@@ -111,8 +111,8 @@ def prepare_expansive_data(dataset, data_path):
         train_data = COOPLMDBDataset(root = data_path, split="train", transform = preprocess)
         test_data = COOPLMDBDataset(root = data_path, split="test", transform = preprocess)
         loaders = {
-            'train': DataLoader(train_data, 128, shuffle = True, num_workers=8),
-            'test': DataLoader(test_data, 128, shuffle = False, num_workers=8),
+            'train': DataLoader(train_data, 128, shuffle = True, num_workers=4),
+            'test': DataLoader(test_data, 128, shuffle = False, num_workers=4),
         }
         configs = {
             'class_names': refine_classnames(test_data.classes),

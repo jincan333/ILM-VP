@@ -23,6 +23,18 @@ def loads_data(buf):
 class LMDBDataset(data.Dataset):
     def __init__(self, root, split='train', transform=None, target_transform=None):
         super().__init__()
+        # db_path = os.path.join(root, f"{split}.lmdb")
+        # self.env = lmdb.open(db_path, subdir=os.path.isdir(db_path),
+        #                      readonly=True, lock=False,
+        #                      readahead=False, meminit=False)
+        # with self.env.begin(write=False) as txn:
+        #     self.length = loads_data(txn.get(b'__len__'))
+        #     self.keys = loads_data(txn.get(b'__keys__'))
+
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def open_lmdb(self, root, split='train'):
         db_path = os.path.join(root, f"{split}.lmdb")
         self.env = lmdb.open(db_path, subdir=os.path.isdir(db_path),
                              readonly=True, lock=False,
@@ -31,10 +43,9 @@ class LMDBDataset(data.Dataset):
             self.length = loads_data(txn.get(b'__len__'))
             self.keys = loads_data(txn.get(b'__keys__'))
 
-        self.transform = transform
-        self.target_transform = target_transform
-
-    def __getitem__(self, index):
+    def __getitem__(self, index, root):
+        if not hasattr(self, 'txn'):
+            self.open_lmdb(root)
         env = self.env
         with env.begin(write=False) as txn:
             byteflow = txn.get(self.keys[index])
