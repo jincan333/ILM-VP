@@ -25,16 +25,23 @@ from cfg import *
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
-    p.add_argument('--network', choices=["resnet18", "resnet50", "instagram"], required=True)
+    p.add_argument('--network', type=str, default="resnet18")
     p.add_argument('--seed', type=int, default=7)
-    p.add_argument('--dataset', choices=["cifar10", "cifar100", "abide", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"], required=True)
+    p.add_argument('--dataset', type=str, default="flowers102")
     p.add_argument('--mapping-interval', type=int, default=1)
     p.add_argument('--epoch', type=int, default=200)
     p.add_argument('--lr', type=float, default=0.01)
     args = p.parse_args()
 
     # Misc
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    def get_device() -> str:
+        if torch.cuda.is_available():
+            return "cuda:0"
+        elif torch.backends.mps.is_available():
+            return "mps"
+        else:
+            return "cpu"
+    device = get_device()
     set_seed(args.seed)
     exp = f"cnn/ilm_vp"
     save_path = os.path.join(results_path, exp, gen_folder_name(args))
