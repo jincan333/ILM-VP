@@ -1,6 +1,6 @@
 import os
 
-base_path = f"{os.getenv('HOME')}/Projects/ILM-VP"
+base_path = os.path.dirname(os.path.abspath(__file__))
 
 data_path = os.path.join(base_path, "data")
-results_path = os.path.join(base_path, "projects", "ILM-VP", "results")
+results_path = os.path.join(base_path, "results")

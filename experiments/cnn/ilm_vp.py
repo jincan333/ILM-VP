@@ -148,4 +148,6 @@ if __name__ == '__main__':
             state_dict['best_acc'] = best_acc
             torch.save(state_dict, os.path.join(save_path, 'best.pth'))
         torch.save(state_dict, os.path.join(save_path, 'ckpt.pth'))
+    print('best test acc: ', best_acc)
+    # cifar10 66.19%
     
