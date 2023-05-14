@@ -27,7 +27,7 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('--network', type=str, default="resnet18")
     p.add_argument('--seed', type=int, default=7)
-    p.add_argument('--dataset', type=str, default="flowers102")
+    p.add_argument('--dataset', type=str, default="cifar10")
     p.add_argument('--mapping-interval', type=int, default=1)
     p.add_argument('--epoch', type=int, default=200)
     p.add_argument('--lr', type=float, default=0.01)
