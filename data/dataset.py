@@ -19,10 +19,12 @@ def cifar10_dataloaders(batch_size=128, data_dir='data/cifar10', num_workers=2):
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
+        transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
     ])
 
     test_transform = transforms.Compose([
         transforms.ToTensor(),
+        transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
     ])
 
     print('Dataset information: CIFAR-10\t 45000 images for training \t 500 images for validation\t')

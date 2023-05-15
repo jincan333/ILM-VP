@@ -40,7 +40,7 @@ parser.add_argument('--arch', type=str, default='resnet18', help='model architec
 parser.add_argument('--imagenet_arch', action="store_true", help="architecture for imagenet size samples")
 
 ##################################### General setting ############################################
-parser.add_argument('--seed', default=None, type=int, help='random seed')
+parser.add_argument('--seed', default=17, type=int, help='random seed')
 parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
 parser.add_argument('--workers', type=int, default=4, help='number of workers in dataloader')
 parser.add_argument('--resume', action="store_true", help="resume from checkpoint")
@@ -48,18 +48,17 @@ parser.add_argument('--checkpoint', type=str, default=None, help='checkpoint fil
 parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results/imp/sparsity', type=str)
 
 ##################################### Training setting #################################################
-parser.add_argument('--batch_size', type=int, default=128, help='batch size')
+parser.add_argument('--batch_size', type=int, default=256, help='batch size')
 parser.add_argument('--lr', default=0.1, type=float, help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
-parser.add_argument('--weight_decay', default=1e-4, type=float, help='weight decay')
-# parser.add_argument('--epochs', default=182, type=int, help='number of total epochs to run')
-parser.add_argument('--epochs', default=200, type=int, help='number of total epochs to run')
+parser.add_argument('--weight_decay', default=2e-4, type=float, help='weight decay')
+parser.add_argument('--epochs', default=182, type=int, help='number of total epochs to run')
 parser.add_argument('--warmup', default=0, type=int, help='warm up epochs')
 parser.add_argument('--print_freq', default=100, type=int, help='print frequency')
 parser.add_argument('--decreasing_lr', default='91,136', help='decreasing strategy')
 
 ##################################### Pruning setting #################################################
-parser.add_argument('--pruning_times', default=9, type=int, help='overall times of pruning')
+parser.add_argument('--pruning_times', default=10, type=int, help='overall times of pruning')
 parser.add_argument('--rate', default=0.2, type=float, help='pruning rate')
 parser.add_argument('--prune_type', default='lt', type=str, help='IMP type (lt, pt or rewind_lt)')
 parser.add_argument('--random_prune', action='store_true', help='whether using random prune')

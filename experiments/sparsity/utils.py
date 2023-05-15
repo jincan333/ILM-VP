@@ -45,14 +45,10 @@ def setup_model_dataset(args):
 
     if args.dataset == 'cifar10':
         classes = 10
-        normalization = NormalizeByChannelMeanStd(
-            mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
         train_set_loader, val_loader, test_loader = cifar10_dataloaders(batch_size = args.batch_size, data_dir = args.data, num_workers = args.workers)
 
     elif args.dataset == 'cifar100':
         classes = 100
-        normalization = NormalizeByChannelMeanStd(
-            mean=[0.5071, 0.4866, 0.4409], std=[0.2673,	0.2564,	0.2762])
         train_set_loader, val_loader, test_loader = cifar100_dataloaders(batch_size = args.batch_size, data_dir = args.data, num_workers = args.workers)
     
     else:
@@ -63,7 +59,7 @@ def setup_model_dataset(args):
     # else:
     #     model = model_dict[args.arch](num_classes=classes)
     model = torchvision.models.resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
-    model.normalize = normalization
+    model.fc = nn.Linear(512, classes)
     print(model)
 
     return model, train_set_loader, val_loader, test_loader
