@@ -25,6 +25,29 @@ def pruning_model(model, px):
         amount=px,
     )
 
+def omp_pruning_model(model, px):
+
+    print('initialize by global magnitude')
+    weight_abs = []
+    for module in self.modules:
+        for name, weight in module.named_parameters():
+            if name not in self.masks: continue
+            weight_abs.append(torch.abs(weight))
+
+    # Gather all scores in a single vector and normalise
+    all_scores = torch.cat([torch.flatten(x) for x in weight_abs])
+    num_params_to_keep = int(len(all_scores) * self.density)
+
+    threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
+    acceptable_score = threshold[-1]
+
+    for module in self.modules:
+        for name, weight in module.named_parameters():
+            if name not in self.masks: continue
+            self.masks[name] = ((torch.abs(weight)) >= acceptable_score).float()
+
+
+
 def pruning_model_random(model, px):
 
     print('Apply Unstructured Random Pruning Globally (all conv layers)')
