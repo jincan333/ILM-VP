@@ -1,315 +1,304 @@
-import torch
-import torch.autograd as autograd
-import torch.nn as nn
-import torch.nn.functional as F
-import math
+from __future__ import print_function
+
+import os
+import time
+import argparse
+import logging
+import hashlib
 import copy
-import types
+import random
+import torch
+from torch import nn
+import torch.nn.functional as F
+import torch.optim as optim
+import torch.backends.cudnn as cudnn
+import numpy as np
+import core
+from core import Masking, CosineDecay
+from utils import *
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+cudnn.benchmark = True
+cudnn.deterministic = True
 
-def snip_forward_conv2d(self, x):
-        return F.conv2d(x, self.weight * self.weight_mask, self.bias,
-                        self.stride, self.padding, self.dilation, self.groups)
+if not os.path.exists('./models'): os.mkdir('./models')
+if not os.path.exists('./logs'): os.mkdir('./logs')
+logger = None
 
+def save_checkpoint(state, filename='checkpoint.pth.tar'):
+    print("SAVING")
+    torch.save(state, filename)
 
-def snip_forward_linear(self, x):
-        return F.linear(x, self.weight * self.weight_mask, self.bias)
+def setup_logger(args):
+    global logger
+    if logger == None:
+        logger = logging.getLogger()
+    else:  # wish there was a logger.close()
+        for handler in logger.handlers[:]:  # make a copy of the list
+            logger.removeHandler(handler)
 
+    args_copy = copy.deepcopy(args)
+    # copy to get a clean hash
+    # use the same log file hash if iterations or verbose are different
+    # these flags do not change the results
+    args_copy.iters = 1
+    args_copy.verbose = False
+    args_copy.log_interval = 1
+    args_copy.seed = 0
 
-def SNIP(net, keep_ratio, train_dataloader, device):
+    log_path = './logs/{0}_{1}_{2}.log'.format(args.model, args.density, hashlib.md5(str(args_copy).encode('utf-8')).hexdigest()[:8])
 
-    # Grab a single batch from the training dataset
-    inputs, targets = next(iter(train_dataloader))
-    inputs = inputs.to(device)
-    targets = targets.to(device)
-    inputs.requires_grad = True
-    # Let's create a fresh copy of the network so that we're not worried about
-    # affecting the actual training-phase
-    net = copy.deepcopy(net).to(device)
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter(fmt='%(asctime)s: %(message)s', datefmt='%H:%M:%S')
 
-    # Monkey-patch the Linear and Conv2d layer to learn the multiplicative mask
-    # instead of the weights
-    for layer in net.modules():
-        if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-            layer.weight_mask = nn.Parameter(torch.ones_like(layer.weight))
-            nn.init.xavier_normal_(layer.weight)
-            layer.weight.requires_grad = False
+    fh = logging.FileHandler(log_path)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
 
-        # Override the forward methods:
-        if isinstance(layer, nn.Conv2d):
-            layer.forward = types.MethodType(snip_forward_conv2d, layer)
+def print_and_log(msg):
+    global logger
+    print(msg)
+    logger.info(msg)
 
-        if isinstance(layer, nn.Linear):
-            layer.forward = types.MethodType(snip_forward_linear, layer)
+gradient_norm = []
+def train(args, model, device, train_loader, optimizer, epoch, mask=None):
+    model.train()
+    train_loss = 0
+    correct = 0
+    n = 0
+    # global gradient_norm
+    for batch_idx, (data, target) in enumerate(train_loader):
 
-    # Compute gradients (but don't apply them)
-    net.zero_grad()
-    outputs = net.forward(inputs)
-    loss = F.nll_loss(outputs, targets)
-    loss.backward()
+        data, target = data.to(device), target.to(device)
+        if args.fp16: data = data.half()
+        optimizer.zero_grad()
+        output = model(data)
+        output = F.log_softmax(output,  dim=1)
+        loss = F.nll_loss(output, target)
 
-    grads_abs = []
-    for layer in net.modules():
-        if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-            grads_abs.append(torch.abs(layer.weight_mask.grad))
+        train_loss += loss.item()
+        pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+        correct += pred.eq(target.view_as(pred)).sum().item()
+        n += target.shape[0]
 
-    # Gather all scores in a single vector and normalise
-    all_scores = torch.cat([torch.flatten(x) for x in grads_abs])
-    norm_factor = torch.sum(all_scores)
-    all_scores.div_(norm_factor)
-
-    num_params_to_keep = int(len(all_scores) * keep_ratio)
-    threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
-    acceptable_score = threshold[-1]
-
-    layer_wise_sparsities = []
-    for g in grads_abs:
-        mask = ((g / norm_factor) >= acceptable_score).float()
-        sparsity = float((mask==0).sum().item() / mask.numel())
-        layer_wise_sparsities.append(sparsity)
-    print(f'layer-wise sparsity is {layer_wise_sparsities}')
-
-    return layer_wise_sparsities
-
-def SNIP_training(net, keep_ratio, train_dataloader, device, masks, death_rate):
-    # TODO: shuffle?
-
-    # Grab a single batch from the training dataset
-    inputs, targets = next(iter(train_dataloader))
-    inputs = inputs.to(device)
-    targets = targets.to(device)
-    print('Pruning rate:', death_rate)
-    # Let's create a fresh copy of the network so that we're not worried about
-    # affecting the actual training-phase
-    net = copy.deepcopy(net)
-    # Monkey-patch the Linear and Conv2d layer to learn the multiplicative mask
-    # instead of the weights
-    # for layer in net.modules():
-    #     if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-    #         layer.weight_mask = nn.Parameter(torch.ones_like(layer.weight))
-    #         # nn.init.xavier_normal_(layer.weight)
-    #         # layer.weight.requires_grad = False
-    #
-    #     # Override the forward methods:
-    #     if isinstance(layer, nn.Conv2d):
-    #         layer.forward = types.MethodType(snip_forward_conv2d, layer)
-    #
-    #     if isinstance(layer, nn.Linear):
-    #         layer.forward = types.MethodType(snip_forward_linear, layer)
-
-    # Compute gradients (but don't apply them)
-    net.zero_grad()
-    outputs = net.forward(inputs)
-    loss = F.nll_loss(outputs, targets)
-    loss.backward()
-
-    grads_abs = []
-    masks_copy = []
-    new_masks = []
-    for name in masks:
-        masks_copy.append(masks[name])
-
-    index = 0
-    for layer in net.modules():
-        if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-            # clone mask
-            mask = masks_copy[index].clone()
-
-            num_nonzero = (masks_copy[index] != 0).sum().item()
-            num_zero = (masks_copy[index] == 0).sum().item()
-
-            # calculate score
-            scores = torch.abs(layer.weight.grad * layer.weight * masks_copy[index]) # weight * grad
-            norm_factor = torch.sum(scores)
-            scores.div_(norm_factor)
-
-            x, idx = torch.sort(scores.data.view(-1))
-            num_remove = math.ceil(death_rate * num_nonzero)
-            k = math.ceil(num_zero + num_remove)
-            if num_remove == 0.0: return masks_copy[index] != 0.0
-
-            mask.data.view(-1)[idx[:k]] = 0.0
-
-            new_masks.append(mask)
-            index += 1
-
-    return new_masks
-
-
-def GraSP_fetch_data(dataloader, num_classes, samples_per_class):
-    datas = [[] for _ in range(num_classes)]
-    labels = [[] for _ in range(num_classes)]
-    mark = dict()
-    dataloader_iter = iter(dataloader)
-    while True:
-        inputs, targets = next(dataloader_iter)
-        for idx in range(inputs.shape[0]):
-            x, y = inputs[idx:idx+1], targets[idx:idx+1]
-            category = y.item()
-            if len(datas[category]) == samples_per_class:
-                mark[category] = True
-                continue
-            datas[category].append(x)
-            labels[category].append(y)
-        if len(mark) == num_classes:
-            break
-
-    X, y = torch.cat([torch.cat(_, 0) for _ in datas]), torch.cat([torch.cat(_) for _ in labels]).view(-1)
-    return X, y
-
-
-def count_total_parameters(net):
-    total = 0
-    for m in net.modules():
-        if isinstance(m, (nn.Linear, nn.Conv2d)):
-            total += m.weight.numel()
-    return total
-
-
-def count_fc_parameters(net):
-    total = 0
-    for m in net.modules():
-        if isinstance(m, (nn.Linear)):
-            total += m.weight.numel()
-    return total
-
-
-def GraSP(net, ratio, train_dataloader, device, num_classes=10, samples_per_class=25, num_iters=1, T=200, reinit=True):
-    eps = 1e-10
-    keep_ratio = ratio
-    old_net = net
-
-    net = copy.deepcopy(net)  # .eval()
-    net.zero_grad()
-
-    weights = []
-    for layer in net.modules():
-        if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-            weights.append(layer.weight)
-
-    inputs_one = []
-    targets_one = []
-
-    grad_w = None
-    for w in weights:
-        w.requires_grad_(True)
-
-    print_once = False
-    for it in range(num_iters):
-        print("(1): Iterations %d/%d." % (it, num_iters))
-        inputs, targets = GraSP_fetch_data(train_dataloader, num_classes, samples_per_class)
-        N = inputs.shape[0]
-        din = copy.deepcopy(inputs)
-        dtarget = copy.deepcopy(targets)
-        inputs_one.append(din[:N//2])
-        targets_one.append(dtarget[:N//2])
-        inputs_one.append(din[N // 2:])
-        targets_one.append(dtarget[N // 2:])
-        inputs = inputs.to(device)
-        targets = targets.to(device)
-
-        outputs = net.forward(inputs[:N//2])/T
-        if print_once:
-            # import pdb; pdb.set_trace()
-            x = F.softmax(outputs)
-            print(x)
-            print(x.max(), x.min())
-            print_once = False
-        loss = F.cross_entropy(outputs, targets[:N//2])
-        # ===== debug ================
-        grad_w_p = autograd.grad(loss, weights)
-        if grad_w is None:
-            grad_w = list(grad_w_p)
+        if args.fp16:
+            optimizer.backward(loss)
         else:
-            for idx in range(len(grad_w)):
-                grad_w[idx] += grad_w_p[idx]
+            loss.backward()
 
-        outputs = net.forward(inputs[N // 2:])/T
-        loss = F.cross_entropy(outputs, targets[N // 2:])
-        grad_w_p = autograd.grad(loss, weights, create_graph=False)
-        if grad_w is None:
-            grad_w = list(grad_w_p)
+        if mask is not None: mask.step()
+        else: optimizer.step()
+
+
+        if batch_idx % args.log_interval == 0:
+            print_and_log('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f} Accuracy: {}/{} ({:.3f}% '.format(
+                epoch, batch_idx * len(data), len(train_loader)*args.batch_size,
+                100. * batch_idx / len(train_loader), loss.item(), correct, n, 100. * correct / float(n)))
+
+
+    # training summary
+    print_and_log('\n{}: Average loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(
+        'Training summary' ,
+        train_loss/batch_idx, correct, n, 100. * correct / float(n)))
+
+
+def evaluate(args, model, device, test_loader, is_test_set=False):
+    model.eval()
+    test_loss = 0
+    correct = 0
+    n = 0
+    with torch.no_grad():
+        for data, target in test_loader:
+            data, target = data.to(device), target.to(device)
+            if args.fp16: data = data.half()
+            model.t = target
+            output = model(data)
+            test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
+            pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
+            correct += pred.eq(target.view_as(pred)).sum().item()
+            n += target.shape[0]
+
+    test_loss /= float(n)
+
+    print_and_log('\n{}: Average loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(
+        'Test evaluation' if is_test_set else 'Evaluation',
+        test_loss, correct, n, 100. * correct / float(n)))
+    return correct / float(n)
+
+
+def main():
+    # Training settings
+    parser = argparse.ArgumentParser(description='PyTorch cifar10 Example')
+    parser.add_argument('--data', type=str, default='data/cifar10')
+    parser.add_argument('--dataset', type=str, default='cifar10')
+    parser.add_argument('--workers', type=int, default=4, help='number of workers in dataloader')
+    parser.add_argument('--batch-size', type=int, default=256, metavar='N', help='input batch size for training (default: 128)')
+    parser.add_argument('--test-batch-size', type=int, default=256, metavar='N', help='input batch size for testing (default: 128)')
+    parser.add_argument('--multiplier', type=int, default=1, metavar='N', help='extend training time by multiplier times')
+    parser.add_argument('--iters', type=int, default=1, help='How many times the model should be run after each other. Default=1')
+    parser.add_argument('--epochs', type=int, default=182, metavar='N', help='number of epochs to train (default: 200)')
+    parser.add_argument('--lr', type=float, default=0.1, metavar='LR', help='learning rate (default: 0.1)')
+    parser.add_argument('--momentum', type=float, default=0.9, metavar='M', help='SGD momentum (default: 0.9)')
+    parser.add_argument('--no-cuda', action='store_true', default=False, help='disables CUDA training')
+    parser.add_argument('--seed', type=int, default=17, metavar='S', help='random seed (default: 17)')
+    parser.add_argument('--log-interval', type=int, default=100, metavar='N', help='how many batches to wait before logging training status')
+    parser.add_argument('--optimizer', type=str, default='sgd', help='The optimizer to use. Default: sgd. Options: sgd, adam.')
+    randomhash = ''.join(str(time.time()).split('.'))
+    parser.add_argument('--save', type=str, default=randomhash + '.pt', help='path to save the final model')
+    parser.add_argument('--decay_frequency', type=int, default=25000)
+    parser.add_argument('--l1', type=float, default=0.0)
+    parser.add_argument('--fp16', action='store_true', help='Run in fp16 mode.')
+    parser.add_argument('--valid_split', type=float, default=0.1)
+    parser.add_argument('--resume', type=str)
+    parser.add_argument('--start-epoch', type=int, default=0)
+    parser.add_argument('--model', type=str, default='resnet18')
+    parser.add_argument('--l2', type=float, default=5.0e-4)
+    parser.add_argument('--save-features', action='store_true', help='Resumes a saved model and saves its feature data to disk for plotting.')
+    parser.add_argument('--bench', action='store_true', help='Enables the benchmarking of layers and estimates sparse speedups')
+    parser.add_argument('--max-threads', type=int, default=4, help='How many threads to use for data loading.')
+    parser.add_argument('--scaled', action='store_true', help='scale the initialization by 1/density')
+    # ITOP settings
+    core.add_sparse_args(parser)
+
+    args = parser.parse_args()
+    setup_logger(args)
+    print_and_log(args)
+
+    if args.fp16:
+        try:
+            from apex.fp16_utils import FP16_Optimizer
+        except:
+            print('WARNING: apex not installed, ignoring --fp16 option')
+            args.fp16 = False
+
+    use_cuda = not args.no_cuda and torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+
+    print_and_log('\n\n')
+    print_and_log('='*80)
+
+    # fix random seed for Reproducibility
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed(args.seed)
+
+
+    if args.dataset == 'mnist':
+        train_loader, valid_loader, test_loader = get_mnist_dataloaders(args, validation_split=args.valid_split)
+    elif args.dataset == 'cifar10':
+        # train_loader, valid_loader, test_loader = cifar10_dataloaders(args.batch_size, num_workers=args.max_threads)
+        model, train_loader, valid_loader, test_loader = setup_model_dataset(args)
+        model.cuda()
+        output = 10
+    elif args.dataset == 'cifar100':
+        train_loader, valid_loader, test_loader = get_cifar100_dataloaders(args, args.valid_split, max_threads=args.max_threads)
+        output = 100
+
+    # if args.scaled:
+    #     init_type = 'scaled_kaiming_normal'
+    # else:
+    #     init_type = 'kaiming_normal'
+
+    # if 'vgg' in args.model:
+    #     model = vgg.VGG(depth=int(args.model[-2:]), dataset=args.data, batchnorm=True).to(device)
+    # else:
+    #     model = cifar_resnet.Model.get_model_from_name(args.model, initializers.initializations(init_type, args.density), outputs=output).to(device)
+
+    print_and_log(model)
+    print_and_log('=' * 60)
+    print_and_log(args.model)
+    print_and_log('=' * 60)
+
+    print_and_log('=' * 60)
+    print_and_log('Prune mode: {0}'.format(args.death))
+    print_and_log('Growth mode: {0}'.format(args.growth))
+    print_and_log('Redistribution mode: {0}'.format(args.redistribution))
+    print_and_log('=' * 60)
+
+    for i in range(args.iters):
+        print_and_log("\nIteration start: {0}/{1}\n".format(i+1, args.iters))
+
+        optimizer = None
+        if args.optimizer == 'sgd':
+            optimizer = optim.SGD(model.parameters(),lr=args.lr,momentum=args.momentum,weight_decay=args.l2, nesterov=True)
+        elif args.optimizer == 'adam':
+            optimizer = optim.Adam(model.parameters(),lr=args.lr,weight_decay=args.l2)
         else:
-            for idx in range(len(grad_w)):
-                grad_w[idx] += grad_w_p[idx]
+            print('Unknown optimizer: {0}'.format(args.optimizer))
+            raise Exception('Unknown optimizer.')
 
-    ret_inputs = []
-    ret_targets = []
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(args.epochs / 2) * args.multiplier, int(args.epochs * 3 / 4) * args.multiplier], last_epoch=-1)
 
-    for it in range(len(inputs_one)):
-        print("(2): Iterations %d/%d." % (it, num_iters))
-        inputs = inputs_one.pop(0).to(device)
-        targets = targets_one.pop(0).to(device)
-        ret_inputs.append(inputs)
-        ret_targets.append(targets)
-        outputs = net.forward(inputs)/T
-        loss = F.cross_entropy(outputs, targets)
-        # ===== debug ==============
+        if args.resume:
+            if os.path.isfile(args.resume):
+                print_and_log("=> loading checkpoint '{}'".format(args.resume))
+                checkpoint = torch.load(args.resume)
+                args.start_epoch = checkpoint['epoch']
+                model.load_state_dict(checkpoint['state_dict'])
+                optimizer.load_state_dict(checkpoint['optimizer'])
+                print_and_log("=> loaded checkpoint '{}' (epoch {})"
+                      .format(args.resume, checkpoint['epoch']))
+                print_and_log('Testing...')
+                evaluate(args, model, device, test_loader)
+                model.feats = []
+                model.densities = []
+                plot_class_feature_histograms(args, model, device, train_loader, optimizer)
+            else:
+                print_and_log("=> no checkpoint found at '{}'".format(args.resume))
 
-        grad_f = autograd.grad(loss, weights, create_graph=True)
-        z = 0
-        count = 0
-        for layer in net.modules():
-            if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-                z += (grad_w[count].data * grad_f[count]).sum()
-                count += 1
-        z.backward()
 
-    grads = dict()
-    old_modules = list(old_net.modules())
-    for idx, layer in enumerate(net.modules()):
-        if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-            grads[old_modules[idx]] = -layer.weight.data * layer.weight.grad  # -theta_q Hg
+        if args.fp16:
+            print('FP16')
+            optimizer = FP16_Optimizer(optimizer,
+                                       static_loss_scale = None,
+                                       dynamic_loss_scale = True,
+                                       dynamic_loss_args = {'init_scale': 2 ** 16})
+            model = model.half()
 
-    # Gather all scores in a single vector and normalise
-    all_scores = torch.cat([torch.flatten(x) for x in grads.values()])
-    norm_factor = torch.abs(torch.sum(all_scores)) + eps
-    print("** norm factor:", norm_factor)
-    all_scores.div_(norm_factor)
+        mask = None
+        if args.sparse:
+            decay = CosineDecay(args.death_rate, len(train_loader)*(args.epochs*args.multiplier))
+            mask = Masking(optimizer, death_rate=args.death_rate, death_mode=args.death, death_rate_decay=decay, growth_mode=args.growth,
+                           redistribution_mode=args.redistribution, args=args,train_loader=train_loader)
+            mask.add_module(model, sparse_init=args.sparse_init, density=args.density)
 
-    num_params_to_rm = int(len(all_scores) * (1-keep_ratio))
-    threshold, _ = torch.topk(all_scores, num_params_to_rm, sorted=True)
-    # import pdb; pdb.set_trace()
-    acceptable_score = threshold[-1]
-    print('** accept: ', acceptable_score)
+        best_acc = 0.0
 
-    layer_wise_sparsities = []
-    for m, g in grads.items():
-        mask = ((g / norm_factor) <= acceptable_score).float()
-        sparsity = float((mask == 0).sum().item() / mask.numel())
-        layer_wise_sparsities.append(sparsity)
+        # create output file
+        save_path = './save/' + str(args.model) + '/' + str(args.data) + '/' + str(args.sparse_init) + '/' + str(args.seed)
+        if args.sparse: save_subfolder = os.path.join(save_path, 'sparsity' + str(1 - args.density))
+        else: save_subfolder = os.path.join(save_path, 'dense')
+        if not os.path.exists(save_subfolder): os.makedirs(save_subfolder)
 
-    print(f'layer-wise sparsity is {layer_wise_sparsities}')
 
-    return layer_wise_sparsities
+        for epoch in range(1, args.epochs*args.multiplier + 1):
 
-def synflow(net, keep_ratio, train_dataloader, device):
+            t0 = time.time()
+            train(args, model, device, train_loader, optimizer, epoch, mask)
+            lr_scheduler.step()
+            if args.valid_split > 0.0:
+                val_acc = evaluate(args, model, device, valid_loader)
 
-    @torch.no_grad()
-    def linearize(model):
-        # model.double()
-        signs = {}
-        for name, param in model.state_dict().items():
-            signs[name] = torch.sign(param)
-            param.abs_()
-        return signs
+            if val_acc > best_acc:
+                print('Saving model')
+                best_acc = val_acc
+                save_checkpoint({
+                    'epoch': epoch + 1,
+                    'state_dict': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                }, filename=os.path.join(save_subfolder, 'model_final.pth'))
 
-    @torch.no_grad()
-    def nonlinearize(model, signs):
-        # model.float()
-        for name, param in model.state_dict().items():
-            param.mul_(signs[name])
+            print_and_log('Current learning rate: {0}. Time taken for epoch: {1:.2f} seconds.\n'.format(optimizer.param_groups[0]['lr'], time.time() - t0))
+        print('Testing model')
+        model.load_state_dict(torch.load(os.path.join(save_subfolder, 'model_final.pth'))['state_dict'])
+        evaluate(args, model, device, test_loader, is_test_set=True)
+        print_and_log("\nIteration end: {0}/{1}\n".format(i+1, args.iters))
 
-    signs = linearize(net)
 
-    (data, _) = next(iter(train_dataloader))
-    input_dim = list(data[0, :].shape)
-    input = torch.ones([1] + input_dim).to(device)  # , dtype=torch.float64).to(device)
-    output = model(input)
-    torch.sum(output).backward()
-
-    for _, p in self.masked_parameters:
-        self.scores[id(p)] = torch.clone(p.grad * p).detach().abs_()
-        p.grad.data.zero_()
-
-    nonlinearize(model, signs)
+if __name__ == '__main__':
+   main()

@@ -125,7 +125,7 @@ optimizer = torch.optim.SGD(model.parameters(), args.lr,
 criterion = nn.CrossEntropyLoss()
 decreasing_lr = list(map(int, args.decreasing_lr.split(',')))
 acc_list = []
-for i in range(1,9):
+for i in range(1,10):
     checkpoint_path = f'results/imp/sparsity/{i}checkpoint.pth.tar'
     checkpoint = torch.load(checkpoint_path, map_location = torch.device('cuda:'+str(args.gpu)))
     best_sa = checkpoint['best_sa']

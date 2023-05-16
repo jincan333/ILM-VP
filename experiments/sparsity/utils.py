@@ -10,7 +10,7 @@ import numpy as np
 
 # from models import *
 import sys
-sys.path.append('C:/Users/jinca/Documents/Projects/ILM-VP/data')
+sys.path.append('/home/hop20001/can/Projects/Visual-sparsity/ILM-VP/data')
 from dataset import *
 __all__ = ['setup_model_dataset']
 
@@ -60,6 +60,8 @@ def setup_model_dataset(args):
     #     model = model_dict[args.arch](num_classes=classes)
     model = torchvision.models.resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
     model.fc = nn.Linear(512, classes)
+    model.conv1=nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+    # model.maxpool=nn.Identity()
     print(model)
 
     return model, train_set_loader, val_loader, test_loader
