@@ -11,7 +11,7 @@ class ExpansiveVisualPrompt(nn.Module):
         in_size = mask.shape[0]
         self.out_size = out_size
         if init == "zero":
-            self.program = torch.nn.Parameter(data=torch.zeros(3, out_size, out_size)) 
+            self.program = torch.nn.Parameter(data=torch.zeros(3, out_size, out_size))
         elif init == "randn":
             self.program = torch.nn.Parameter(data=torch.randn(3, out_size, out_size)) 
         else:

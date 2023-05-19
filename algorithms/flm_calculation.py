@@ -43,3 +43,27 @@ def generate_label_mapping_by_frequency(visual_prompt, network, data_loader, map
     pairs = torch.nonzero(predictive_distribution_based_multi_label_mapping(dist_matrix, mapping_num))
     mapping_sequence = pairs[:, 0][torch.sort(pairs[:, 1]).indices.tolist()]
     return mapping_sequence
+
+
+def generate_label_mapping_by_frequency_ordinary(network, data_loader, mapping_num = 1,device='cpu'):
+    device = device
+    if hasattr(network, "eval"):
+        network.eval()
+    fx0s = []
+    ys = []
+    pbar = tqdm(data_loader, total=len(data_loader), desc=f"Frequency Label Mapping", ncols=100) if len(data_loader) > 20 else data_loader
+    for x, y in pbar:
+        x, y = x.to(device), y.to(device)
+        with torch.no_grad():
+            fx0 = network((x))
+        fx0s.append(fx0)
+        ys.append(y)
+    fx0s = torch.cat(fx0s).cpu().float()
+    ys = torch.cat(ys).cpu().int()
+    if ys.size(0) != fx0s.size(0):
+        assert fx0s.size(0) % ys.size(0) == 0
+        ys = ys.repeat(int(fx0s.size(0) / ys.size(0)))
+    dist_matrix = get_dist_matrix(fx0s, ys)
+    pairs = torch.nonzero(predictive_distribution_based_multi_label_mapping(dist_matrix, mapping_num))
+    mapping_sequence = pairs[:, 0][torch.sort(pairs[:, 1]).indices.tolist()]
+    return mapping_sequence

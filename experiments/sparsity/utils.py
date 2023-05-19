@@ -10,35 +10,10 @@ import numpy as np
 
 # from models import *
 import sys
-sys.path.append('/home/hop20001/can/Projects/Visual-sparsity/ILM-VP/data')
-from dataset import *
+sys.path.append(".")
+from data import cifar10_dataloaders, cifar100_dataloaders
 __all__ = ['setup_model_dataset']
 
-
-
-class NormalizeByChannelMeanStd(nn.Module):
-    def __init__(self, mean, std):
-        super(NormalizeByChannelMeanStd, self).__init__()
-        if not isinstance(mean, torch.Tensor):
-            mean = torch.tensor(mean)
-        if not isinstance(std, torch.Tensor):
-            std = torch.tensor(std)
-        self.register_buffer("mean", mean)
-        self.register_buffer("std", std)
-
-    def forward(self, tensor):
-        return normalize_fn(tensor, self.mean, self.std)
-
-    def extra_repr(self):
-        return 'mean={}, std={}'.format(self.mean, self.std)
-
-
-def normalize_fn(tensor, mean, std):
-    """Differentiable version of torchvision.functional.normalize"""
-    # here we assume the color channel is in at dim=1
-    mean = mean[None, :, None, None]
-    std = std[None, :, None, None]
-    return tensor.sub(mean).div(std)
 
 
 def setup_model_dataset(args):
@@ -59,8 +34,8 @@ def setup_model_dataset(args):
     # else:
     #     model = model_dict[args.arch](num_classes=classes)
     model = torchvision.models.resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
-    model.fc = nn.Linear(512, classes)
-    model.conv1=nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+    # model.fc = nn.Linear(512, classes)
+    # model.conv1=nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
     # model.maxpool=nn.Identity()
     print(model)
 

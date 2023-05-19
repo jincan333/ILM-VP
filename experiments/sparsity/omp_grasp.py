@@ -128,20 +128,47 @@ def evaluate(args, model, device, test_loader, is_test_set=False):
 
 
 def main():
-    # Training settings
-    parser = argparse.ArgumentParser(description='PyTorch cifar10 Example')
-    parser.add_argument('--data', type=str, default='data/cifar10')
-    parser.add_argument('--dataset', type=str, default='cifar10')
+    ##################################### Dataset #################################################
+    parser.add_argument('--data', type=str, default='data/cifar10', help='location of the data corpus')
+    parser.add_argument('--dataset', type=str, default='cifar10', help='dataset')
+    parser.add_argument('--input_size', type=int, default=32, help='size of input images')
+
+    ##################################### Architecture ############################################
+    parser.add_argument('--arch', type=str, default='resnet18', help='model architecture')
+    parser.add_argument('--imagenet_arch', action="store_true", help="architecture for imagenet size samples")
+
+    ##################################### General setting ############################################
+    parser.add_argument('--seed', default=17, type=int, help='random seed')
+    parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
     parser.add_argument('--workers', type=int, default=4, help='number of workers in dataloader')
-    parser.add_argument('--batch-size', type=int, default=256, metavar='N', help='input batch size for training (default: 128)')
+    parser.add_argument('--resume', action="store_true", help="resume from checkpoint")
+    parser.add_argument('--checkpoint', type=str, default=None, help='checkpoint file')
+    parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results/imp/sparsity', type=str)
+
+    ##################################### Training setting #################################################
+    parser.add_argument('--batch_size', type=int, default=256, help='batch size')
+    parser.add_argument('--lr', default=0.1, type=float, help='initial learning rate')
+    parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
+    parser.add_argument('--weight_decay', default=2e-4, type=float, help='weight decay')
+    parser.add_argument('--epochs', default=182, type=int, help='number of total epochs to run')
+    parser.add_argument('--warmup', default=0, type=int, help='warm up epochs')
+    parser.add_argument('--print_freq', default=100, type=int, help='print frequency')
+    parser.add_argument('--decreasing_lr', default='91,136', help='decreasing strategy')
+
+    ##################################### Pruning setting #################################################
+    parser.add_argument('--pruning_times', default=10, type=int, help='overall times of pruning')
+    parser.add_argument('--rate', default=0.2, type=float, help='pruning rate')
+    parser.add_argument('--prune_type', default='lt', type=str, help='IMP type (lt, pt or rewind_lt)')
+    parser.add_argument('--random_prune', action='store_true', help='whether using random prune')
+    parser.add_argument('--rewind_epoch', default=3, type=int, help='rewind checkpoint')
+
+
+    # Training settings
+    parser = argparse.ArgumentParser(description='PyTorch OMP/Grasp Experiments')
     parser.add_argument('--test-batch-size', type=int, default=256, metavar='N', help='input batch size for testing (default: 128)')
     parser.add_argument('--multiplier', type=int, default=1, metavar='N', help='extend training time by multiplier times')
     parser.add_argument('--iters', type=int, default=1, help='How many times the model should be run after each other. Default=1')
-    parser.add_argument('--epochs', type=int, default=3, metavar='N', help='number of epochs to train (default: 200)')
-    parser.add_argument('--lr', type=float, default=0.1, metavar='LR', help='learning rate (default: 0.1)')
-    parser.add_argument('--momentum', type=float, default=0.9, metavar='M', help='SGD momentum (default: 0.9)')
     parser.add_argument('--no-cuda', action='store_true', default=False, help='disables CUDA training')
-    parser.add_argument('--seed', type=int, default=17, metavar='S', help='random seed (default: 17)')
     parser.add_argument('--log-interval', type=int, default=100, metavar='N', help='how many batches to wait before logging training status')
     parser.add_argument('--optimizer', type=str, default='sgd', help='The optimizer to use. Default: sgd. Options: sgd, adam.')
     randomhash = ''.join(str(time.time()).split('.'))
@@ -149,11 +176,10 @@ def main():
     parser.add_argument('--decay_frequency', type=int, default=25000)
     parser.add_argument('--l1', type=float, default=0.0)
     parser.add_argument('--fp16', action='store_true', help='Run in fp16 mode.')
-    parser.add_argument('--valid_split', type=float, default=0.1)
     parser.add_argument('--resume', type=str)
     parser.add_argument('--start-epoch', type=int, default=0)
     parser.add_argument('--model', type=str, default='resnet18')
-    parser.add_argument('--l2', type=float, default=5.0e-4)
+    parser.add_argument('--l2', type=float, default=2e-4)
     parser.add_argument('--save-features', action='store_true', help='Resumes a saved model and saves its feature data to disk for plotting.')
     parser.add_argument('--bench', action='store_true', help='Enables the benchmarking of layers and estimates sparse speedups')
     parser.add_argument('--max-threads', type=int, default=4, help='How many threads to use for data loading.')

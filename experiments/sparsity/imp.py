@@ -12,7 +12,7 @@ import argparse
 import numpy as np  
 from copy import deepcopy
 import matplotlib.pyplot as plt
-
+from functools import partial
 import torch
 import torch.optim
 import torch.nn as nn
@@ -23,15 +23,18 @@ import torch.backends.cudnn as cudnn
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 from torch.utils.data.sampler import SubsetRandomSampler
-from utils import NormalizeByChannelMeanStd
-
 from utils import *
 from pruner import *
+import sys
+sys.path.append(".")
+from algorithms import generate_label_mapping_by_frequency, get_dist_matrix, label_mapping_base, generate_label_mapping_by_frequency_ordinary
 
-parser = argparse.ArgumentParser(description='PyTorch Lottery Tickets Experiments')
+
+# setting experiment parameters
+parser = argparse.ArgumentParser(description='PyTorch IMP Experiments')
 
 ##################################### Dataset #################################################
-parser.add_argument('--data', type=str, default='data/cifar10', help='location of the data corpus')
+parser.add_argument('--data', type=str, default='dataset/cifar10', help='location of the data corpus')
 parser.add_argument('--dataset', type=str, default='cifar10', help='dataset')
 parser.add_argument('--input_size', type=int, default=32, help='size of input images')
 
@@ -45,25 +48,26 @@ parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
 parser.add_argument('--workers', type=int, default=4, help='number of workers in dataloader')
 parser.add_argument('--resume', action="store_true", help="resume from checkpoint")
 parser.add_argument('--checkpoint', type=str, default=None, help='checkpoint file')
-parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results/imp/sparsity', type=str)
+parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results/sparsity/imp', type=str)
 
 ##################################### Training setting #################################################
 parser.add_argument('--batch_size', type=int, default=256, help='batch size')
 parser.add_argument('--lr', default=0.1, type=float, help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight_decay', default=2e-4, type=float, help='weight decay')
-parser.add_argument('--epochs', default=182, type=int, help='number of total epochs to run')
+parser.add_argument('--epochs', default=3, type=int, help='number of total epochs to run')
 parser.add_argument('--warmup', default=0, type=int, help='warm up epochs')
 parser.add_argument('--print_freq', default=100, type=int, help='print frequency')
 parser.add_argument('--decreasing_lr', default='91,136', help='decreasing strategy')
 
 ##################################### Pruning setting #################################################
-parser.add_argument('--pruning_times', default=10, type=int, help='overall times of pruning')
+parser.add_argument('--pruning_times', default=1, type=int, help='overall times of pruning')
 parser.add_argument('--rate', default=0.2, type=float, help='pruning rate')
 parser.add_argument('--prune_type', default='lt', type=str, help='IMP type (lt, pt or rewind_lt)')
 parser.add_argument('--random_prune', action='store_true', help='whether using random prune')
 parser.add_argument('--rewind_epoch', default=3, type=int, help='rewind checkpoint')
 
+# initiate the best performance
 best_sa = 0
 
 def main():
@@ -73,6 +77,7 @@ def main():
 
     torch.cuda.set_device(int(args.gpu))
     os.makedirs(args.save_dir, exist_ok=True)
+    # set random seed
     if args.seed:
         setup_seed(args.seed)
 
@@ -82,7 +87,8 @@ def main():
 
     criterion = nn.CrossEntropyLoss()
     decreasing_lr = list(map(int, args.decreasing_lr.split(',')))
-
+    mapping_sequence = generate_label_mapping_by_frequency_ordinary(model, train_loader, device=args.gpu)
+    label_mapping = partial(label_mapping_base, mapping_sequence=mapping_sequence)
     if args.prune_type == 'lt':
         print('lottery tickets setting (rewind to the same random init)')
         initalization = deepcopy(model.state_dict())
@@ -138,7 +144,7 @@ def main():
 
         start_epoch = 0
         start_state = 0
-    test_tacc = validate(test_loader, model, criterion)
+    test_tacc = validate(test_loader, model, criterion, label_mapping)
     print('accuracy without finetuning: ', test_tacc)
     print('######################################## Start Standard Training Iterative Pruning ########################################')
     
@@ -152,7 +158,9 @@ def main():
         for epoch in range(start_epoch, args.epochs):
 
             print(optimizer.state_dict()['param_groups'][0]['lr'])
-            acc = train(train_loader, model, criterion, optimizer, epoch)
+            mapping_sequence = generate_label_mapping_by_frequency_ordinary(model, train_loader, device=args.gpu)
+            label_mapping = partial(label_mapping_base, mapping_sequence=mapping_sequence)
+            acc = train(train_loader, model, criterion, optimizer, epoch, label_mapping)
 
             if state == 0:
                 if (epoch+1) == args.rewind_epoch:
@@ -161,9 +169,9 @@ def main():
                         initalization = deepcopy(model.state_dict())
 
             # evaluate on validation set
-            tacc = validate(val_loader, model, criterion)
+            tacc = validate(val_loader, model, criterion, label_mapping)
             # evaluate on test set
-            test_tacc = validate(test_loader, model, criterion)
+            test_tacc = validate(test_loader, model, criterion, label_mapping)
 
             scheduler.step()
 
@@ -238,7 +246,7 @@ def main():
             start_epoch = args.rewind_epoch
 
 
-def train(train_loader, model, criterion, optimizer, epoch):
+def train(train_loader, model, criterion, optimizer, epoch, label_mapping):
     
     losses = AverageMeter()
     top1 = AverageMeter()
@@ -256,7 +264,8 @@ def train(train_loader, model, criterion, optimizer, epoch):
         target = target.cuda()
 
         # compute output
-        output_clean = model(image)
+        # output_clean = model(image)
+        output_clean = label_mapping(model(image))
         loss = criterion(output_clean, target)
 
         optimizer.zero_grad()
@@ -284,7 +293,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
     return top1.avg
 
-def validate(val_loader, model, criterion):
+def validate(val_loader, model, criterion, label_mapping):
     """
     Run evaluation
     """
@@ -301,7 +310,7 @@ def validate(val_loader, model, criterion):
 
         # compute output
         with torch.no_grad():
-            output = model(image)
+            output = label_mapping(model(image))
             loss = criterion(output, target)
 
         output = output.float()
