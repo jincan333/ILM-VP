@@ -13,17 +13,19 @@ from torchvision.datasets import CIFAR10, CIFAR100
 
 __all__ = ['cifar10_dataloaders', 'cifar100_dataloaders']
 
-def cifar10_dataloaders(batch_size=128, data_dir='data/cifar10', num_workers=2):
+def cifar10_dataloaders(batch_size=128, data_dir='dataset/cifar10', num_workers=2):
 
     train_transform = transforms.Compose([
-        transforms.RandomCrop((224, 224), padding=96),
+        transforms.RandomCrop((32, 32), padding=4),
         transforms.RandomHorizontalFlip(),
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
     ])
 
     test_transform = transforms.Compose([
-        transforms.RandomCrop((224, 224), padding=96),
+        transforms.RandomCrop((32, 32), padding=4),
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
     ])
@@ -42,7 +44,7 @@ def cifar10_dataloaders(batch_size=128, data_dir='data/cifar10', num_workers=2):
 
     return train_loader, val_loader, test_loader
 
-def cifar100_dataloaders(batch_size=128, data_dir='data/cifar100', num_workers=2):
+def cifar100_dataloaders(batch_size=128, data_dir='dataset/cifar100', num_workers=2):
 
     train_transform = transforms.Compose([
         transforms.RandomCrop((224, 224), padding=96),
