@@ -174,7 +174,7 @@ def count_fc_parameters(net):
     return total
 
 
-def GraSP(net, ratio, train_dataloader, device, num_classes=10, samples_per_class=25, num_iters=1, T=200, reinit=True):
+def GraSP(net, ratio, train_dataloader, device, label_mapping=None, num_classes=10, samples_per_class=25, num_iters=1, T=200, reinit=True):
     eps = 1e-10
     keep_ratio = ratio
     old_net = net
@@ -207,8 +207,7 @@ def GraSP(net, ratio, train_dataloader, device, num_classes=10, samples_per_clas
         targets_one.append(dtarget[N // 2:])
         inputs = inputs.to(device)
         targets = targets.to(device)
-
-        outputs = net.forward(inputs[:N//2])/T
+        outputs = F.log_softmax(label_mapping(net.forward(inputs[:N//2])), dim=1)/T
         if print_once:
             # import pdb; pdb.set_trace()
             x = F.softmax(outputs)
@@ -224,7 +223,7 @@ def GraSP(net, ratio, train_dataloader, device, num_classes=10, samples_per_clas
             for idx in range(len(grad_w)):
                 grad_w[idx] += grad_w_p[idx]
 
-        outputs = net.forward(inputs[N // 2:])/T
+        outputs = F.log_softmax(label_mapping(net.forward(inputs[N // 2:])), dim=1)/T
         loss = F.cross_entropy(outputs, targets[N // 2:])
         grad_w_p = autograd.grad(loss, weights, create_graph=False)
         if grad_w is None:
@@ -242,7 +241,7 @@ def GraSP(net, ratio, train_dataloader, device, num_classes=10, samples_per_clas
         targets = targets_one.pop(0).to(device)
         ret_inputs.append(inputs)
         ret_targets.append(targets)
-        outputs = net.forward(inputs)/T
+        outputs = F.log_softmax(label_mapping(net.forward(inputs)), dim=1)/T
         loss = F.cross_entropy(outputs, targets)
         # ===== debug ==============
 

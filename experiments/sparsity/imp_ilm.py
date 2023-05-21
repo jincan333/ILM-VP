@@ -27,7 +27,7 @@ from utils import *
 from pruner import *
 import sys
 sys.path.append(".")
-from algorithms import generate_label_mapping_by_frequency, get_dist_matrix, label_mapping_base, generate_label_mapping_by_frequency_ordinary
+from algorithms import generate_label_mapping_by_frequency, label_mapping_base, generate_label_mapping_by_frequency_ordinary
 
 
 # setting experiment parameters
@@ -44,7 +44,7 @@ parser.add_argument('--imagenet_arch', action="store_true", help="architecture f
 
 ##################################### General setting ############################################
 parser.add_argument('--seed', default=17, type=int, help='random seed')
-parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
+parser.add_argument('--gpu', type=int, default=1, help='gpu device id 1')
 parser.add_argument('--workers', type=int, default=4, help='number of workers in dataloader')
 parser.add_argument('--resume', action="store_true", help="resume from checkpoint")
 parser.add_argument('--checkpoint', type=str, default=None, help='checkpoint file')
@@ -89,6 +89,7 @@ def main():
     decreasing_lr = list(map(int, args.decreasing_lr.split(',')))
     mapping_sequence = generate_label_mapping_by_frequency_ordinary(model, train_loader, device=args.gpu)
     label_mapping = partial(label_mapping_base, mapping_sequence=mapping_sequence)
+    # TODO what's the meaning of these?
     if args.prune_type == 'lt':
         print('lottery tickets setting (rewind to the same random init)')
         initalization = deepcopy(model.state_dict())
@@ -118,13 +119,12 @@ def main():
             current_mask = extract_mask(checkpoint['state_dict'])
             prune_model_custom(model, current_mask)
             check_sparsity(model)
-            optimizer = torch.optim.SGD(model.parameters(), args.lr,
-                                        momentum=args.momentum,
-                                        weight_decay=args.weight_decay)
+            optimizer = torch.optim.SGD(model.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
             scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=decreasing_lr, gamma=0.1)
 
         model.load_state_dict(checkpoint['state_dict'])
         # adding an extra forward process to enable the masks
+        # TODO why do we need this step
         x_rand = torch.rand(1,3,args.input_size, args.input_size).cuda()
         model.eval()
         with torch.no_grad:
@@ -161,7 +161,6 @@ def main():
             mapping_sequence = generate_label_mapping_by_frequency_ordinary(model, train_loader, device=args.gpu)
             label_mapping = partial(label_mapping_base, mapping_sequence=mapping_sequence)
             acc = train(train_loader, model, criterion, optimizer, epoch, label_mapping)
-
             if state == 0:
                 if (epoch+1) == args.rewind_epoch:
                     torch.save(model.state_dict(), os.path.join(args.save_dir, 'epoch_{}_rewind_weight.pt'.format(epoch+1)))

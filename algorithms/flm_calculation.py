@@ -45,7 +45,7 @@ def generate_label_mapping_by_frequency(visual_prompt, network, data_loader, map
     return mapping_sequence
 
 
-def generate_label_mapping_by_frequency_ordinary(network, data_loader, mapping_num = 1,device='cpu'):
+def generate_label_mapping_by_frequency_ordinary(network, data_loader, mapping_num = 1,device='gpu'):
     device = device
     if hasattr(network, "eval"):
         network.eval()

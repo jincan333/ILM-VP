@@ -27,7 +27,7 @@ from utils import *
 from pruner import *
 import sys
 sys.path.append(".")
-from algorithms import generate_label_mapping_by_frequency, get_dist_matrix, label_mapping_base, generate_label_mapping_by_frequency_ordinary
+from algorithms import generate_label_mapping_by_frequency, label_mapping_base, generate_label_mapping_by_frequency_ordinary
 
 
 # setting experiment parameters
@@ -44,11 +44,11 @@ parser.add_argument('--imagenet_arch', action="store_true", help="architecture f
 
 ##################################### General setting ############################################
 parser.add_argument('--seed', default=17, type=int, help='random seed')
-parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
+parser.add_argument('--gpu', type=int, default=4, help='gpu device id 0')
 parser.add_argument('--workers', type=int, default=4, help='number of workers in dataloader')
 parser.add_argument('--resume', action="store_true", help="resume from checkpoint")
 parser.add_argument('--checkpoint', type=str, default=None, help='checkpoint file')
-parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results/sparsity/imp_ilm', type=str)
+parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results/sparsity/imp_flm', type=str)
 
 ##################################### Training setting #################################################
 parser.add_argument('--batch_size', type=int, default=256, help='batch size')
@@ -117,9 +117,7 @@ def main():
             current_mask = extract_mask(checkpoint['state_dict'])
             prune_model_custom(model, current_mask)
             check_sparsity(model)
-            optimizer = torch.optim.SGD(model.parameters(), args.lr,
-                                        momentum=args.momentum,
-                                        weight_decay=args.weight_decay)
+            optimizer = torch.optim.SGD(model.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
             scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=decreasing_lr, gamma=0.1)
 
         model.load_state_dict(checkpoint['state_dict'])
@@ -128,19 +126,16 @@ def main():
         model.eval()
         with torch.no_grad:
             model(x_rand)
-
         optimizer.load_state_dict(checkpoint['optimizer'])
         scheduler.load_state_dict(checkpoint['scheduler'])
         initalization = checkpoint['init_weight']
         print('loading state:', start_state)
         print('loading from epoch: ',start_epoch, 'best_sa=', best_sa)
-
     else:
         all_result = {}
         all_result['train_ta'] = []
         all_result['test_ta'] = []
         all_result['val_ta'] = []
-
         start_epoch = 0
         start_state = 0
     test_tacc = validate(test_loader, model, criterion, label_mapping)
@@ -157,8 +152,6 @@ def main():
         for epoch in range(start_epoch, args.epochs):
 
             print(optimizer.state_dict()['param_groups'][0]['lr'])
-            # mapping_sequence = generate_label_mapping_by_frequency_ordinary(model, train_loader, device=args.gpu)
-            # label_mapping = partial(label_mapping_base, mapping_sequence=mapping_sequence)
             acc = train(train_loader, model, criterion, optimizer, epoch, label_mapping)
 
             if state == 0:
@@ -205,7 +198,6 @@ def main():
         check_sparsity(model)
         val_pick_best_epoch = np.argmax(np.array(all_result['val_ta']))
         print('* best SA = {}, Epoch = {}'.format(all_result['test_ta'][val_pick_best_epoch], val_pick_best_epoch+1))
-
         all_result = {}
         all_result['train_ta'] = []
         all_result['test_ta'] = []
@@ -232,9 +224,7 @@ def main():
         # weight rewinding
         model.load_state_dict(initalization)
         prune_model_custom(model, current_mask)
-        optimizer = torch.optim.SGD(model.parameters(), args.lr,
-                                    momentum=args.momentum,
-                                    weight_decay=args.weight_decay)
+        optimizer = torch.optim.SGD(model.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
         scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=decreasing_lr, gamma=0.1)
 
         if args.prune_type == 'rewind_lt':

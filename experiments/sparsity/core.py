@@ -6,17 +6,17 @@ from snip import SNIP, GraSP
 import numpy as np
 import math
 
-def add_sparse_args(parser):
-    parser.add_argument('--sparse', default='true', action='store_true', help='Enable sparse mode. Default: True.')
-    parser.add_argument('--fix', default='true', action='store_true', help='Fix sparse connectivity during training. Default: True.')
-    parser.add_argument('--sparse_init', type=str, default='GraSP', help='sparse initialization')
-    parser.add_argument('--growth', type=str, default='random', help='Growth mode. Choose from: momentum, random, random_unfired, and gradient.')
-    parser.add_argument('--death', type=str, default='none', help='Death mode / pruning mode. Choose from: magnitude, SET, threshold.')
-    parser.add_argument('--redistribution', type=str, default='none', help='Redistribution mode. Choose from: momentum, magnitude, nonzeros, or none.')
-    parser.add_argument('--death-rate', type=float, default=0.50, help='The pruning rate / death rate used for dynamic sparse training (not used in this paper).')
-    parser.add_argument('--density', type=float, default=0.134217728, help='The density of the overall sparse network.')
-    parser.add_argument('--update_frequency', type=int, default=100, metavar='N', help='how many iterations to train between parameter exploration')
-    parser.add_argument('--decay-schedule', type=str, default='cosine', help='The decay schedule for the pruning rate. Default: cosine. Choose from: cosine, linear.')
+# def add_sparse_args(parser):
+#     parser.add_argument('--sparse', default='true', action='store_true', help='Enable sparse mode. Default: True.')
+#     parser.add_argument('--fix', default='true', action='store_true', help='Fix sparse connectivity during training. Default: True.')
+#     parser.add_argument('--sparse_init', type=str, default='GraSP', help='sparse initialization')
+#     parser.add_argument('--growth', type=str, default='random', help='Growth mode. Choose from: momentum, random, random_unfired, and gradient.')
+#     parser.add_argument('--death', type=str, default='none', help='Death mode / pruning mode. Choose from: magnitude, SET, threshold.')
+#     parser.add_argument('--redistribution', type=str, default='none', help='Redistribution mode. Choose from: momentum, magnitude, nonzeros, or none.')
+#     parser.add_argument('--death-rate', type=float, default=0.50, help='The pruning rate / death rate used for dynamic sparse training (not used in this paper).')
+#     parser.add_argument('--density', type=float, default=0.134217728, help='The density of the overall sparse network.')
+#     parser.add_argument('--update_frequency', type=int, default=100, metavar='N', help='how many iterations to train between parameter exploration')
+#     parser.add_argument('--decay-schedule', type=str, default='cosine', help='The decay schedule for the pruning rate. Default: cosine. Choose from: cosine, linear.')
 
 
 class CosineDecay(object):
@@ -55,7 +55,7 @@ class Masking(object):
 
         self.train_loader = train_loader
         self.args = args
-        self.device = torch.device("cuda")
+        self.device = torch.device(f"cuda:{args.gpu}")
         self.growth_mode = growth_mode
         self.death_mode = death_mode
         self.growth_death_ratio = growth_death_ratio
@@ -78,7 +78,7 @@ class Masking(object):
         if self.args.fix: self.prune_every_k_steps = None
         else: self.prune_every_k_steps = self.args.update_frequency
 
-    def init(self, mode='ERK', density=0.05, erk_power_scale=1.0):
+    def init(self, mode='ERK', density=0.05, erk_power_scale=1.0, label_mapping=None):
         self.density = density
         if mode == 'global_magnitude':
             print('initialize by global magnitude')
@@ -109,7 +109,7 @@ class Masking(object):
 
         elif mode == 'GraSP':
             print('initialize by GraSP')
-            layer_wise_sparsities = GraSP(self.module, self.density, self.train_loader, self.device)
+            layer_wise_sparsities = GraSP(self.module, self.density, self.train_loader, self.device ,label_mapping=label_mapping)
             # re-sample mask positions
             for sparsity_, name in zip(layer_wise_sparsities, self.masks):
                 self.masks[name][:] = (torch.rand(self.masks[name].shape) < (1-sparsity_)).float().data.cuda()
@@ -295,7 +295,7 @@ class Masking(object):
                 self.print_nonzero_counts()
 
 
-    def add_module(self, module, density, sparse_init='ER'):
+    def add_module(self, module, density, sparse_init='ER', label_mapping=None):
         self.modules.append(module)
         self.module = module
         for name, tensor in module.named_parameters():
@@ -308,7 +308,7 @@ class Masking(object):
         self.remove_type(nn.BatchNorm2d)
         print('Removing 1D batch norms...')
         self.remove_type(nn.BatchNorm1d)
-        self.init(mode=sparse_init, density=density)
+        self.init(mode=sparse_init, density=density, label_mapping=label_mapping)
 
 
     def remove_weight(self, name):
