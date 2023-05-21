@@ -282,7 +282,7 @@ class Masking(object):
 
 
     def step(self):
-        # self.optimizer.step()
+        self.optimizer.step()
         self.apply_mask()
         self.death_rate_decay.step()
         self.death_rate = self.death_rate_decay.get_dr()

@@ -44,7 +44,7 @@ parser.add_argument('--imagenet_arch', action="store_true", help="architecture f
 
 ##################################### General setting ############################################
 parser.add_argument('--seed', default=17, type=int, help='random seed')
-parser.add_argument('--gpu', type=int, default=4, help='gpu device id 0')
+parser.add_argument('--gpu', type=int, default=0, help='gpu device id 0')
 parser.add_argument('--workers', type=int, default=4, help='number of workers in dataloader')
 parser.add_argument('--resume', action="store_true", help="resume from checkpoint")
 parser.add_argument('--checkpoint', type=str, default=None, help='checkpoint file')

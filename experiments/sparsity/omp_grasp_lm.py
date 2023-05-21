@@ -44,11 +44,11 @@ def main():
 
     ##################################### General setting ############################################
     parser.add_argument('--seed', default=17, type=int, help='random seed')
-    parser.add_argument('--gpu', type=int, default=2, help='gpu device id')
+    parser.add_argument('--gpu', type=int, default=3, help='gpu device id')
     parser.add_argument('--workers', type=int, default=4, help='number of workers in dataloader')
     parser.add_argument('--resume', action="store_true", help="resume from checkpoint")
     parser.add_argument('--checkpoint', type=str, default=None, help='checkpoint file')
-    parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results/sparsity/omp_grasp', type=str)
+    parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results/sparsity/omp', type=str)
     ##
     parser.add_argument('--fp16', action='store_true', help='Run in fp16 mode.')
     randomhash = ''.join(str(time.time()).split('.'))
@@ -60,10 +60,10 @@ def main():
 
     ##################################### Training setting #################################################
     parser.add_argument('--batch_size', type=int, default=256, help='batch size')
-    parser.add_argument('--lr', default=0.01, type=float, help='initial learning rate')
+    parser.add_argument('--lr', default=0.1, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
-    parser.add_argument('--weight_decay', default=1e-5, type=float, help='weight decay')
-    parser.add_argument('--epochs', default=5, type=int, help='number of total epochs to run')
+    parser.add_argument('--weight_decay', default=2e-4, type=float, help='weight decay')
+    parser.add_argument('--epochs', default=120, type=int, help='number of total epochs to run')
     parser.add_argument('--warmup', default=0, type=int, help='warm up epochs')
     parser.add_argument('--print_freq', default=100, type=int, help='print frequency')
     parser.add_argument('--decreasing_lr', default='60,90', help='decreasing strategy')
@@ -87,7 +87,7 @@ def main():
     # TODO what's the meaning of these parameters
     parser.add_argument('--sparse', default='true', action='store_true', help='Enable sparse mode. Default: True.')
     parser.add_argument('--fix', default='true', action='store_true', help='Fix sparse connectivity during training. Default: True.')
-    parser.add_argument('--sparse_init', type=str, default='GraSP', help='sparse initialization')
+    parser.add_argument('--sparse_init', type=str, default='global_magnitude', help='sparse initialization')
     parser.add_argument('--growth', type=str, default='random', help='Growth mode. Choose from: momentum, random, random_unfired, and gradient.')
     parser.add_argument('--death', type=str, default='magnitude', help='Death mode / pruning mode. Choose from: magnitude, SET, threshold.')
     parser.add_argument('--redistribution', type=str, default='none', help='Redistribution mode. Choose from: momentum, magnitude, nonzeros, or none.')
@@ -127,8 +127,13 @@ def main():
     model.cuda(device)
     criterion = nn.CrossEntropyLoss()
     decreasing_lr = list(map(int, args.decreasing_lr.split(',')))
-    mapping_sequence = generate_label_mapping_by_frequency_ordinary(model, train_loader, device=args.gpu)
-    label_mapping = partial(label_mapping_base, mapping_sequence=mapping_sequence)
+    if args.label_mapping_mode == 'rlm':
+        print('Random Label Mapping')
+        mapping_sequence = torch.randperm(1000)[:10]
+        label_mapping = partial(label_mapping_base, mapping_sequence=mapping_sequence)
+    else:
+        mapping_sequence = generate_label_mapping_by_frequency_ordinary(model, train_loader, device=args.gpu)
+        label_mapping = partial(label_mapping_base, mapping_sequence=mapping_sequence)
     # if args.dataset == 'mnist':
     #     train_loader, valid_loader, test_loader = get_mnist_dataloaders(args, validation_split=args.valid_split)
     # elif args.dataset == 'cifar10':
