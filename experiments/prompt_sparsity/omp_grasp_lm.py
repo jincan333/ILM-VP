@@ -60,19 +60,22 @@ def main():
 
     ##################################### Training setting #################################################
     parser.add_argument('--batch_size', type=int, default=256, help='batch size')
+    parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use. Default: sgd. Options: sgd, adam.')
     parser.add_argument('--lr', default=0.1, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
     parser.add_argument('--weight_decay', default=2e-4, type=float, help='weight decay')
     parser.add_argument('--epochs', default=1, type=int, help='number of total epochs to run')
     parser.add_argument('--warmup', default=0, type=int, help='warm up epochs')
     parser.add_argument('--print_freq', default=100, type=int, help='print frequency')
+    parser.add_argument('--lr_scheduler', default='cosine', help='decreasing strategy')
     parser.add_argument('--decreasing_lr', default='60,90', help='decreasing strategy')
+    
     ##
     parser.add_argument('--l1', type=float, default=0.0)
     parser.add_argument('--decay_frequency', type=int, default=25000)
     parser.add_argument('--test-batch-size', type=int, default=256, metavar='N', help='input batch size for testing (default: 128)')
     parser.add_argument('--multiplier', type=int, default=1, metavar='N', help='extend training time by multiplier times')
-    parser.add_argument('--optimizer', type=str, default='sgd', help='The optimizer to use. Default: sgd. Options: sgd, adam.')
+    
 
     ##################################### Pruning setting #################################################
     parser.add_argument('--pruning_times', default=10, type=int, help='overall times of pruning')

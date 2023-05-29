@@ -146,16 +146,17 @@ def prepare_additive_data(dataset, data_path, preprocess):
         test_data = datasets.CIFAR10(root = data_path, train = False, download = False, transform = preprocess)
         class_names = refine_classnames(test_data.classes)
         loaders = {
-            'train': DataLoader(train_data, 128, shuffle = True, num_workers=0),
-            'test': DataLoader(test_data, 128, shuffle = False, num_workers=0),
+            'train': DataLoader(train_data, 256, shuffle = True, num_workers=4),
+            'test': DataLoader(test_data, 256, shuffle = False, num_workers=4),
         }
+        
     elif dataset == "cifar100":
         train_data = datasets.CIFAR100(root = data_path, train = True, download = False, transform = preprocess)
         test_data = datasets.CIFAR100(root = data_path, train = False, download = False, transform = preprocess)
         class_names = refine_classnames(test_data.classes)
         loaders = {
-            'train': DataLoader(train_data, 128, shuffle = True, num_workers=2),
-            'test': DataLoader(test_data, 128, shuffle = False, num_workers=2),
+            'train': DataLoader(train_data, 256, shuffle = True, num_workers=2),
+            'test': DataLoader(test_data, 256, shuffle = False, num_workers=2),
         }
     elif dataset == "svhn":
         train_data = datasets.SVHN(root = data_path, split="train", download = False, transform = preprocess)
