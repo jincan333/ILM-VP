@@ -3,13 +3,13 @@ import pickle
 
 def add_args(parser):
     # Frequently change
-    parser.add_argument('--experiment_name', default='padsize_exp', type=str, help='name of experiment, the save directory will be save_dir+exp_name')
-    parser.add_argument('--gpu', type=int, default=5, help='gpu device id')
+    parser.add_argument('--experiment_name', default='inputsize_exp', type=str, help='name of experiment, the save directory will be save_dir+exp_name')
+    parser.add_argument('--gpu', type=int, default=4, help='gpu device id')
     parser.add_argument('--label_mapping_mode', type=str, default='flm', help='label mapping methods: rlm, flm, ilm, None')
     parser.add_argument('--prompt_method', type=str, default='pad', help='None, expand, pad, fix, random')
-    parser.add_argument('--input_size', type=int, default=224, help='image size before prompt, no more than 224')
-    parser.add_argument('--pad_size', type=int, default=32, help='only for padprompt, no more than 112, parameters cnt 4*pad**2+896pad')
-    parser.add_argument('--mask_size', type=int, default=96, help='only for fixadd and randomadd, no more than 224, parameters cnt mask**2')
+    parser.add_argument('--input_size', type=int, default=192, help='image size before prompt, no more than 224', choices=[224, 192, 160, 128, 96, 64, 32])
+    parser.add_argument('--pad_size', type=int, default=112, help='only for padprompt, no more than 112, parameters cnt 4*pad**2+896pad', choices=[16, 32, 48, 64, 80, 96, 112])
+    parser.add_argument('--mask_size', type=int, default=96, help='only for fixadd and randomadd, no more than 224, parameters cnt mask**2', choices=[115, 156, 183, 202, 214, 221, 224])
     parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use. Default: sgd. Options: sgd, adam.')
     parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy. Default: cosine, multistep')
     parser.add_argument('--epochs', default=200, type=int, help='number of total epochs to run')

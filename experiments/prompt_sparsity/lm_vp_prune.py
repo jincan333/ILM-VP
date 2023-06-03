@@ -104,6 +104,7 @@ def main():
             if args.label_mapping_mode == 'ilm' and epoch % args.label_mapping_interval == 0:
                 label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
             train_acc, train_loss = train(train_loader, network, optimizer, epoch, label_mapping, visual_prompt, mask)
+            # train_acc, train_loss = 0, 10000
             scheduler.step()
             logger.add_scalar("train/acc", train_acc, epoch)
             logger.add_scalar("train/loss", train_loss, epoch)
