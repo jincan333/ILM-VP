@@ -23,6 +23,8 @@ def predictive_distribution_based_multi_label_mapping(dist_matrix, mlm_num: int)
 
 def generate_label_mapping_by_frequency(visual_prompt, network, data_loader, mapping_num = 1):
     device = next(visual_prompt.parameters()).device
+    if visual_prompt:
+        visual_prompt.eval()
     if hasattr(network, "eval"):
         network.eval()
     fx0s = []
@@ -45,15 +47,14 @@ def generate_label_mapping_by_frequency(visual_prompt, network, data_loader, map
     return mapping_sequence
 
 
-def generate_label_mapping_by_frequency_ordinary(network, data_loader, mapping_num = 1,device='gpu'):
-    device = device
+def generate_label_mapping_by_frequency_ordinary(network, data_loader, mapping_num = 1):
     if hasattr(network, "eval"):
         network.eval()
     fx0s = []
     ys = []
     pbar = tqdm(data_loader, total=len(data_loader), desc=f"Frequency Label Mapping", ncols=100) if len(data_loader) > 20 else data_loader
     for x, y in pbar:
-        x, y = x.to(device), y.to(device)
+        x, y = x.cuda(), y.cuda()
         with torch.no_grad():
             fx0 = network((x))
         fx0s.append(fx0)

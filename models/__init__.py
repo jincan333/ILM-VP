@@ -1,4 +1,4 @@
-from .visual_prompt import ExpansiveVisualPrompt, AdditiveVisualPrompt
+from .visual_prompt import ExpansiveVisualPrompt, PadVisualPrompt, FixVisualPrompt, RandomVisualPrompt
 from models.ResNet import *
 from models.ResNets import *
 from models.VGG import * 

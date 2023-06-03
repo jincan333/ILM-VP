@@ -25,7 +25,7 @@ from cfg import *
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('--seed', type=int, default=7)
-    p.add_argument('--dataset', choices=["cifar10", "cifar100", "abide", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"], required=True)
+    p.add_argument('--dataset', choices=["cifar10", "cifar100", "abide", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"], default = 'cifar10')
     p.add_argument('--mapping-interval', type=int, default=1)
     p.add_argument('--epoch', type=int, default=200)
     p.add_argument('--lr', type=float, default=40)

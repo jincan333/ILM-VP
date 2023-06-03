@@ -1,29 +1,72 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
+import datetime
 
-# image resize prune
-save_dir = 'results/Prune_LM_VP'
-image_name = 'VP Size - IMP Prune Accuracy'
+# 0603
+imp_ff_flm = [0.9625, 0.9668, 0.9652, 0.9656, 0.9676, 0.9668, 0.9651, 0.9672, 0.9649, 0.9648]
+imp_ff_ilm = [0.9625, 0.9666, 0.9682, 0.9655, 0.966, 0.9661, 0.9645, 0.9638, 0.9652, 0.962]
+omp_ff_flm = [0.9625, 0.9633, 0.9627, 0.9615, 0.9604, 0.9586, 0.9581, 0.9582, 0.9563, 0.9552]
+omp_ff_ilm = [0.9625, 0.9632, 0.9635, 0.9621, 0.9631, 0.9586, 0.9592, 0.9582, 0.9541, 0.9529]
+grasp_ff_flm = [0.9625, 0.9602, 0.9585, 0.9532, 0.9526, 0.9451, 0.9406, 0.9383, 0.9386, 0.9322]
+grasp_ff_ilm = [0.9625, 0.9599, 0.9544, 0.9511, 0.9483, 0.9453, 0.944, 0.9399, 0.9375, 0.9321]
+hydra_ff_flm = [0.9625, 0.9628, 0.9592, 0.9544, 0.9475, 0.9383, 0.9276, 0.9246, 0.9183, 0.9201]
+hydra_ff_ilm = [0.9625, 0.9636, 0.9579, 0.9564, 0.9449, 0.9363, 0.9288, 0.9258, 0.923, 0.9193]
+
+
+# ff grasp/hydra
+save_dir = os.path.join('results/Prune_LM_VP', str(datetime.datetime.now().date()))
+image_name = 'Finetune - GraSP+Hydra Accuracy'
 os.makedirs(save_dir, exist_ok=True)
 results = {
     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728]]
-    ,'SIZE-32': [65.64, 61.81,  61.70,  62.18,  61.46,  61.23,  60.03,  58.42,  56.38,  53.61]
-    ,'SIZE-128': [69.58,  64.85,  64.74,  64.08, 61.50, 60.42]
-    ,'SIZE-200': [57.93,  51.95,  50.21,  50.59,  47.85,  45.77,  41.12,  36.69,  30.36,  23.85]
+    ,'GraSP-FLM': [_*100 for _ in [0.9625, 0.9602, 0.9585, 0.9532, 0.9526, 0.9451, 0.9406, 0.9383, 0.9386, 0.9322]]
+    ,'GraSP-ILM': [_*100 for _ in [.9625, 0.9599, 0.9544, 0.9511, 0.9483, 0.9453, 0.944, 0.9399, 0.9375, 0.9321]]
+    ,'Hydra-FLM': [_*100 for _ in [0.9625, 0.9628, 0.9592, 0.9544, 0.9475, 0.9383, 0.9276, 0.9246, 0.9183, 0.9201]]
+    ,'Hydra-ILM': [_*100 for _ in [0.9625, 0.9636, 0.9579, 0.9564, 0.9449, 0.9363, 0.9288, 0.9258, 0.923, 0.9193]]
 }
+for k in results.keys():
+    if k != 'density':
+        plt.plot(results['density'], results[k], label=k)
 
-plt.plot(results['density'], results['SIZE-32'], label='SIZE-32')
-plt.plot(results['density'][:6], results['SIZE-128'], label='SIZE-128')
-plt.plot(results['density'], results['SIZE-200'], label='SIZE-200')
-
-plt.title('VP size influence accuracy')
+plt.title(image_name)
 plt.xlabel('weight density(%)')
 plt.ylabel('accuracy(%)')
 plt.legend(loc=2)
 plt.grid()
 plt.savefig(os.path.join(save_dir, image_name+'.png'))
 plt.close()
+result_df = pd.DataFrame(results)
+result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+
+
+
+# ff imp/omp/grasp/hydra
+# save_dir = os.path.join('results/Prune_LM_VP', str(datetime.datetime.now().date()))
+# image_name = 'Finetune - Prune Accuracy'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728]]
+#     ,'IMP-FLM': [_*100 for _ in [0.9625, 0.9668, 0.9652, 0.9656, 0.9676, 0.9668, 0.9651, 0.9672, 0.9649, 0.9648]]
+#     ,'IMP-ILM': [_*100 for _ in [0.9625, 0.9666, 0.9682, 0.9655, 0.966, 0.9661, 0.9645, 0.9638, 0.9652, 0.962]]
+#     ,'OMP-FLM': [_*100 for _ in [0.9625, 0.9633, 0.9627, 0.9615, 0.9604, 0.9586, 0.9581, 0.9582, 0.9563, 0.9552]]
+#     ,'OMP-ILM': [_*100 for _ in [0.9625, 0.9632, 0.9635, 0.9621, 0.9631, 0.9586, 0.9592, 0.9582, 0.9541, 0.9529]]
+#     ,'GraSP-FLM': [_*100 for _ in [0.9625, 0.9602, 0.9585, 0.9532, 0.9526, 0.9451, 0.9406, 0.9383, 0.9386, 0.9322]]
+#     ,'GraSP-ILM': [_*100 for _ in [.9625, 0.9599, 0.9544, 0.9511, 0.9483, 0.9453, 0.944, 0.9399, 0.9375, 0.9321]]
+#     ,'Hydra-FLM': [_*100 for _ in [0.9625, 0.9628, 0.9592, 0.9544, 0.9475, 0.9383, 0.9276, 0.9246, 0.9183, 0.9201]]
+#     ,'Hydra-ILM': [_*100 for _ in [0.9625, 0.9636, 0.9579, 0.9564, 0.9449, 0.9363, 0.9288, 0.9258, 0.923, 0.9193]]
+# }
+# for k in results.keys():
+#     if k != 'density':
+#         plt.plot(results['density'], results[k], label=k)
+
+# plt.title(image_name)
+# plt.xlabel('weight density(%)')
+# plt.ylabel('accuracy(%)')
+# plt.legend(loc=2)
+# plt.grid()
+# plt.savefig(os.path.join(save_dir, image_name+'.png'))
+# plt.close()
 # result_df = pd.DataFrame(results)
 # result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
 

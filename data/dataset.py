@@ -24,7 +24,7 @@ def image_transform(args):
         'std': [0.2470, 0.2435, 0.2616]
     }
     
-    if args.is_visual_prompt:
+    if args.prompt_method:
         normalize = transforms.Normalize(mean=IMAGENETNORMALIZE['mean'], std=IMAGENETNORMALIZE['std'])
         train_transform = transforms.Compose([
             transforms.Resize((args.input_size, args.input_size)),
@@ -67,7 +67,6 @@ def cifar10_dataloaders(args):
 
     configs = {
         'class_names': test_set.classes,
-        'mask': np.zeros((args.input_size, args.input_size)),
         'normalize': normalize
     }
     return train_loader, val_loader, test_loader, configs
