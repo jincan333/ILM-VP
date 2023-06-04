@@ -14,13 +14,13 @@
 input_sizes=(192 160 128 96 64 32)
 gpus=(7 6 5 4 3 2)
 pad_sizes=(64 80 96 112)
-for pad_size in ${pad_sizes[@]}
-    for i in ${!input_sizes[@]}
-    do
+for pad_size in ${pad_sizes[@]};do
+    for i in ${!input_sizes[@]};do
         log_filename=inputsize_${input_sizes[i]}_${pad_size}.log
         python ./experiments/prompt_sparsity/lm_vp_prune.py --experiment_name inputsize_exp --gpu ${gpus[i]} --input_size ${input_sizes[i]} --pad_size ${pad_size} --epochs 200 > $log_filename 2>&1 &
     done
-
+    wait
+done
 
 
 
