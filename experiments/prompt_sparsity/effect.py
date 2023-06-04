@@ -8,14 +8,28 @@ import os
 
 
 if __name__ == '__main__':
-    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/VPpad/PRUNEhydra/LMilm/LPFalse/padsize_exp/adam/LR0.01/multistep/EPOCHS1/IMAGESIZE224_0_96/GPU1/DENSITY0.8'
+    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/VPpad/PRUNEimp/LMflm/LPFalse/padsize_exp/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE224_32_96/GPU5/DENSITY0.8'
     ckpt_path = []
     acc = []
-    for i in range(0, 10):
+    for i in range(0, 5):
         ckpt_path.append(os.path.join(dir_path, str(i) + 'best.pth'))
     for path in ckpt_path:
         acc.append(torch.load(path)['ckpt_test_acc'])
     print(acc)
+
+# 0604
+pad_112 = [0.6179, 0.6147, 0.6077, 0.6173, 0.6145]
+pad_96 = [0.6118, 0.6199, 0.6159, 0.6226, 0.6082]
+pad_80 = [0.6166, 0.6202, 0.6142, 0.6115, 0.6159]
+pad_64 = [0.6135, 0.6112, 0.6037, 0.6072, 0.61]
+pad_32 = [0.6286, 0.6224, 0.6128, 0.6162, 0.5988]
+pad_16 = [0.5896, 0.5918, 0.5919, 0.5892, 0.5845]
+# pad_16 0.5894
+# pad_32 0.6157600000000001
+# pad_64 0.60912
+# pad_80 0.61568
+# pad_96 0.61568
+# pad_112 0.6144200000000001
 
 # 0603
 # prune without tune
