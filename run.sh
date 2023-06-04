@@ -1,5 +1,6 @@
 #!/bin/sh
 
+
 # pad size experiment pad_sizes=(16 32 48 64 80 96 112) input_size=224 gpus=(0 0 0 0 0 0 0)
 # exp_name='padsize_exp'
 # pad_sizes=(16 32 48 64 80 96 112)
@@ -10,20 +11,36 @@
 #     python ./experiments/prompt_sparsity/lm_vp_prune.py --experiment_name $exp_name --gpu ${gpus[i]} --input_size 224 --pad_size ${pad_sizes[i]} --epochs 200 > $log_filename 2>&1
 # done
 
+
 # input size experiment input_sizes=(224 192 160 128 96 64 32) pad_size=(16 32 48 64 80 96 112) gpus=(7 6 5 4 3 2 1)
-input_sizes=(192 160 128 96 64 32)
-gpus=(7 6 5 4 3 2)
-pad_sizes=(64 80 96 112)
-for pad_size in ${pad_sizes[@]};do
-    for i in ${!input_sizes[@]};do
-        log_filename=inputsize_${input_sizes[i]}_${pad_size}.log
-        python ./experiments/prompt_sparsity/lm_vp_prune.py --experiment_name inputsize_exp --gpu ${gpus[i]} --input_size ${input_sizes[i]} --pad_size ${pad_size} --epochs 200 > $log_filename 2>&1 &
+# input_sizes=(192 160 128 96 64 32)
+# gpus=(7 6 5 4 3 2)
+# pad_sizes=(64 80 96 112)
+# for pad_size in ${pad_sizes[@]};do
+#     for i in ${!input_sizes[@]};do
+#         log_filename=inputsize_${input_sizes[i]}_${pad_size}.log
+#         python ./experiments/prompt_sparsity/lm_vp_prune.py --experiment_name inputsize_exp --gpu ${gpus[i]} --input_size ${input_sizes[i]} --pad_size ${pad_size} --epochs 200 > $log_filename 2>&1 &
+#     done
+#     wait
+# done
+
+
+# visual prompt prune experiment
+experiment_name='prompt_prune_exp'
+prune_methods=('imp' 'omp' 'grasp' 'hydra')
+label_mapping_modes=('flm' 'ilm')
+gpus=(7 6 5 4 3 2 1 0)
+prompt_method='pad'
+input_size=160
+pad_size=32
+pruning_times=10
+epochs=200
+for i in ${!prune_methods[@]};do
+    for j in ${!label_mapping_modes[@]};do
+        log_filename=${experiment_name}_${prune_methods[i]}_${label_mapping_modes[j]}.log
+        python ./experiments/prompt_sparsity/lm_vp_prune.py --experiment_name ${experiment_name} --prune_method ${prune_methods[i]} --label_mapping_mode ${label_mapping_modes[j]} --gpu ${gpus[2*i+j]} --prompt_method ${prompt_method} --input_size ${input_size} --pad_size ${pad_size} --pruning_times ${pruning_times} --epochs ${epochs} > $log_filename 2>&1 &
     done
-    wait
 done
-
-
-
 
 
 # parser.add_argument('--experiment_name', default='inputsize_exp', type=str, help='name of experiment, the save directory will be save_dir+exp_name')

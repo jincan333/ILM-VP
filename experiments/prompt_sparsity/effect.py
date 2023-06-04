@@ -8,7 +8,7 @@ import os
 
 
 if __name__ == '__main__':
-    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/VPpad/PRUNEimp/LMflm/LPFalse/padsize_exp/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE224_32_96/GPU5/DENSITY0.8'
+    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/VPpad/PRUNEimp/LMflm/LPFalse/inputsize_exp/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE192_32_96/GPU2/DENSITY0.8'
     ckpt_path = []
     acc = []
     for i in range(0, 5):
@@ -18,10 +18,21 @@ if __name__ == '__main__':
     print(acc)
 
 # 0604
+input_32 = [0.5522, 0.5565, 0.5599, 0.5636, 0.5581]
+input_64 = [0.6043, 0.6007, 0.6074, 0.6046, 0.5961]
+input_96 = [0.6374, 0.6385, 0.6403, 0.6382, 0.635]
+input_128 = [0.6492, 0.6542, 0.661, 0.6453, 0.6454]
+input_160 = [0.7401, 0.744, 0.738, 0.7435, 0.7239]
+input_192 = [0.6773, 0.6789, 0.68, 0.6758, 0.6689]
+input_224 = [0.6286, 0.6224, 0.6128, 0.6162, 0.5988]
+
+
+
 pad_112 = [0.6179, 0.6147, 0.6077, 0.6173, 0.6145]
 pad_96 = [0.6118, 0.6199, 0.6159, 0.6226, 0.6082]
 pad_80 = [0.6166, 0.6202, 0.6142, 0.6115, 0.6159]
 pad_64 = [0.6135, 0.6112, 0.6037, 0.6072, 0.61]
+pad_48 = [0.614, 0.6055, 0.6066, 0.6072, 0.5923]
 pad_32 = [0.6286, 0.6224, 0.6128, 0.6162, 0.5988]
 pad_16 = [0.5896, 0.5918, 0.5919, 0.5892, 0.5845]
 # pad_16 0.5894
