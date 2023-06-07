@@ -25,22 +25,108 @@
 # done
 
 
+# prompt location experiment
+# experiment_name='prompt_loc_exp'
+# prune_methods=('imp')
+# label_mapping_modes=('flm')
+# gpus=(7 5 1)
+# prompt_methods=('pad' 'fix' 'random')
+# input_sizes=(224)
+# pad_sizes=(32)
+# mask_sizes=(156)
+# pruning_times=10
+# epochs=200
+# for i in ${!prompt_methods[@]};do
+#     log_filename=${experiment_name}_${prompt_methods[i]}.log
+#     python ./experiments/prompt_sparsity/lm_vp_prune.py --experiment_name ${experiment_name} --prune_method imp --label_mapping_mode flm --gpu ${gpus[i]} --prompt_method ${prompt_methods[i]} --input_size 224 --pad_size 32 --mask_size 156 --pruning_times ${pruning_times} --epochs ${epochs} > $log_filename 2>&1 &
+# done
+
+
 # visual prompt prune experiment
-experiment_name='prompt_prune_exp'
-prune_methods=('imp' 'omp' 'grasp' 'hydra')
-label_mapping_modes=('flm' 'ilm')
-gpus=(7 6 5 4 3 2 1 0)
-prompt_method='pad'
-input_size=160
-pad_size=32
-pruning_times=10
-epochs=200
-for i in ${!prune_methods[@]};do
-    for j in ${!label_mapping_modes[@]};do
-        log_filename=${experiment_name}_${prune_methods[i]}_${label_mapping_modes[j]}.log
-        python ./experiments/prompt_sparsity/lm_vp_prune.py --experiment_name ${experiment_name} --prune_method ${prune_methods[i]} --label_mapping_mode ${label_mapping_modes[j]} --gpu ${gpus[2*i+j]} --prompt_method ${prompt_method} --input_size ${input_size} --pad_size ${pad_size} --pruning_times ${pruning_times} --epochs ${epochs} > $log_filename 2>&1 &
-    done
-done
+# experiment_name='prompt_prune_exp'
+# prune_methods=('imp' 'omp' 'grasp' 'hydra')
+# label_mapping_modes=('flm' 'ilm')
+# gpus=(7 6 5 4 3 2 1 0)
+# prompt_method='pad'
+# input_size=160
+# pad_size=32
+# pruning_times=10
+# epochs=200
+# for i in ${!prune_methods[@]};do
+#     for j in ${!label_mapping_modes[@]};do
+#         log_filename=${experiment_name}_${prune_methods[i]}_${label_mapping_modes[j]}.log
+#         python ./experiments/prompt_sparsity/lm_vp_prune.py --experiment_name ${experiment_name} --prune_method ${prune_methods[i]} --label_mapping_mode ${label_mapping_modes[j]} --gpu ${gpus[2*i+j]} --prompt_method ${prompt_method} --input_size ${input_size} --pad_size ${pad_size} --pruning_times ${pruning_times} --epochs ${epochs} > $log_filename 2>&1 &
+#     done
+# done
+
+
+# padsize=0 and without tune performance
+# experiment_name='pad_0_exp'
+# prune_methods=('imp' 'omp' 'grasp')
+# label_mapping_modes=('flm' 'ilm')
+# gpus=(7 6 5 4 3 2 1 0)
+# prompt_method='pad'
+# input_size=224
+# pad_size=0
+# pruning_times=1
+# epochs=1
+# for i in ${!prune_methods[@]};do
+#     for j in ${!label_mapping_modes[@]};do
+#         log_filename=${experiment_name}_${prune_methods[i]}_${label_mapping_modes[j]}.log
+#         python ./experiments/prompt_sparsity/lm_vp_prune.py --experiment_name ${experiment_name} --prune_method ${prune_methods[i]} --label_mapping_mode ${label_mapping_modes[j]} --gpu ${gpus[2*i+j]} --prompt_method ${prompt_method} --input_size ${input_size} --pad_size ${pad_size} --pruning_times ${pruning_times} --epochs ${epochs} > $log_filename 2>&1 &
+#     done
+# done
+
+
+###  tricks experiments  ###
+# experiment_name='tricks_exp_eval_use_train'
+# prune_methods=('imp')
+# label_mapping_modes=('flm')
+# gpus=(1 6 5 4 3 2 1 0)
+# prompt_method='expand'
+# input_size=32
+# pruning_times=1
+# epochs=200
+# for i in ${!prune_methods[@]};do
+#     for j in ${!label_mapping_modes[@]};do
+#         log_filename=${experiment_name}_${prune_methods[i]}_${label_mapping_modes[j]}.log
+#         python ./experiments/prompt_sparsity/lm_vp_prune.py --experiment_name ${experiment_name} --prune_method ${prune_methods[i]} --label_mapping_mode ${label_mapping_modes[j]} --gpu ${gpus[2*i+j]} --prompt_method ${prompt_method} --input_size ${input_size} --pruning_times ${pruning_times} --epochs ${epochs} > $log_filename 2>&1 &
+#     done
+# done
+
+
+# experiment_name='tricks_exp_flm_after_prune'
+# prune_methods=('omp' 'grasp')
+# label_mapping_modes=('flm')
+# gpus=(3 0)
+# prompt_method='pad'
+# input_size=160
+# pad_size=32
+# pruning_times=10
+# epochs=200
+# for i in ${!prune_methods[@]};do
+#     for j in ${!label_mapping_modes[@]};do
+#         log_filename=${experiment_name}_${prune_methods[i]}.log
+#         python ./experiments/prompt_sparsity/lm_vp_prune.py --experiment_name ${experiment_name} --prune_method ${prune_methods[i]} --label_mapping_mode ${label_mapping_modes[j]} --gpu ${gpus[i]} --prompt_method ${prompt_method} --input_size ${input_size} --pad_size ${pad_size} --pruning_times ${pruning_times} --epochs ${epochs} > $log_filename 2>&1 &
+#     done
+# done
+
+
+# experiment_name='tricks_exp_flm_after_prune_notune'
+# prune_methods=('imp' 'omp' 'grasp')
+# label_mapping_modes=('flm')
+# gpus=(7 5 1)
+# prompt_methods=('pad')
+# input_sizes=(224)
+# pad_sizes=(0)
+# mask_sizes=(156)
+# pruning_times=10
+# epochs=1
+# for i in ${!prune_methods[@]};do
+#     log_filename=${experiment_name}_${prune_methods[i]}.log
+#     python ./experiments/prompt_sparsity/lm_vp_prune.py --experiment_name ${experiment_name} --prune_method ${prune_methods[i]} --label_mapping_mode flm --gpu ${gpus[i]} --prompt_method ${prompt_methods[0]} --input_size ${input_sizes[0]} --pad_size ${pad_sizes[0]} --mask_size ${mask_sizes[0]} --pruning_times ${pruning_times} --epochs ${epochs} > $log_filename 2>&1 &
+# done
+
 
 
 # parser.add_argument('--experiment_name', default='inputsize_exp', type=str, help='name of experiment, the save directory will be save_dir+exp_name')

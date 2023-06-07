@@ -26,14 +26,27 @@ def image_transform(args):
     
     if args.prompt_method:
         normalize = transforms.Normalize(mean=IMAGENETNORMALIZE['mean'], std=IMAGENETNORMALIZE['std'])
-        train_transform = transforms.Compose([
-            transforms.Resize((args.input_size, args.input_size)),
-            transforms.ToTensor(),
-        ])
-        test_transform = transforms.Compose([
-            transforms.Resize((args.input_size, args.input_size)),
-            transforms.ToTensor(),
-        ])
+        if args.randomcrop:
+            print('Using randomcrop\n')
+            train_transform = transforms.Compose([
+                transforms.RandomCrop((32, 32), padding=4),
+                transforms.RandomHorizontalFlip(),
+                transforms.Resize((args.input_size, args.input_size)),
+                transforms.ToTensor(),
+            ])
+            test_transform = transforms.Compose([
+                transforms.Resize((args.input_size, args.input_size)),
+                transforms.ToTensor(),
+            ])
+        else:
+            train_transform = transforms.Compose([
+                transforms.Resize((args.input_size, args.input_size)),
+                transforms.ToTensor(),
+            ])
+            test_transform = transforms.Compose([
+                transforms.Resize((args.input_size, args.input_size)),
+                transforms.ToTensor(),
+            ])
     elif args.dataset == 'cifar10':
         normalize = transforms.Normalize(mean=CIFAR10NORMALIZE['mean'], std=CIFAR10NORMALIZE['std'])
         train_transform = transforms.Compose([

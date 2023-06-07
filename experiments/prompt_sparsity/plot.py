@@ -3,42 +3,260 @@ import pandas as pd
 import os
 import datetime
 
-# 0604
-# choose the best input_size
-input_32 = [0.5522, 0.5565, 0.5599, 0.5636, 0.5581]
-input_64 = [0.6043, 0.6007, 0.6074, 0.6046, 0.5961]
-input_96 = [0.6374, 0.6385, 0.6403, 0.6382, 0.635]
-input_128 = [0.6492, 0.6542, 0.661, 0.6453, 0.6454]
-input_160 = [0.7401, 0.744, 0.738, 0.7435, 0.7239]
-input_192 = [0.6773, 0.6789, 0.68, 0.6758, 0.6689]
-input_224 = [0.6286, 0.6224, 0.6128, 0.6162, 0.5988]
+# 0605
+# vp grasp+hydra
+grasp_flm = [0.7401, 0.6009, 0.5669, 0.5299, 0.2504, 0.1938, 0.2389, 0.2993, 0.1836, 0.2076]
+grasp_ilm = [0.8051, 0.5622, 0.5446, 0.5231, 0.4542, 0.4376, 0.3994, 0.3692, 0.3823]
+hydra_flm = [0.7401, 0.9491, 0.9395, 0.9157, 0.905, 0.884, 0.8761, 0.8713, 0.866, 0.864]
+hydra_ilm = [0.8051, 0.9489, 0.9364, 0.9222, 0.9002, 0.8836, 0.8768, 0.8759, 0.8732]
 
 save_dir = os.path.join('results/Prune_LM_VP', str(datetime.datetime.now().date()))
-image_name = 'Input size - Accuracy'
+image_name = 'VP GraSP+Hydra - Accuracy'
 os.makedirs(save_dir, exist_ok=True)
 results = {
-    'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728][:5]]
-    ,'SIZE-32': [_*100 for _ in input_32]
-    ,'SIZE-64': [_*100 for _ in input_64]
-    ,'SIZE-96': [_*100 for _ in input_96]
-    ,'SIZE-128': [_*100 for _ in input_128]
-    ,'SIZE-160': [_*100 for _ in input_160]
-    ,'SIZE-192': [_*100 for _ in input_192]
-    ,'SIZE-224': [_*100 for _ in input_224]
+    'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728]]
+    ,'GraSP-FLM': [_*100 for _ in grasp_flm]
+    ,'GraSP-ILM': [_*100 for _ in grasp_ilm]
+    ,'Hydra-FLM': [_*100 for _ in hydra_flm]
+    ,'Hydra-ILM': [_*100 for _ in hydra_ilm]
 }
 for k in results.keys():
     if k != 'density':
-        plt.plot(results['density'], results[k], label=k)
+        plt.plot(results['density'][:len(results[k])], results[k], label=k)
 
 plt.title(image_name)
-plt.xlabel('weight density(%)')
-plt.ylabel('accuracy(%)')
+plt.xlabel('Weight Density(%)')
+plt.ylabel('Accuracy(%)')
 plt.legend(loc=2)
 plt.grid()
 plt.savefig(os.path.join(save_dir, image_name+'.png'))
 plt.close()
-result_df = pd.DataFrame(results)
-result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+
+# prompt_prune_exp
+# imp_flm = [0.7401, 0.744, 0.738, 0.7435, 0.7239, 0.7185, 0.7072, 0.6968, 0.682, 0.6548]
+# imp_ilm = [0.8051, 0.8267, 0.813, 0.8159, 0.7851, 0.6392, 0.6771, 0.6365, 0, 0]
+# omp_flm = [0.7401, 0.7415, 0.7391, 0.734, 0.7254, 0.71, 0.7018, 0.6998, 0.662, 0.6314]
+# omp_ilm = [0.8051, 0.8308, 0.7939, 0.7929, 0.7799, 0.6419, 0.6186, 0.6202, 0, 0]
+# grasp_flm = [0.7401, 0.6009, 0.5669, 0.5299, 0.2504, 0.1938, 0.2389, 0.2993, 0.1836, 0.2076]
+# grasp_ilm = [0.8051, 0.5622, 0.5446, 0.5231, 0.4542, 0.4376, 0.3994, 0.3692, 0.3823, 0]
+# hydra_flm = [0.7401, 0.9491, 0.9395, 0.9157, 0.905, 0.884, 0.8761, 0.8713, 0.866, 0.864]
+# hydra_ilm = [0.8051, 0.9489, 0.9364, 0.9222, 0.9002, 0.8836, 0.8768, 0.8759, 0.8732, 0]
+
+# save_dir = os.path.join('results/Prune_LM_VP', str(datetime.datetime.now().date()))
+# image_name = 'VP Prune - Accuracy'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728]]
+#     ,'IMP-FLM': [_*100 for _ in imp_flm]
+#     ,'IMP-ILM': [_*100 for _ in imp_ilm]
+#     ,'OMP-FLM': [_*100 for _ in omp_flm]
+#     ,'OMP-ILM': [_*100 for _ in omp_ilm]
+#     ,'GraSP-FLM': [_*100 for _ in grasp_flm]
+#     ,'GraSP-ILM': [_*100 for _ in grasp_ilm]
+#     ,'Hydra-FLM': [_*100 for _ in hydra_flm]
+#     ,'Hydra-ILM': [_*100 for _ in hydra_ilm]
+# }
+# for k in results.keys():
+#     if k != 'density':
+#         plt.plot(results['density'][:len(results[k])], results[k], label=k)
+
+# plt.title(image_name)
+# plt.xlabel('Weight Density(%)')
+# plt.ylabel('Accuracy(%)')
+# plt.legend(loc=2)
+# plt.grid()
+# plt.savefig(os.path.join(save_dir, image_name+'.png'))
+# plt.close()
+# result_df = pd.DataFrame(results)
+# result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+
+
+
+# tricks_exp_flm_after_prune_notune
+# imp_flm_pre = [0.5042, 0.4983, 0.4723, 0.4754, 0.4616, 0.455, 0.3472, 0.1568, 0.1268, 0.0971]
+# imp_flm_after = [0.5042, 0.4985, 0.4866, 0.4923, 0.4162, 0.2663, 0.2383, 0.1745, 0.1874, 0.1947]
+# imp_ilm = [0.5042, 0.4985, 0.4866, 0.4923, 0.4162, 0.2663, 0.2383, 0.1745, 0.1874, 0.1947]
+# omp_flm_pre = [0.5042, 0.499, 0.475, 0.4825, 0.4797, 0.4214, 0.2975, 0.1296, 0.1028, 0.1003]
+# omp_flm_after = [0.5042, 0.4996, 0.4892, 0.4718, 0.4152, 0.2738, 0.1921, 0.1938, 0.2072, 0.1586]
+# omp_ilm = [0.5042, 0.4996, 0.4892, 0.4718, 0.4152, 0.2738, 0.1921, 0.1938, 0.2072, 0.1586]
+# grasp_flm_pre = [0.5042, 0.0848, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+# grasp_flm_after = [0.5042, 0.1647, 0.1927, 0.1023, 0.1001, 0.1114, 0.1, 0.1, 0.1, 0.1]
+# grasp_ilm = [0.5042, 0.1647, 0.1927, 0.1023, 0.1001, 0.1114, 0.1, 0.1, 0.1, 0.1]
+
+
+# save_dir = os.path.join('results/Prune_LM_VP', str(datetime.datetime.now().date()))
+# image_name = 'Without tune diff LM Accuracy'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728]]
+#     ,'imp_flm_pre': [_*100 for _ in imp_flm_pre]
+#     ,'imp_flm_after': [_*100 for _ in imp_flm_after]
+#     ,'imp_ilm': [_*100 for _ in imp_ilm]
+#     ,'omp_flm_pre': [_*100 for _ in omp_flm_pre]
+#     ,'omp_flm_after': [_*100 for _ in omp_flm_after]
+#     ,'omp_ilm': [_*100 for _ in omp_ilm]
+#     ,'grasp_flm_pre': [_*100 for _ in grasp_flm_pre]
+#     ,'grasp_flm_after': [_*100 for _ in grasp_flm_after]
+#     ,'grasp_ilm': [_*100 for _ in grasp_ilm]
+# }
+# for k in results.keys():
+#     if k != 'density':
+#         plt.plot(results['density'], results[k], label=k)
+
+# plt.title(image_name)
+# plt.xlabel('weight density(%)')
+# plt.ylabel('accuracy(%)')
+# plt.legend(loc=2)
+# plt.grid()
+# plt.savefig(os.path.join(save_dir, image_name+'.png'))
+# plt.close()
+# result_df = pd.DataFrame(results)
+# result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+
+
+# tricks_exp_flm_after_prune
+# omp_flm_pre = [0.7401, 0.7415, 0.7391]
+# omp_flm_after = [0.7401, 0.7378, 0.75]
+# omp_ilm = [0.8051, 0.8308, 0.7939]
+# grasp_flm_pre = [0.7401, 0.6009, 0.5669]
+# grasp_flm_after = [0.7401, 0.5506, 0.522]
+# grasp_ilm = [0.8051, 0.5622, 0.5446]
+
+
+# save_dir = os.path.join('results/Prune_LM_VP', str(datetime.datetime.now().date()))
+# image_name = 'flm pretrain&after_prune - Accuracy'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728][:3]]
+#     ,'omp_flm_pre': [_*100 for _ in omp_flm_pre]
+#     ,'omp_flm_after': [_*100 for _ in omp_flm_after]
+#     ,'omp_ilm': [_*100 for _ in omp_ilm]
+#     ,'grasp_flm_pre': [_*100 for _ in grasp_flm_pre]
+#     ,'grasp_flm_after': [_*100 for _ in grasp_flm_after]
+#     ,'grasp_ilm': [_*100 for _ in grasp_ilm]
+# }
+# for k in results.keys():
+#     if k != 'density':
+#         plt.plot(results['density'], results[k], label=k)
+
+# plt.title(image_name)
+# plt.xlabel('Weight Density(%)')
+# plt.ylabel('Accuracy(%)')
+# plt.legend(loc=2)
+# plt.grid()
+# plt.savefig(os.path.join(save_dir, image_name+'.png'))
+# plt.close()
+# result_df = pd.DataFrame(results)
+# result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+
+
+
+
+# prompt_loc_exp
+# pad = [0.6286, 0.6224]
+# fix = [0.5754, 0.5814]
+# random = [0.4755, 0.4678]
+
+# save_dir = os.path.join('results/Prune_LM_VP', str(datetime.datetime.now().date()))
+# image_name = 'VP Location - Accuracy'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728][:2]]
+#     ,'pad': [_*100 for _ in pad]
+#     ,'fix': [_*100 for _ in fix]
+#     ,'random': [_*100 for _ in random]
+# }
+# for k in results.keys():
+#     if k != 'density':
+#         plt.plot(results['density'], results[k], label=k)
+
+# plt.title(image_name)
+# plt.xlabel('Weight Density(%)')
+# plt.ylabel('Accuracy(%)')
+# plt.legend(loc=2)
+# plt.grid()
+# plt.savefig(os.path.join(save_dir, image_name+'.png'))
+# plt.close()
+# result_df = pd.DataFrame(results)
+# result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+
+# prompt_prune_exp
+# imp_flm = [0.7401, 0.744, 0.738, 0.7435, 0.7239]
+# imp_ilm = [0.8051, 0.8267, 0.813, 0.8159, 0.7851]
+# omp_flm = [0.7401, 0.7415, 0.7391, 0.734, 0.7254]
+# omp_ilm = [0.8051, 0.8308, 0.7939, 0.7929, 0.7799]
+# grasp_flm = [0.7401, 0.6009, 0.5669, 0.5299, 0.2504]
+# grasp_ilm = [0.8051, 0.5622, 0.5446, 0.5231, 0.4542]
+# hydra_flm = [0.7401, 0.9491, 0.9395, 0.9157, 0.905]
+# hydra_ilm = [0.8051, 0.9489, 0.9364, 0.9222, 0.9002]
+
+# save_dir = os.path.join('results/Prune_LM_VP', str(datetime.datetime.now().date()))
+# image_name = 'VP Prune - Accuracy'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728][:5]]
+#     ,'IMP-FLM': [_*100 for _ in imp_flm]
+#     ,'IMP-ILM': [_*100 for _ in imp_ilm]
+#     ,'OMP-FLM': [_*100 for _ in omp_flm]
+#     ,'OMP-ILM': [_*100 for _ in omp_ilm]
+#     ,'GraSP-FLM': [_*100 for _ in grasp_flm]
+#     ,'GraSP-ILM': [_*100 for _ in grasp_ilm]
+#     ,'Hydra-FLM': [_*100 for _ in hydra_flm]
+#     ,'Hydra-ILM': [_*100 for _ in hydra_ilm]
+# }
+# for k in results.keys():
+#     if k != 'density':
+#         plt.plot(results['density'], results[k], label=k)
+
+# plt.title(image_name)
+# plt.xlabel('Weight Density(%)')
+# plt.ylabel('Accuracy(%)')
+# plt.legend(loc=2)
+# plt.grid()
+# plt.savefig(os.path.join(save_dir, image_name+'.png'))
+# plt.close()
+# result_df = pd.DataFrame(results)
+# result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+
+
+
+
+# 0604
+# choose the best input_size
+# input_32 = [0.5522, 0.5565, 0.5599, 0.5636, 0.5581]
+# input_64 = [0.6043, 0.6007, 0.6074, 0.6046, 0.5961]
+# input_96 = [0.6374, 0.6385, 0.6403, 0.6382, 0.635]
+# input_128 = [0.6492, 0.6542, 0.661, 0.6453, 0.6454]
+# input_160 = [0.7401, 0.744, 0.738, 0.7435, 0.7239]
+# input_192 = [0.6773, 0.6789, 0.68, 0.6758, 0.6689]
+# input_224 = [0.6286, 0.6224, 0.6128, 0.6162, 0.5988]
+
+# save_dir = os.path.join('results/Prune_LM_VP', str(datetime.datetime.now().date()))
+# image_name = 'Input size - Accuracy'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728][:5]]
+#     ,'SIZE-32': [_*100 for _ in input_32]
+#     ,'SIZE-64': [_*100 for _ in input_64]
+#     ,'SIZE-96': [_*100 for _ in input_96]
+#     ,'SIZE-128': [_*100 for _ in input_128]
+#     ,'SIZE-160': [_*100 for _ in input_160]
+#     ,'SIZE-192': [_*100 for _ in input_192]
+#     ,'SIZE-224': [_*100 for _ in input_224]
+# }
+# for k in results.keys():
+#     if k != 'density':
+#         plt.plot(results['density'], results[k], label=k)
+
+# plt.title(image_name)
+# plt.xlabel('weight density(%)')
+# plt.ylabel('accuracy(%)')
+# plt.legend(loc=2)
+# plt.grid()
+# plt.savefig(os.path.join(save_dir, image_name+'.png'))
+# plt.close()
+# result_df = pd.DataFrame(results)
+# result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
 
 
 # choose the best pad_size
@@ -106,8 +324,8 @@ result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
 #     ,'OMP-ILM': [_*100 for _ in [0.5042, 0.4996, 0.4892, 0.4718, 0.4152, 0.2738, 0.1921, 0.1938, 0.2072, 0.1586]]
 #     ,'GraSP-FLM': [_*100 for _ in [0.5042, 0.0848, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]]
 #     ,'GraSP-ILM': [_*100 for _ in [0.5042, 0.1647, 0.1927, 0.1023, 0.1001, 0.1114, 0.1, 0.1, 0.1, 0.1]]
-#     ,'Hydra-FLM': [_*100 for _ in [0.5042, 0.1104, 0.1149, 0.0976, 0.1053, 0.1, 0.1, 0.1, 0.1, 0.1]]
-#     ,'Hydra-ILM': [_*100 for _ in [0.5042, 0.1724, 0.1217, 0.1355, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]]
+#     # ,'Hydra-FLM': [_*100 for _ in [0.5042, 0.1104, 0.1149, 0.0976, 0.1053, 0.1, 0.1, 0.1, 0.1, 0.1]]
+#     # ,'Hydra-ILM': [_*100 for _ in [0.5042, 0.1724, 0.1217, 0.1355, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]]
 # }
 # for k in results.keys():
 #     if k != 'density':
