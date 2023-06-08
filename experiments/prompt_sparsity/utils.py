@@ -26,10 +26,20 @@ def setup_model_dataset(args):
     else:
         raise ValueError('Dataset not supprot yet !')
     
-    if args.network == 'resnet18':
-        model = torchvision.models.resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
-        model.cuda()
-    return model, train_set_loader, val_loader, test_loader, configs
+    # network
+    if args.network == "resnet18":
+        from torchvision.models import resnet18, ResNet18_Weights
+        network = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).to(args.device)
+    elif args.network == "resnet50":
+        from torchvision.models import resnet50, ResNet50_Weights
+        network = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2).to(args.device)
+    elif args.network == "instagram":
+        from torch import hub
+        network = hub.load('facebookresearch/WSL-Images', 'resnext101_32x8d_wsl').to(args.device)
+    else:
+        raise NotImplementedError(f"{args.network} is not supported")
+    
+    return network, train_set_loader, val_loader, test_loader, configs
 
 
 def set_seed(seed):

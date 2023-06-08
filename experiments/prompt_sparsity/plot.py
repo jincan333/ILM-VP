@@ -5,6 +5,21 @@ import datetime
 
 # 0608
 # ablation_vp_search_exp
+inputsize64_padsize16=0.6171
+inputsize64_padsize32=0.7187
+inputsize64_padsize48=0.6886
+inputsize64_padsize64=0.7693
+inputsize64_padsize80=0.6825
+inputsize64_padsize96=0.6783
+inputsize64_padsize112=0.7053
+
+inputsize96_padsize16=0.6171
+inputsize96_padsize32=0.7187
+inputsize96_padsize48=0.6886
+inputsize96_padsize64=0.7693
+inputsize96_padsize80=0.6825
+inputsize96_padsize96=0.6783
+inputsize96_padsize112=0.7053
 
 inputsize128_padsize16=0.6550
 inputsize128_padsize32=0.7751

@@ -29,8 +29,8 @@ def main():
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
     parser.add_argument('--label_mapping_mode', type=str, default='ilm', help='label mapping methods: rlm, flm, ilm, None', choices=['flm', 'ilm', 'rlm', None, 'None'])
     parser.add_argument('--prompt_method', type=str, default='pad', help='None, expand, pad, fix, random', choices=['expand', 'pad', 'fix', 'random', None, 'None'])
-    parser.add_argument('--input_size', type=int, default=160, help='image size before prompt, no more than 224', choices=[224, 192, 160, 128, 96, 64, 32])
-    parser.add_argument('--pad_size', type=int, default=32, help='only for padprompt, no more than 112, parameters cnt 4*pad**2+896pad', choices=[0, 16, 32, 48, 64, 80, 96, 112])
+    parser.add_argument('--input_size', type=int, default=128, help='image size before prompt, no more than 224', choices=[224, 192, 160, 128, 96, 64, 32])
+    parser.add_argument('--pad_size', type=int, default=48, help='only for padprompt, no more than 112, parameters cnt 4*pad**2+896pad', choices=[0, 16, 32, 48, 64, 80, 96, 112])
     parser.add_argument('--mask_size', type=int, default=156, help='only for fixadd and randomadd, no more than 224, parameters cnt mask**2', choices=[115, 156, 183, 202, 214, 221, 224])
     parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use. Default: sgd. Options: sgd, adam.', choices=['sgd', 'adam'])
     parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy. Default: cosine, multistep', choices=['cosine', 'multistep'])
@@ -43,7 +43,8 @@ def main():
     parser.add_argument('--flm_loc', type=str, default='pre', help='pre-train flm or after-prune flm.', choices=['pre', 'after'])
     parser.add_argument('--randomcrop', type=int, default=0, help='dataset randomcrop.', choices=[0, 1])
     parser.add_argument('--seed', default=7, type=int, help='random seed')
-
+    parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"])
+    parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results', type=str)
@@ -51,14 +52,12 @@ def main():
     # parser.add_argument('--gpu', type=int, default=6, help='gpu device id')
     parser.add_argument('--workers', type=int, default=2, help='number of workers in dataloader')
     parser.add_argument('--resume_checkpoint', default='', help="resume checkpoint path")
-    parser.add_argument('--print_freq', default=100, type=int, help='print frequency')
+    parser.add_argument('--print_freq', default=200, type=int, help='print frequency')
 
     ##################################### Dataset #################################################
     parser.add_argument('--data', type=str, default='dataset', help='location of the data corpus')
-    parser.add_argument('--dataset', default="cifar10")
 
     ##################################### Architecture ############################################
-    parser.add_argument('--network', default='resnet18')
     # parser.add_argument('--label_mapping_mode', type=str, default='flm', help='label mapping methods: rlm, flm, ilm, None')
     parser.add_argument('--label_mapping_interval', type=int, default=1, help='in ilm, the interval of epoch to implement label mapping')
     parser.add_argument('--is_adjust_linear_head', type=bool, default=False, help='whether adjust the linear head or not')
@@ -115,6 +114,7 @@ def main():
     print(args)
     # Device
     device = torch.device(f"cuda:{args.gpu}")
+    args.device=device
     torch.cuda.set_device(int(args.gpu))
     set_seed(args.seed)
     # Save Path
