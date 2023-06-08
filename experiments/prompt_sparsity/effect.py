@@ -8,26 +8,34 @@ import os
 
 
 if __name__ == '__main__':
-    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/VPpad/PRUNEgrasp/LMilm/LPFalse/prompt_prune_exp/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE160_32_96/GPU6/DENSITY0.8'
+    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/VPpad/PRUNEhydra/LMilm/LPFalse/ablation_hydra_init_exp/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE160_32_156/SEED7/GPU6/DENSITY0.8'
     ckpt_path = []
     acc = []
-    for i in range(0,9):
+    for i in range(0,6):
         ckpt_path.append(os.path.join(dir_path, str(i) + 'best.pth'))
     for path in ckpt_path:
         acc.append(torch.load(path)['ckpt_test_acc'])
     print(acc)
 
-# 0605
+# 0608
+# ablation_hydra_init_exp
+init_1 = [0.9497, 0.9395, 0.9263, 0.9059, 0.8928]
+init_0 = [0.9489, 0.9364, 0.9222, 0.9002, 0.8836]
 
+# ablation_randomcrop_exp
+crop_0=[0.8152, 0.8186, 0.8265, 0.801, 0.7658]
+crop_1=[0.8271, 0.8174, 0.818, 0.7829, 0.7645]
+
+# 0605
 # prompt_prune_exp
 imp_flm = [0.7401, 0.744, 0.738, 0.7435, 0.7239, 0.7185, 0.7072, 0.6968, 0.682, 0.6548]
-imp_ilm = [0.8051, 0.8267, 0.813, 0.8159, 0.7851, 0.6392, 0.6771, 0.6365]
+imp_ilm = [0.8051, 0.8267, 0.813, 0.8159, 0.7851, 0.6392, 0.6771, 0.6365, 0.6127, 0.6011]
 omp_flm = [0.7401, 0.7415, 0.7391, 0.734, 0.7254, 0.71, 0.7018, 0.6998, 0.662, 0.6314]
-omp_ilm = [0.8051, 0.8308, 0.7939, 0.7929, 0.7799, 0.6419, 0.6186, 0.6202]
+omp_ilm = [0.8051, 0.8308, 0.7939, 0.7929, 0.7799, 0.6419, 0.6186, 0.6202, 0.6103, 0.5916]
 grasp_flm = [0.7401, 0.6009, 0.5669, 0.5299, 0.2504, 0.1938, 0.2389, 0.2993, 0.1836, 0.2076]
-grasp_ilm = [0.8051, 0.5622, 0.5446, 0.5231, 0.4542, 0.4376, 0.3994, 0.3692, 0.3823]
+grasp_ilm = [0.8051, 0.5622, 0.5446, 0.5231, 0.4542, 0.4376, 0.3994, 0.3692, 0.3823, 0.3865]
 hydra_flm = [0.7401, 0.9491, 0.9395, 0.9157, 0.905, 0.884, 0.8761, 0.8713, 0.866, 0.864]
-hydra_ilm = [0.8051, 0.9489, 0.9364, 0.9222, 0.9002, 0.8836, 0.8768, 0.8759, 0.8732]
+hydra_ilm = [0.8051, 0.9489, 0.9364, 0.9222, 0.9002, 0.8836, 0.8768, 0.8759, 0.8732, 0.8649]
 
 # tricks_exp_flm_after_prune_notune
 imp = [0.5042, 0.4985, 0.4866, 0.4923, 0.4162, 0.2663, 0.2383, 0.1745, 0.1874, 0.1947]

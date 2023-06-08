@@ -27,8 +27,8 @@ def main():
     # Frequently change
     parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment, the save directory will be save_dir+exp_name')
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
-    parser.add_argument('--label_mapping_mode', type=str, default='ilm', help='label mapping methods: rlm, flm, ilm, None', choices=['flm', 'ilm', 'rlm', None])
-    parser.add_argument('--prompt_method', type=str, default='pad', help='None, expand, pad, fix, random', choices=['expand', 'pad', 'fix', 'random', None])
+    parser.add_argument('--label_mapping_mode', type=str, default='ilm', help='label mapping methods: rlm, flm, ilm, None', choices=['flm', 'ilm', 'rlm', None, 'None'])
+    parser.add_argument('--prompt_method', type=str, default='pad', help='None, expand, pad, fix, random', choices=['expand', 'pad', 'fix', 'random', None, 'None'])
     parser.add_argument('--input_size', type=int, default=160, help='image size before prompt, no more than 224', choices=[224, 192, 160, 128, 96, 64, 32])
     parser.add_argument('--pad_size', type=int, default=32, help='only for padprompt, no more than 112, parameters cnt 4*pad**2+896pad', choices=[0, 16, 32, 48, 64, 80, 96, 112])
     parser.add_argument('--mask_size', type=int, default=156, help='only for fixadd and randomadd, no more than 224, parameters cnt mask**2', choices=[115, 156, 183, 202, 214, 221, 224])
@@ -108,8 +108,10 @@ def main():
     parser.add_argument('--exp_mode',default='prune')
     parser.add_argument('--freeze_bn',default=False)
     parser.add_argument('--scores_init_type',default=None, choices=("kaiming_normal", "kaiming_uniform", "xavier_uniform", "xavier_normal"))
-    
+
     args = parser.parse_args()
+    if args.prompt_method=='None':
+        args.prompt_method=None
     print(args)
     # Device
     device = torch.device(f"cuda:{args.gpu}")

@@ -3,6 +3,42 @@ import pandas as pd
 import os
 import datetime
 
+# 0608
+# ablation_vp_search_exp
+
+inputsize128_padsize16=0.6550
+inputsize128_padsize32=0.7751
+inputsize128_padsize48=0.8353
+inputsize128_padsize64=0.6933
+inputsize128_padsize80=0.6691
+inputsize128_padsize96=0.6674
+inputsize128_padsize112=0.7066
+
+inputsize160_padsize16=0.6631
+inputsize160_padsize32=0.8051
+inputsize160_padsize48=0.7328
+inputsize160_padsize64=0.6551
+inputsize160_padsize80=0.6581
+inputsize160_padsize96=0.6611
+inputsize160_padsize112=0.6803
+
+inputsize192_padsize16=0.7615
+inputsize192_padsize32=0.7751
+inputsize192_padsize48=0.6525
+inputsize192_padsize64=0.6289
+inputsize192_padsize80=0.6352
+inputsize192_padsize96=0.6484
+inputsize192_padsize112=0.6738
+
+inputsize224_padsize16=0.6291
+inputsize224_padsize32=0.6060
+inputsize224_padsize48=0.6425
+inputsize224_padsize64=0.6177
+inputsize224_padsize80=0.6140
+inputsize224_padsize96=0.6209
+inputsize224_padsize112=0.6258
+
+
 # 0605
 # vp grasp+hydra
 grasp_flm = [0.7401, 0.6009, 0.5669, 0.5299, 0.2504, 0.1938, 0.2389, 0.2993, 0.1836, 0.2076]

@@ -19,49 +19,32 @@
 # parser.add_argument('--randomcrop', type=int, default=0, help='dataset randomcrop.', choices=[0, 1])
 # parser.add_argument('--seed', default=7, type=int, help='random seed')
 
-# input_size   prompt_size   
-experiment_name='ablation_vp_search_exp'
+experiment_name='ablation_prompt_methods_exp'
 if [ ! -d ${experiment_name} ]; then
     mkdir -p ${experiment_name}
 fi
 
 prune_methods=('imp')
 label_mapping_modes=('ilm')
-prompt_methods=('pad')
-gpus=(4 5 6 7 4 5 6)
-input_sizes=(96 64 32)
-pad_sizes=(16 32 48 64 80 96 112)
-pruning_times=1
-epochs=200
-for i in ${!input_sizes[@]};do
-    for j in ${!pad_sizes[@]};do
-        log_filename=${experiment_name}/inputsize${input_sizes[i]}_padsize${pad_sizes[j]}.log
-        python ./experiments/prompt_sparsity/lm_vp_prune.py \
-            --experiment_name ${experiment_name} \
-            --prune_method ${prune_methods[0]} \
-            --label_mapping_mode ${label_mapping_modes[0]} \
-            --prompt_method ${prompt_methods[0]} \
-            --gpu ${gpus[j]} \
-            --input_size ${input_sizes[i]} \
-            --pad_size ${pad_sizes[j]} \
-            --pruning_times ${pruning_times} \
-            --epochs ${epochs} > $log_filename 2>&1 &
-    done
-    wait
+prompt_methods=('pad' 'fix' 'random')
+gpus=(7 6 5)
+input_sizes=(160)
+pad_sizes=(32)
+pruning_times=3
+epochs=3
+seed=7
+for i in ${!prompt_methods[@]};do
+    log_filename=${experiment_name}/prompt_methods_${prompt_methods[i]}.log
+    python ./experiments/prompt_sparsity/lm_vp_prune.py \
+        --experiment_name ${experiment_name} \
+        --prune_method ${prune_methods[0]} \
+        --label_mapping_mode ${label_mapping_modes[0]} \
+        --prompt_method ${prompt_methods[i]} \
+        --gpu ${gpus[i]} \
+        --input_size ${input_sizes[0]} \
+        --pad_size ${pad_sizes[0]} \
+        --pruning_times ${pruning_times} \
+        --epochs ${epochs} \
+        --seed ${seed} \
+        > $log_filename 2>&1 &
 done
-
-
-
-# sigmoid
-
-
-
-# network.train
-
-
-
-
-# mask_visualization   lm_methods   hydra_initialize    randomcrop   sigmoid   network.train   flm_pre&after    
-
-
-

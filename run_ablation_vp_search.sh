@@ -28,11 +28,12 @@ fi
 prune_methods=('imp')
 label_mapping_modes=('ilm')
 prompt_methods=('pad')
-gpus=(4 5 6 7 4 5 6)
+gpus=(2 3 4 5 5 4 3)
 input_sizes=(96 64 32)
 pad_sizes=(16 32 48 64 80 96 112)
 pruning_times=1
 epochs=200
+seed=7
 for i in ${!input_sizes[@]};do
     for j in ${!pad_sizes[@]};do
         log_filename=${experiment_name}/inputsize${input_sizes[i]}_padsize${pad_sizes[j]}.log
@@ -45,23 +46,9 @@ for i in ${!input_sizes[@]};do
             --input_size ${input_sizes[i]} \
             --pad_size ${pad_sizes[j]} \
             --pruning_times ${pruning_times} \
-            --epochs ${epochs} > $log_filename 2>&1 &
+            --epochs ${epochs} \
+            --seed ${seed} \
+            > $log_filename 2>&1 &
     done
     wait
 done
-
-
-
-# sigmoid
-
-
-
-# network.train
-
-
-
-
-# mask_visualization   lm_methods   hydra_initialize    randomcrop   sigmoid   network.train   flm_pre&after    
-
-
-
