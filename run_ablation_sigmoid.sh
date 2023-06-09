@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='ablation_sigmoid_exp'
+experiment_name='ablation_no_sigmoid_exp'
 if [ ! -d ${experiment_name} ]; then
     mkdir -p ${experiment_name}
 fi
@@ -8,13 +8,13 @@ fi
 prune_methods=('imp')
 label_mapping_modes=('ilm')
 prompt_methods=('pad')
-gpus=(0)
-input_sizes=(160)
-pad_sizes=(32)
-pruning_times=3
-epochs=3
+gpus=(5)
+input_sizes=(128)
+pad_sizes=(48)
+pruning_times=10
+epochs=200
 seed=7
-log_filename=${experiment_name}/network_sigmoid_false.log
+log_filename=${experiment_name}/prompt_no_sigmoid.log
 python ./experiments/prompt_sparsity/lm_vp_prune.py \
     --experiment_name ${experiment_name} \
     --prune_method ${prune_methods[0]} \

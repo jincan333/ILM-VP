@@ -8,14 +8,26 @@ import os
 
 
 if __name__ == '__main__':
-    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/VPpad/PRUNEhydra/LMilm/LPFalse/ablation_hydra_init_exp/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE160_32_156/SEED7/GPU6/DENSITY0.8'
+    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/ablation_lm_methods_exp/VPpad/PRUNEimp/LMflm/LPFalse/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE128_48_156/SEED7/GPU2/DENSITY0.8'
     ckpt_path = []
     acc = []
-    for i in range(0,6):
+    for i in range(0,8):
         ckpt_path.append(os.path.join(dir_path, str(i) + 'best.pth'))
     for path in ckpt_path:
         acc.append(torch.load(path)['ckpt_test_acc'])
     print(acc)
+
+# 0609
+# ablation_lm_methods_exp
+flm = [0.7425, 0.7348, 0.7421, 0.7325, 0.728, 0.7253, 0.718, 0.6968]
+
+# ablation_hydra_init_exp
+init_1 = [0.7948, 0.9407, 0.9319, 0.9148, 0.8877]
+init_0 = [0.7948, 0.9398, 0.9238, 0.9092, 0.8918]
+
+# ablation_randomcrop_exp
+crop_0=[0.8353, 0.8111, 0.826, 0.7954, 0.7397, 0.6795, 0.6741]
+crop_1=[0.8358, 0.8212, 0.8183, 0.7219, 0.7391, 0.6887, 0.6877]
 
 # 0608
 # ablation_hydra_init_exp

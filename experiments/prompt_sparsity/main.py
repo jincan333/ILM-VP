@@ -1,4 +1,5 @@
 import os
+os.environ['TORCH_USE_CUDA_DSA'] = '1'
 import torch
 from torch.nn import functional as F
 from torch.nn import Conv2d, Linear
@@ -12,8 +13,9 @@ import copy
 import sys
 sys.path.append(".")
 from cfg import *
-from parser_func import add_args, save_args
-from utils import setup_model_dataset, set_seed, setup_optimizer_scheduler, calculate_label_mapping, obtain_label_mapping
+from parser_func import save_args
+from utils import get_model, set_seed, setup_optimizer_scheduler, calculate_label_mapping, obtain_label_mapping
+from data import prepare_dataset
 
 from pruner import extract_mask, prune_model_custom, check_sparsity, pruning_model_random, remove_prune, pruning_model
 from core import Masking, CosineDecay
@@ -44,13 +46,13 @@ def main():
     parser.add_argument('--randomcrop', type=int, default=0, help='dataset randomcrop.', choices=[0, 1])
     parser.add_argument('--seed', default=7, type=int, help='random seed')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"])
-    parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
+    parser.add_argument('--dataset', default="gtsrb", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results', type=str)
     # parser.add_argument('--experiment_name', default='test', type=str, help='name of experiment, the save directory will be save_dir+exp_name')
     # parser.add_argument('--gpu', type=int, default=6, help='gpu device id')
-    parser.add_argument('--workers', type=int, default=4, help='number of workers in dataloader')
+    parser.add_argument('--workers', type=int, default=2, help='number of workers in dataloader')
     parser.add_argument('--resume_checkpoint', default='', help="resume checkpoint path")
     parser.add_argument('--print_freq', default=200, type=int, help='print frequency')
 
@@ -126,7 +128,8 @@ def main():
     logger = SummaryWriter(os.path.join(save_path, 'tensorboard'))
     print('Save path: ',save_path)
     # Network and Dataset
-    network, train_loader, val_loader, test_loader, configs = setup_model_dataset(args)
+    network = get_model(args)
+    train_loader, val_loader, test_loader, configs = prepare_dataset(args)
     if args.is_adjust_linear_head:
         network.fc = torch.nn.Linear(512, 10).to(device)
     if args.prune_method == 'hydra':

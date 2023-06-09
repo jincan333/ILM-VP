@@ -66,6 +66,7 @@ class LMDBDataset(data.Dataset):
     def __repr__(self):
         return self.__class__.__name__ + ' (' + self.db_path + ')'
 
+
 class ImageNetCLSLMDBDataset(LMDBDataset):
     def __init__(self, root, split='train', class_id = 0, transform=None, target_transform=None):
         super().__init__(root, split, transform, target_transform)
@@ -80,6 +81,7 @@ class ImageNetCLSLMDBDataset(LMDBDataset):
 
     def __len__(self):
         return self.class_split_dict[str(self.class_id)] - self.class_split_dict[str(self.class_id - 1)]
+
 
 class COOPLMDBDataset(LMDBDataset):
     def __init__(self, root, split="train", transform=None) -> None:

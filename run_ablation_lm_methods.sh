@@ -25,13 +25,13 @@ if [ ! -d ${experiment_name} ]; then
 fi
 
 prune_methods=('imp')
-label_mapping_modes=('ilm' 'flm')
+label_mapping_modes=('flm')
 prompt_methods=('pad')
-gpus=(3 2)
-input_sizes=(160)
-pad_sizes=(32)
-pruning_times=3
-epochs=3
+gpus=(2)
+input_sizes=(128)
+pad_sizes=(48)
+pruning_times=10
+epochs=200
 seed=7
 for i in ${!label_mapping_modes[@]};do
     log_filename=${experiment_name}/label_mapping_modes_${label_mapping_modes[i]}.log

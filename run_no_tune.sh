@@ -24,16 +24,14 @@ if [ ! -d ${experiment_name} ]; then
     mkdir -p ${experiment_name}
 fi
 
-prune_methods=('imp' 'omp' 'hydra')
+prune_methods=('imp' 'omp' 'grasp' 'hydra')
 label_mapping_modes=('ilm')
-prompt_methods=(None)
-gpus=(0 1 2)
-input_sizes=(160)
-pad_sizes=(32)
-optimizer='sgd'
-lr_scheduler='cosine'
-pruning_times=3
-epochs=3
+prompt_methods=('pad')
+gpus=(0 1 2 3)
+input_sizes=(224)
+pad_sizes=(0)
+pruning_times=2
+epochs=2
 seed=7
 for i in ${!prune_methods[@]};do
     log_filename=${experiment_name}/label_mapping_modes_${label_mapping_modes[i]}.log

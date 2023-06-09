@@ -18,35 +18,43 @@
 # parser.add_argument('--flm_loc', type=str, default='pre', help='pre-train flm or after-prune flm.', choices=['pre', 'after'])
 # parser.add_argument('--randomcrop', type=int, default=0, help='dataset randomcrop.', choices=[0, 1])
 # parser.add_argument('--seed', default=7, type=int, help='random seed')
+# parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"])
+# parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
 
-experiment_name='ablation_prompt_methods_exp'
+
+experiment_name='main_test'
 if [ ! -d ${experiment_name} ]; then
     mkdir -p ${experiment_name}
 fi
 
+datasets=('cifar10')
+networks=('instagram')
 prune_methods=('imp')
-label_mapping_modes=('ilm')
-prompt_methods=('fix' 'random')
-gpus=(4 3)
+label_mapping_modes=('flm')
+prompt_methods=('pad')
+gpus=(0)
 input_sizes=(128)
 pad_sizes=(48)
-mask_sizes=(183)
-pruning_times=10
-epochs=200
+pruning_times=1
+epochs=3
 seed=7
-for i in ${!prompt_methods[@]};do
-    log_filename=${experiment_name}/prompt_methods_${prompt_methods[i]}.log
-    python ./experiments/prompt_sparsity/lm_vp_prune.py \
-        --experiment_name ${experiment_name} \
-        --prune_method ${prune_methods[0]} \
-        --label_mapping_mode ${label_mapping_modes[0]} \
-        --prompt_method ${prompt_methods[i]} \
-        --gpu ${gpus[i]} \
-        --input_size ${input_sizes[0]} \
-        --pad_size ${pad_sizes[0]} \
-        --mask_size ${mask_sizes[0]} \
-        --pruning_times ${pruning_times} \
-        --epochs ${epochs} \
-        --seed ${seed} \
-        > $log_filename 2>&1 &
+for i in ${!datasets[@]};do
+    for j in ${!networks[@]};do
+        log_filename=${experiment_name}/test_${datasets[i]}_${networks[j]}.log
+        python ./experiments/prompt_sparsity/main.py \
+            --experiment_name ${experiment_name} \
+            --dataset ${datasets[i]} \
+            --network ${networks[j]} \
+            --prune_method ${prune_methods[0]} \
+            --label_mapping_mode ${label_mapping_modes[0]} \
+            --prompt_method ${prompt_methods[0]} \
+            --gpu ${gpus[0]} \
+            --input_size ${input_sizes[0]} \
+            --pad_size ${pad_sizes[0]} \
+            --pruning_times ${pruning_times} \
+            --epochs ${epochs} \
+            --seed ${seed} \
+            > $log_filename 2>&1 &
+    done
+    wait
 done

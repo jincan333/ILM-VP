@@ -11,11 +11,27 @@ from functools import partial
 
 
 sys.path.append(".")
-from data import cifar10_dataloaders, cifar100_dataloaders
+from data import cifar10_dataloaders, cifar100_dataloaders, prepare_dataset
 from models import ExpansiveVisualPrompt, PadVisualPrompt, FixVisualPrompt, RandomVisualPrompt
 from algorithms import label_mapping_base, generate_label_mapping_by_frequency_ordinary, generate_label_mapping_by_frequency
 __all__ = ['setup_model_dataset', 'set_seed', 'setup_optimizer_scheduler', 'calculate_label_mapping', 'obtain_label_mapping']
 
+
+def get_model(args):
+    # network
+    if args.network == "resnet18":
+        from torchvision.models import resnet18, ResNet18_Weights
+        network = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).to(args.device)
+    elif args.network == "resnet50":
+        from torchvision.models import resnet50, ResNet50_Weights
+        network = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2).to(args.device)
+    elif args.network == "instagram":
+        from torch import hub
+        network = hub.load('facebookresearch/WSL-Images', 'resnext101_32x8d_wsl').to(args.device)
+    else:
+        raise NotImplementedError(f"{args.network} is not supported")
+    
+    return network
 
 def setup_model_dataset(args):
     data_dir = os.path.join(args.data, args.dataset)
