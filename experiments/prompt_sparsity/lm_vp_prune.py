@@ -44,7 +44,7 @@ def main():
     parser.add_argument('--randomcrop', type=int, default=0, help='dataset randomcrop.', choices=[0, 1])
     parser.add_argument('--seed', default=7, type=int, help='random seed')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"])
-    parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
+    parser.add_argument('--dataset', default="ucf101", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results', type=str)

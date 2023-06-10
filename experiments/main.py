@@ -30,6 +30,16 @@ def main():
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"], required=True)
     parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"], required=True)
 
+    # parser.add_argument('--label_mapping_mode', type=str, default='ilm', choices=['flm', 'ilm'])
+    # parser.add_argument('--prompt_method', type=str, default='pad', choices=['pad', 'fix', 'random', 'None'])
+    # parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
+    # parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
+    # parser.add_argument('--prune_method', type=str, default='hydra', choices=['imp', 'omp', 'grasp', 'hydra'])
+    # parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1])
+    # parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"])
+    # parser.add_argument('--dataset', default="ucf101", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
+
+
     parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
     parser.add_argument('--input_size', type=int, default=128, help='image size before prompt, no more than 224', choices=[224, 192, 160, 128, 96, 64, 32])

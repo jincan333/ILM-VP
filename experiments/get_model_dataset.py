@@ -181,19 +181,23 @@ def get_torch_dataset(args):
         class_cnt = 47
 
     elif dataset == 'oxfordpets':
-        full_data = OxfordIIITPet(root = data_path, split = 'train', download = True)
+        full_data = OxfordIIITPet(root = data_path, split = 'trainval', download = True)
         train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(OxfordIIITPet(data_path, split = 'train', transform=train_transform, download=True), train_indices)
-        val_set = Subset(OxfordIIITPet(data_path, split = 'train', transform=test_transform, download=True), val_indices)
+        train_set = Subset(OxfordIIITPet(data_path, split = 'trainval', transform=train_transform, download=True), train_indices)
+        val_set = Subset(OxfordIIITPet(data_path, split = 'trainval', transform=test_transform, download=True), val_indices)
         test_set = OxfordIIITPet(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 37
 
     else:
         raise NotImplementedError(f"{dataset} not supported")
-    
-    train_loader = DataLoader(train_set, batch_size=256, shuffle=True, num_workers=args.workers, pin_memory=True)
-    val_loader = DataLoader(val_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)
-    test_loader = DataLoader(test_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)
+    if dataset not in ['dtd', 'oxfordpets']:
+        train_loader = DataLoader(train_set, batch_size=256, shuffle=True, num_workers=args.workers, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)
+        test_loader = DataLoader(test_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)
+    else:
+        train_loader = DataLoader(train_set, batch_size=64, shuffle=True, num_workers=args.workers, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=64, shuffle=False, num_workers=args.workers, pin_memory=True)
+        test_loader = DataLoader(test_set, batch_size=64, shuffle=False, num_workers=args.workers, pin_memory=True)
     args.class_cnt = class_cnt
     args.normalize = normalize
     print(f'Dataset information: {dataset}\t {len(train_set)} images for training \t {len(val_set)} images for validation\t')

@@ -7,7 +7,7 @@ if [ ! -d ${foler_name} ]; then
 fi
 
 
-datasets=('cifar10')
+datasets=('cifar10' 'cifar100')
 networks=('resnet18')
 is_finetunes=(0)
 label_mapping_modes=('ilm')
@@ -15,7 +15,7 @@ prune_methods=('imp' 'omp' 'hydra')
 prompt_methods=('pad')
 optimizers=('adam')
 lr_schedulers=('multistep')
-gpus=(7 6 5 4)
+gpus=(7 6 5)
 input_sizes=(128)
 pad_sizes=(48)
 pruning_times=10

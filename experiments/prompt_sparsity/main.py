@@ -16,6 +16,7 @@ from cfg import *
 from parser_func import save_args
 from utils import set_seed, setup_optimizer_scheduler, calculate_label_mapping, obtain_label_mapping
 from get_model_dataset import get_torch_dataset, get_model
+from data import prepare_dataset
 
 from pruner import extract_mask, prune_model_custom, check_sparsity, remove_prune, pruning_model
 from core import Masking, CosineDecay
@@ -48,7 +49,7 @@ def main():
     parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1])
     parser.add_argument('--is_adjust_linear_head', type=int, default=0, choices=[0, 1])
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"])
-    parser.add_argument('--dataset', default="gtsrb", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
+    parser.add_argument('--dataset', default="ucf101", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results', type=str)
@@ -130,7 +131,7 @@ def main():
     print('Save path: ',save_path)
     # Network and Dataset
     network = get_model(args)
-    train_loader, val_loader, test_loader = get_torch_dataset(args)
+    train_loader, val_loader, test_loader = prepare_dataset(args)
     if args.is_adjust_linear_head:
         network.fc = torch.nn.Linear(512, args.class_cnt).to(device)
     if args.prune_method == 'hydra':
@@ -287,7 +288,7 @@ def main():
         else:
             network.load_state_dict(initalization)
         # Optimizer, Schedule and Visual Prompt Initialize
-        optimizer, scheduler, visual_prompt = setup_optimizer_scheduler(network, configs, device, args)
+        optimizer, scheduler, visual_prompt = setup_optimizer_scheduler(network, device, args)
         # Save for the next iteration
         test_acc, test_loss = evaluate(test_loader, network, label_mapping, visual_prompt)
         print(f'Accuracy without train: {test_acc:.4f}, loss {test_loss:.4f}')
