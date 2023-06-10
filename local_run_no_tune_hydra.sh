@@ -36,7 +36,7 @@ fi
 # datasets=("cifar100" "dtd" "flowers102" "ucf101" "food101" "gtsrb" "svhn" "eurosat" "oxfordpets" "stanfordcars" "sun397")
 # datasets=("ucf101" "eurosat" "oxfordpets" "stanfordcars" "sun397") 
 networks=('resnet18' 'resnet50')
-datasets=("dtd" "flowers102" "food101" "gtsrb" "svhn")
+datasets=('cifar10' 'cifar100')
 is_finetunes=(0)
 label_mapping_modes=('ilm')
 prune_methods=('hydra')
