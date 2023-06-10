@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='no_tune'
+experiment_name='visual_prompt'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -12,7 +12,7 @@ networks=('resnet18')
 is_finetunes=(0)
 label_mapping_modes=('ilm')
 prune_methods=('imp' 'omp' 'hydra')
-prompt_methods=(None)
+prompt_methods=('pad')
 optimizers=('adam')
 lr_schedulers=('multistep')
 gpus=(7 6 5 4)

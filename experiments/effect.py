@@ -1,14 +1,9 @@
 import torch
-from torch import nn
-from torch.nn import functional as F
-import argparse
-from torch.nn.utils import prune
-from functools import partial
 import os
 
 
 if __name__ == '__main__':
-    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/ablation_no_sigmoid_exp/VPpad/PRUNEimp/LMilm/LPFalse/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE128_48_156/SEED7/GPU5/DENSITY0.8'
+    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/ablation_prompt_methods_exp/VPrandom/PRUNEimp/LMilm/LPFalse/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE128_48_183/SEED7/GPU3/DENSITY0.8'
     ckpt_path = []
     acc = []
     for i in range(0,10):
@@ -18,6 +13,10 @@ if __name__ == '__main__':
     print(acc)
 
 # 0609
+# ablation_prompt_methods_exp
+fix = [0.676, 0.666, 0.6682, 0.6465, 0.6557, 0.6449, 0.6284, 0.645, 0.6358, 0.6351]
+random = [0.5752, 0.5892, 0.5831, 0.5999, 0.6031, 0.5896, 0.5866, 0.5687, 0.5706, 0.5824]
+
 # ablation_no_sigmoid_exp
 no_sigmoid = [0.7628, 0.8205, 0.7996, 0.7786, 0.6982, 0.6898, 0.6721, 0.6788, 0.6593, 0.6578]
 
@@ -142,99 +141,5 @@ pad_48 = [0.6256, 0.6252, 0.6327, 0.6248, 0.6276, 0.6132, 0.6179, 0.6032, 0.6079
 pad_64 = [0.6273, 0.6332, 0.6246, 0.6243, 0.6259, 0.6268, 0.6215, 0.6224, 0.6175, 0.6117]
 pad_80 = [0.6356, 0.6414, 0.6382, 0.6296, 0.6417, 0.628, 0.6266, 0.6269, 0.6227, 0.6298]
 pad_96 = [0.6442, 0.6357, 0.6494, 0.6326, 0.6388, 0.636, 0.6266, 0.6288, 0.6333, 0.624]
-
-
-
-
-
-
-# from algorithms import label_mapping_base, generate_label_mapping_by_frequency_ordinary
-# from parser import add_args, load_args
-# from utils import set_seed, setup_model_dataset
-# from pruner import 
-
-# def main(ckpt_path):
-#     # Parser
-#     parser = argparse.ArgumentParser(description='Evaluate Model Effect')
-#     global args
-#     args = parser.parse_args()
-#     # Device
-#     device = torch.device(f"cuda:{args.gpu}")
-#     torch.cuda.set_device(int(args.gpu))
-#     set_seed(args.seed)
-#     network, train_loader, val_loader, test_loader = setup_model_dataset(args)
-#     network.cuda()
-
-#     ckpt = torch.load(ckpt_path, map_location = torch.device('cuda:'+str(args.gpu)))
-#     visual_prompt = ckpt['visual_prompt']
-#     mapping_sequence = ckpt['mapping_sequence']
-
-#     ,"optimizer_dict": optimizer.state_dict()
-#     ,'scheduler': scheduler.state_dict()
-#     ,'visual_prompt': visual_prompt.state_dict() if visual_prompt else None
-#     ,'mapping_sequence': mapping_sequence if args.label_mapping_mode else None
-#     ,"epoch": epoch
-#     ,"val_best_acc": best_acc
-#     ,'all_results': all_results
-#     ,'init_weight': initalization
-#     ,'state': state
-
-#         test_acc, test_loss = evaluate(test_loader, network, label_mapping)
-#         acc_list.append(test_acc)
-#         print(f'[{i}] Checkpoint path: {ckpt_path}\t'
-#             ,f'Accuracy:{test_acc:.4f}'
-#         )
-#     print('Accuracy list: ', acc_list)
-
-
-# def load_ckpt(network, ckpt_path):
-#     checkpoint = torch.load(ckpt_path, map_location = torch.device('cuda:'+str(args.gpu)))
-
-#     if args.is_prune:
-#         current_mask = extract_mask(checkpoint['state_dict'])
-#         prune_model_custom(network, current_mask)
-#         check_sparsity(network)
-#         network.load_state_dict(checkpoint['state_dict'])
-#         # adding an extra forward process to enable the masks
-#         x_rand = torch.rand(1,3,args.input_size, args.input_size).cuda()
-#         network.eval()
-#         with torch.no_grad():
-#             network(x_rand)
-#     else:
-#         network.load_state_dict(checkpoint['state_dict'])
-
-#     return network
-
-
-
-# def evaluate(val_loader, model, label_mapping):
-#     # switch to evaluate mode
-#     model.eval()
-#     total_num = 0
-#     true_num = 0
-#     loss_sum = 0
-#     for i, (x, y) in enumerate(val_loader):
-#         x = x.cuda()
-#         y = y.cuda()
-#         # compute output
-#         with torch.no_grad():
-#             if label_mapping:
-#                 fx = label_mapping(model(x))
-#             else:
-#                 fx = model(x)
-#             loss = F.cross_entropy(fx, y, reduction='mean')
-#         # measure accuracy and record loss
-#         total_num += y.size(0)
-#         true_num += torch.argmax(fx, 1).eq(y).float().sum().item()
-#         test_acc = true_num / total_num
-#         loss_sum += loss.item() * fx.size(0)
-#         if i % args.print_freq == 0:
-#             print(f'evaluate: [{i}/{len(val_loader)}]\t'
-#                 f'Loss {loss_sum:.4f}\t'
-#                 f'Accuracy {test_acc:.4f}\t'
-#             )
-#     print(f'evaluate_accuracy {test_acc:.3f}')
-
-#     return test_acc, loss_sum
 
 

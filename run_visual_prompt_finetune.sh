@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='no_tune'
+experiment_name='visual_prompt_finetune'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -9,12 +9,12 @@ fi
 
 datasets=('cifar10')
 networks=('resnet18')
-is_finetunes=(0)
-label_mapping_modes=('ilm')
+is_finetunes=(1)
+label_mapping_modes=('flm')
 prune_methods=('imp' 'omp' 'hydra')
-prompt_methods=(None)
-optimizers=('adam')
-lr_schedulers=('multistep')
+prompt_methods=('pad')
+optimizers=('sgd')
+lr_schedulers=('cosine')
 gpus=(7 6 5 4)
 input_sizes=(128)
 pad_sizes=(48)

@@ -1,54 +1,48 @@
 import os
-os.environ['TORCH_USE_CUDA_DSA'] = '1'
 import torch
 from torch.nn import functional as F
-from torch.nn import Conv2d, Linear
 from torch.cuda.amp import autocast, GradScaler
 from torch.utils.tensorboard import SummaryWriter
 import argparse
 import time
 from matplotlib import pyplot as plt
 import copy
+import warnings
 
-import sys
-sys.path.append(".")
-from cfg import *
-from parser_func import save_args
-from utils import set_seed, setup_optimizer_scheduler, calculate_label_mapping, obtain_label_mapping
+from utils import set_seed, setup_optimizer_and_prompt, calculate_label_mapping, obtain_label_mapping, save_args
 from get_model_dataset import get_torch_dataset, get_model
-
 from pruner import extract_mask, prune_model_custom, check_sparsity, remove_prune, pruning_model
 from core import Masking, CosineDecay
-from hydra import get_layers, replace_layers, setPruneRate, initialize_scaled_score
+from hydra import set_hydra_prune_rate, set_hydra_network
 
-def main():
-    
+
+def main():    
     parser = argparse.ArgumentParser(description='PyTorch Visual Prompt + Prune + Label Mapping Experiments')
     global args
 
     # Frequently change
-    parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment, the save directory will be save_dir+exp_name')
+    parser.add_argument('--label_mapping_mode', type=str, default='ilm', choices=['flm', 'ilm'], required=True)
+    parser.add_argument('--prompt_method', type=str, default='pad', choices=['pad', 'fix', 'random', 'None'], required=True)
+    parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'], required=True)
+    parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'], required=True)
+    parser.add_argument('--prune_method', type=str, default='hydra', choices=['imp', 'omp', 'grasp', 'hydra'], required=True)
+    parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1], required=True)
+    parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"], required=True)
+    parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"], required=True)
+
+    parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
-    parser.add_argument('--label_mapping_mode', type=str, default='ilm', help='label mapping methods: rlm, flm, ilm, None', choices=['flm', 'ilm', 'rlm', None, 'None'])
-    parser.add_argument('--prompt_method', type=str, default='pad', help='None, expand, pad, fix, random', choices=['expand', 'pad', 'fix', 'random', None, 'None'])
     parser.add_argument('--input_size', type=int, default=128, help='image size before prompt, no more than 224', choices=[224, 192, 160, 128, 96, 64, 32])
     parser.add_argument('--pad_size', type=int, default=48, help='only for padprompt, no more than 112, parameters cnt 4*pad**2+896pad', choices=[0, 16, 32, 48, 64, 80, 96, 112])
-    parser.add_argument('--mask_size', type=int, default=156, help='only for fixadd and randomadd, no more than 224, parameters cnt mask**2', choices=[115, 156, 183, 202, 214, 221, 224])
-    parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use. Default: sgd. Options: sgd, adam.', choices=['sgd', 'adam'])
-    parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy. Default: cosine, multistep', choices=['cosine', 'multistep'])
-    parser.add_argument('--epochs', default=200, type=int, help='number of total epochs to run')
-    parser.add_argument('--prune_method', type=str, default='hydra', help='prune methods: imp, omp, grasp, hydra', choices=['imp', 'omp', 'grasp', 'hydra'])
+    parser.add_argument('--mask_size', type=int, default=183, help='only for fixadd and randomadd, no more than 224, parameters cnt mask**2', choices=[115, 156, 183, 202, 214, 221, 224])
+    parser.add_argument('--epochs', default=200, type=int, help='number of total eopchs to run')
     parser.add_argument('--pruning_times', default=10, type=int, help='overall times of pruning')
     parser.add_argument('--density', type=float, default=0.80, help='The density of the overall sparse network.')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
     parser.add_argument('--hydra_scaled_init', type=int, default=1, help='whether use scaled initialization for hydra or not.', choices=[0, 1])
-    parser.add_argument('--train_model', type=int, default=1, help='whether training the model.', choices=[0, 1])
     parser.add_argument('--flm_loc', type=str, default='pre', help='pre-train flm or after-prune flm.', choices=['pre', 'after'])
     parser.add_argument('--randomcrop', type=int, default=0, help='dataset randomcrop.', choices=[0, 1])
-    parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1])
     parser.add_argument('--is_adjust_linear_head', type=int, default=0, choices=[0, 1])
-    parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"])
-    parser.add_argument('--dataset', default="gtsrb", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results', type=str)
@@ -121,7 +115,7 @@ def main():
     torch.cuda.set_device(int(args.gpu))
     set_seed(args.seed)
     # Save Path
-    save_path = os.path.join(args.save_dir, args.network, args.dataset, args.experiment_name, 'VP'+str(args.prompt_method), 'FF'+str(args.is_finetune), 'LP'+str(args.is_linear_head), 
+    save_path = os.path.join(args.save_dir, args.experiment_name, args.network, args.dataset, 'VP'+str(args.prompt_method), 'FF'+str(args.is_finetune), 'LP'+str(args.is_adjust_linear_head), 
                 'PRUNE'+str(args.prune_method), 'LM'+str(args.label_mapping_mode), args.optimizer, 'LR'+str(args.lr), args.lr_scheduler, 'EPOCHS'+str(args.epochs), 
                 'IMAGESIZE'+str(args.input_size)+'_'+str(args.pad_size)+'_'+str(args.mask_size), 'SEED'+str(args.seed), 'GPU'+str(args.gpu), 'DENSITY'+str(args.k))
     os.makedirs(save_path, exist_ok=True)
@@ -132,18 +126,12 @@ def main():
     network = get_model(args)
     train_loader, val_loader, test_loader = get_torch_dataset(args)
     if args.is_adjust_linear_head:
-        network.fc = torch.nn.Linear(512, args.class_cnt).to(device)
+        network.fc = torch.nn.Linear(512, args.class_cnt).to(args.device)
     if args.prune_method == 'hydra':
-        cl, ll = get_layers(args.layer_type)
-        network=replace_layers(network,Conv2d,cl,args.ChannelPrune)
-        network=replace_layers(network,Linear,ll,args.ChannelPrune)
-        network.to(device)
-        if args.hydra_scaled_init:
-            print('Using hydra scaled score initialization\n')
-            initialize_scaled_score(network)
+        network = set_hydra_network(network, args)
     print(network)
     # Optimizer and Scheduler
-    optimizer, scheduler, visual_prompt = setup_optimizer_scheduler(network, device, args)
+    optimizer, scheduler, visual_prompt = setup_optimizer_and_prompt(network, args)
     # Label Mapping
     label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
     # Prune initiate type
@@ -159,10 +147,10 @@ def main():
     all_results['no_train_acc'] = test_acc
     checkpoint = {
             'state_dict': network.state_dict()
-            ,"optimizer_dict": optimizer.state_dict()
-            ,'scheduler': scheduler.state_dict()
+            ,"optimizer_dict": optimizer.state_dict() if optimizer else None
+            ,'scheduler': scheduler.state_dict() if scheduler else None
             ,'visual_prompt': visual_prompt.state_dict() if visual_prompt else None
-            ,'mapping_sequence': mapping_sequence if args.label_mapping_mode else None
+            ,'mapping_sequence': mapping_sequence
             ,"epoch": 0
             ,"val_best_acc": 0
             ,'ckpt_test_acc': test_acc
@@ -173,16 +161,22 @@ def main():
     torch.save(checkpoint, os.path.join(save_path, str(start_state)+'best.pth'))
     if args.prune_method in ('omp', 'grasp', 'hydra'):
         start_state+=1
+    # if optimizer=None, it means there are no need to finetune or visual prompt
+    if not optimizer:
+        epochs = 1
+    else:
+        epochs = args.epochs * args.multiplier
     print('######################################## Start Standard Training Iterative Pruning ########################################')
     for state in range(start_state, args.pruning_times):
         print('******************************************')
         print('pruning state', state)
         print('******************************************')
         mask = None
-        for epoch in range(args.epochs * args.multiplier):
-            print('lr: ', optimizer.state_dict()['param_groups'][0]['lr'])
+        for epoch in range(epochs):
+            if optimizer:
+                print('lr: ', optimizer.state_dict()['param_groups'][0]['lr'])
             if epoch == args.warmup:
-            # OMP, Grasp Prune
+                # OMP, GraSP, Hydra Prune
                 if args.prune_method in ('omp', 'grasp') and state > 0:
                     decay = CosineDecay(args.death_rate, len(train_loader)*(args.epochs*args.multiplier))
                     mask = Masking(optimizer, death_rate=args.death_rate, death_mode=args.death, death_rate_decay=decay, growth_mode=args.growth,
@@ -190,7 +184,7 @@ def main():
                     mask.add_module(network, label_mapping=label_mapping, sparse_init=args.prune_method, density=(args.density)**state)
                 elif args.prune_method == 'hydra' and state > 0:
                     print('Hydra Density Setting:', (args.density)**state)
-                    setPruneRate(network, cl, ll, (args.density)**state)
+                    set_hydra_prune_rate(network, (args.density)**state, args)
                 else:
                     pass
                 if args.flm_loc == 'after':
@@ -199,12 +193,12 @@ def main():
             # Train
             if args.label_mapping_mode == 'ilm' and epoch % args.label_mapping_interval == 0:
                 label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
-            if args.train_model:
+            if optimizer:
                 train_acc, train_loss = train(train_loader, network, optimizer, epoch, label_mapping, visual_prompt, mask)
+                scheduler.step()
             else:
-                print('Model not training!!!\n')
+                warnings.warn('\n*********No Need For Model to train!!!*********\n')
                 train_acc, train_loss = 0, 10000
-            scheduler.step()
             logger.add_scalar("train/acc", train_acc, epoch)
             logger.add_scalar("train/loss", train_loss, epoch)
 
@@ -218,10 +212,10 @@ def main():
             # Save CKPT
             checkpoint = {
                 'state_dict': network.state_dict()
-                ,"optimizer_dict": optimizer.state_dict()
-                ,'scheduler': scheduler.state_dict()
+                ,"optimizer_dict": optimizer.state_dict() if optimizer else None
+                ,'scheduler': scheduler.state_dict() if scheduler else None
                 ,'visual_prompt': visual_prompt.state_dict() if visual_prompt else None
-                ,'mapping_sequence': mapping_sequence if args.label_mapping_mode else None
+                ,'mapping_sequence': mapping_sequence
                 ,"epoch": epoch
                 ,"val_best_acc": best_acc
                 ,'ckpt_test_acc': 0
@@ -287,17 +281,17 @@ def main():
         else:
             network.load_state_dict(initalization)
         # Optimizer, Schedule and Visual Prompt Initialize
-        optimizer, scheduler, visual_prompt = setup_optimizer_scheduler(network, configs, device, args)
+        optimizer, scheduler, visual_prompt = setup_optimizer_and_prompt(network, args)
         # Save for the next iteration
         test_acc, test_loss = evaluate(test_loader, network, label_mapping, visual_prompt)
         print(f'Accuracy without train: {test_acc:.4f}, loss {test_loss:.4f}')
         all_results['no_train_acc'] = test_acc
         checkpoint = {
             'state_dict': network.state_dict()
-            ,"optimizer_dict": optimizer.state_dict()
-            ,'scheduler': scheduler.state_dict()
+            ,"optimizer_dict": optimizer.state_dict() if optimizer else None
+            ,'scheduler': scheduler.state_dict() if scheduler else None
             ,'visual_prompt': visual_prompt.state_dict() if visual_prompt else None
-            ,'mapping_sequence': mapping_sequence if args.label_mapping_mode else None
+            ,'mapping_sequence': mapping_sequence
             ,"epoch": 0
             ,"val_best_acc": 0
             ,'ckpt_test_acc': test_acc

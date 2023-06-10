@@ -2,3 +2,5 @@ __pycache__
 dataset/
 results/
 main_test/
+logs/
+ablation_vp_search_exp/
