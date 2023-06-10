@@ -26,24 +26,24 @@
 
 # test dataset and model 
 
-experiment_name='ff_model_dataset'
+experiment_name='vp_model_dataset'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
 fi
 
-
+# ucf101   eurosat   oxfordpets   stanfordcars   sun397
 # datasets=("cifar100" "dtd" "flowers102" "ucf101" "food101" "gtsrb" "svhn" "eurosat" "oxfordpets" "stanfordcars" "sun397")
-# networks=('resnet18')
+# datasets=("ucf101" "eurosat" "oxfordpets" "stanfordcars" "sun397") 
 networks=('resnet18' 'resnet50')
-datasets=("dtd" "flowers102" "food101" "gtsrb" "svhn")
-is_finetunes=(1)
-label_mapping_modes=('flm')
+datasets=('cifar10' 'cifar100')
+is_finetunes=(0)
+label_mapping_modes=('ilm')
 prune_methods=('imp' 'omp' 'hydra')
-prompt_methods=('pad' 'None')
-optimizers=('sgd')
-lr_schedulers=('cosine')
-gpus=(0 1 2)
+prompt_methods=('pad')
+optimizers=('adam')
+lr_schedulers=('multistep')
+gpus=(7 6 5)
 input_sizes=(128)
 pad_sizes=(48)
 pruning_times=10
@@ -81,3 +81,124 @@ for j in ${!networks[@]};do
     done
     wait
 done
+
+
+
+
+# test prompt or prompt+finntune  
+
+# experiment_name='test_prompt'
+# foler_name=logs/${experiment_name}
+# if [ ! -d ${foler_name} ]; then
+#     mkdir -p ${foler_name}
+# fi
+
+
+# datasets=('cifar10')
+# networks=('resnet18')
+# is_finetunes=(0 1)
+# label_mapping_modes=('ilm')
+# prune_methods=('imp')
+# prompt_methods=('pad' 'None')
+# optimizers=('sgd')
+# lr_schedulers=('cosine')
+# gpus=(0 0 0 0 0 0)
+# input_sizes=(128)
+# pad_sizes=(48)
+# pruning_times=2
+# epochs=3
+# seed=7
+# for i in ${!datasets[@]};do
+#     for j in ${!networks[@]};do
+#         for m in ${!is_finetunes[@]};do
+#             for k in ${!label_mapping_modes[@]};do
+#                 for l in ${!prune_methods[@]};do
+#                     log_filename=${foler_name}/test_${datasets[i]}_${networks[j]}_${label_mapping_modes[k]}_${prune_methods[l]}_${is_finetunes[m]}.log
+#                     python ./experiments/main.py \
+#                         --experiment_name ${experiment_name} \
+#                         --dataset ${datasets[i]} \
+#                         --network ${networks[j]} \
+#                         --label_mapping_mode ${label_mapping_modes[k]} \
+#                         --prune_method ${prune_methods[l]} \
+#                         --is_finetune ${is_finetunes[m]} \
+#                         --prompt_method ${prompt_methods[0]} \
+#                         --optimizer ${optimizers[0]} \
+#                         --lr_scheduler ${lr_schedulers[0]} \
+#                         --gpu ${gpus[l]} \
+#                         --input_size ${input_sizes[0]} \
+#                         --pad_size ${pad_sizes[0]} \
+#                         --pruning_times ${pruning_times} \
+#                         --epochs ${epochs} \
+#                         --seed ${seed} \
+#                         > $log_filename 2>&1 &
+#                 done
+#                 wait
+#             done
+#             wait
+#         done
+#         wait
+#     done
+#     wait
+# done
+
+
+
+
+# test no prompt finntune or not finetuen
+
+# experiment_name='test_no_prompt'
+# foler_name=logs/${experiment_name}
+# if [ ! -d ${foler_name} ]; then
+#     mkdir -p ${foler_name}
+# fi
+
+
+# datasets=('cifar10')
+# networks=('resnet18')
+# is_finetunes=(0 1)
+# label_mapping_modes=('flm' 'ilm')
+# prune_methods=('hydra')
+
+# prompt_methods=(None)
+# optimizers=('sgd')
+# lr_schedulers=('cosine')
+# gpus=(5 6 7 0 1 2)
+# input_sizes=(128)
+# pad_sizes=(48)
+# pruning_times=2
+# epochs=2
+# seed=7
+# lr=0.01
+# for i in ${!datasets[@]};do
+#     for j in ${!networks[@]};do
+#         for m in ${!is_finetunes[@]};do
+#             for k in ${!label_mapping_modes[@]};do
+#                 for l in ${!prune_methods[@]};do
+#                     log_filename=${foler_name}/test_${datasets[i]}_${networks[j]}_${label_mapping_modes[k]}_${prune_methods[l]}_${is_finetunes[m]}.log
+#                     python ./experiments/main.py \
+#                         --experiment_name ${experiment_name} \
+#                         --dataset ${datasets[i]} \
+#                         --network ${networks[j]} \
+#                         --label_mapping_mode ${label_mapping_modes[k]} \
+#                         --prune_method ${prune_methods[l]} \
+#                         --is_finetune ${is_finetunes[m]} \
+#                         --prompt_method ${prompt_methods[0]} \
+#                         --optimizer ${optimizers[0]} \
+#                         --lr_scheduler ${lr_schedulers[0]} \
+#                         --gpu ${gpus[l]} \
+#                         --input_size ${input_sizes[0]} \
+#                         --pad_size ${pad_sizes[0]} \
+#                         --pruning_times ${pruning_times} \
+#                         --epochs ${epochs} \
+#                         --seed ${seed} \
+#                         --lr ${lr} \
+#                         > $log_filename 2>&1 &
+#                 done
+#                 wait
+#             done
+#             wait
+#         done
+#         wait
+#     done
+#     wait
+# done

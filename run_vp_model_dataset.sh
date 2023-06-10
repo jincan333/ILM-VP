@@ -65,7 +65,7 @@ for j in ${!networks[@]};do
                         --prompt_method ${prompt_methods[n]} \
                         --optimizer ${optimizers[0]} \
                         --lr_scheduler ${lr_schedulers[0]} \
-                        --gpu ${gpus[n]} \
+                        --gpu ${gpus[l]} \
                         --input_size ${input_sizes[0]} \
                         --pad_size ${pad_sizes[0]} \
                         --pruning_times ${pruning_times} \

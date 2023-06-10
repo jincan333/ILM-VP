@@ -1,16 +1,19 @@
 import torch
 import os
+import pickle
 
 
 if __name__ == '__main__':
-    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/ablation_prompt_methods_exp/VPrandom/PRUNEimp/LMilm/LPFalse/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE128_48_183/SEED7/GPU3/DENSITY0.8'
-    ckpt_path = []
-    acc = []
-    for i in range(0,10):
-        ckpt_path.append(os.path.join(dir_path, str(i) + 'best.pth'))
-    for path in ckpt_path:
-        acc.append(torch.load(path)['ckpt_test_acc'])
-    print(acc)
+    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/VPFalse/PRUNEimp/LMflm/LPFalse/sgd/LR0.01/cosine/EPOCHS200/IMAGESIZE32/GPU5/ff_pruneargs.pkl'
+    file = pickle.load(dir_path)
+    print(file)
+    # ckpt_path = []
+    # acc = []
+    # for i in range(0,10):
+    #     ckpt_path.append(os.path.join(dir_path, str(i) + 'best.pth'))
+    # for path in ckpt_path:
+    #     acc.append(torch.load(path)['ckpt_test_acc'])
+    # print(acc)
 
 # 0609
 # ablation_prompt_methods_exp
