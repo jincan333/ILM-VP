@@ -8,10 +8,10 @@ import os
 
 
 if __name__ == '__main__':
-    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/ablation_lm_methods_exp/VPpad/PRUNEimp/LMflm/LPFalse/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE128_48_156/SEED7/GPU2/DENSITY0.8'
+    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/ablation_no_sigmoid_exp/VPpad/PRUNEimp/LMilm/LPFalse/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE128_48_156/SEED7/GPU5/DENSITY0.8'
     ckpt_path = []
     acc = []
-    for i in range(0,8):
+    for i in range(0,10):
         ckpt_path.append(os.path.join(dir_path, str(i) + 'best.pth'))
     for path in ckpt_path:
         acc.append(torch.load(path)['ckpt_test_acc'])
@@ -19,15 +19,15 @@ if __name__ == '__main__':
 
 # 0609
 # ablation_lm_methods_exp
-flm = [0.7425, 0.7348, 0.7421, 0.7325, 0.728, 0.7253, 0.718, 0.6968]
+flm = [0.7425, 0.7348, 0.7421, 0.7325, 0.728, 0.7253, 0.718, 0.6968, 0.694, 0.666]
 
 # ablation_hydra_init_exp
-init_1 = [0.7948, 0.9407, 0.9319, 0.9148, 0.8877]
-init_0 = [0.7948, 0.9398, 0.9238, 0.9092, 0.8918]
+init_1 = [0.7948, 0.9407, 0.9319, 0.9148, 0.8877, 0.8754, 0.8754, 0.8641, 0.8549, 0.8427]
+init_0 = [0.7948, 0.9398, 0.9238, 0.9092, 0.8918, 0.8681, 0.8674, 0.8614, 0.8569, 0.8484]
 
 # ablation_randomcrop_exp
-crop_0=[0.8353, 0.8111, 0.826, 0.7954, 0.7397, 0.6795, 0.6741]
-crop_1=[0.8358, 0.8212, 0.8183, 0.7219, 0.7391, 0.6887, 0.6877]
+crop_0=[0.8353, 0.8111, 0.826, 0.7954, 0.7397, 0.6795, 0.6741, 0.6481, 0.6619, 0.6377]
+crop_1=[0.8358, 0.8212, 0.8183, 0.7219, 0.7391, 0.6887, 0.6877, 0.6386, 0.6599, 0.6235]
 
 # 0608
 # ablation_hydra_init_exp

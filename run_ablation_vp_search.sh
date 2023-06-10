@@ -28,7 +28,7 @@ fi
 prune_methods=('imp')
 label_mapping_modes=('ilm')
 prompt_methods=('pad')
-gpus=(2 3 4 5 5 4 3)
+gpus=(6 5 4 3 6 5 6)
 input_sizes=(64 32)
 pad_sizes=(16 32 48 64 80 96 112)
 pruning_times=1
