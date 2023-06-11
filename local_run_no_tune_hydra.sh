@@ -26,7 +26,7 @@
 
 # test dataset and model 
 
-experiment_name='vp_model_dataset'
+experiment_name='no_tune_model_dataset'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}

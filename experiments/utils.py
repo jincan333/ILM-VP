@@ -7,6 +7,7 @@ import random
 from functools import partial
 import warnings
 import pickle
+import json
 
 from visual_prompt import ExpansiveVisualPrompt, PadVisualPrompt, FixVisualPrompt, RandomVisualPrompt
 from label_mapping import label_mapping_base, generate_label_mapping_by_frequency, generate_label_mapping_by_frequency_ordinary
@@ -139,7 +140,7 @@ def obtain_label_mapping(mapping_sequence):
 
     return label_mapping
 
-
+# TODO
 def save_args(args, file_path):
     with open(file_path, 'wb') as file:
         pickle.dump(args, file)

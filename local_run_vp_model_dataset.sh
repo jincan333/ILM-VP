@@ -54,7 +54,7 @@ for j in ${!networks[@]};do
         for m in ${!is_finetunes[@]};do
             for n in ${!prompt_methods[@]};do
                 for l in ${!prune_methods[@]};do
-                    log_filename=${foler_name}/test_${datasets[i]}_${networks[j]}_${prune_methods[l]}_${is_finetunes[m]}_${prompt_methods[n]}.log
+                    log_filename=${foler_name}/${datasets[i]}_${networks[j]}_${prune_methods[l]}_${is_finetunes[m]}_${prompt_methods[n]}.log
                     python ./experiments/main.py \
                         --experiment_name ${experiment_name} \
                         --dataset ${datasets[i]} \
