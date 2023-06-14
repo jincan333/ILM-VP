@@ -3,31 +3,194 @@ import pandas as pd
 import os
 import datetime
 
-# 0610
-# ablation hydra init
-scaled_init = [0.8353, 0.9407, 0.9319, 0.9148, 0.8877, 0.8754, 0.8754, 0.8641, 0.8549, 0.8427]
-scratch = [0.8353, 0.9398, 0.9238, 0.9092, 0.8918, 0.8681, 0.8674, 0.8614, 0.8569, 0.8484]
+# 0614
+# ablation lm_interval
+interval_1 = [0.8353, 0.8111, 0.826, 0.7954, 0.7397, 0.6795, 0.6741, 0.6481, 0.6619, 0.6377]
+interval_5 = [0.7668, 0.8191, 0.8234, 0.7646, 0.7447, 0.7305, 0.6974, 0.6646, 0.6512, 0.6449]
+interval_10 = [0.7779, 0.8205, 0.7903, 0.7408, 0.7363, 0.7028, 0.6532, 0.6344, 0.6429, 0.6205]
+interval_15 = [0.7737, 0.8289, 0.7532, 0.7599, 0.7362, 0.6862, 0.683, 0.6598, 0.6308, 0.6278]
+interval_20 = [0.7503, 0.7127, 0.7377, 0.7127, 0.667, 0.6458, 0.6462, 0.6547, 0.6393, 0.6136]
+flm = [0.7425, 0.7348, 0.7421, 0.7325, 0.728, 0.7253, 0.718, 0.6968, 0.694, 0.666]
 
 save_dir = os.path.join('results/ablation_plot', str(datetime.datetime.now().date()))
-image_name = 'Hydra Score Initialization - Accuracy'
+image_name = 'Label Mapping Interval'
 os.makedirs(save_dir, exist_ok=True)
 results = {
     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728]]
-    ,'scaled_init': [_*100 for _ in scaled_init]
-    ,'scratch': [_*100 for _ in scratch]
+    ,'interval_1': [_*100 for _ in interval_1]
+    ,'interval_5': [_*100 for _ in interval_5]
+    ,'interval_10': [_*100 for _ in interval_10]
+    ,'interval_15': [_*100 for _ in interval_15]
+    ,'interval_20': [_*100 for _ in interval_20]
+    ,'flm': [_*100 for _ in flm]
 }
 for k in results.keys():
     if k != 'density':
-        plt.plot(results['density'], results[k], marker='o', markersize=4, label=k)
+        plt.plot(results['density'][:len(results[k])], results[k], marker='o', markersize=4, label=k)
 
+plt.title(image_name)
 plt.xlabel('Weight Density(%)')
 plt.ylabel('Accuracy(%)')
-plt.legend(loc=2)
+plt.legend(loc=4, prop={'size':8})
 plt.grid()
-plt.savefig(os.path.join(save_dir, image_name+'.png'))
+plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
 plt.close()
 result_df = pd.DataFrame(results)
 result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+
+
+
+# 0612
+# resnet18+cifar100
+# notune_imp = [0.2447, 0.2384, 0.2295, 0.2239, 0.2085, 0.1332, 0.0806, 0.0445, 0.0398, 0.0409]
+# notune_omp = [0.2411, 0.245, 0.2266, 0.2292, 0.1911, 0.1134, 0.0653, 0.0375, 0.0443, 0.0293]
+# vp_hydra = [0.4546, 0.7673, 0.7442, 0.7063, 0.6638, 0.6385, 0.6319, 0.6178]
+# vp_imp = [0.4546, 0.4602, 0.4688, 0.4574, 0.4515, 0.4321, 0.4021, 0.3656]
+# vp_omp = [0.4546, 0.4709, 0.4646, 0.4523, 0.4478, 0.4342, 0.3843, 0.3568]
+
+
+# save_dir = os.path.join('results/superior_performance', str(datetime.datetime.now().date()))
+# image_name = 'ResNet18+CIFAR100'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728]]
+#     ,'notune_imp': [_*100 for _ in notune_imp]
+#     ,'notune_omp': [_*100 for _ in notune_omp]
+#     ,'vp_hydra': [_*100 for _ in vp_hydra]
+#     ,'vp_imp': [_*100 for _ in vp_imp]
+#     ,'vp_omp': [_*100 for _ in vp_omp]
+# }
+# for k in results.keys():
+#     if k != 'density':
+#         plt.plot(results['density'][:len(results[k])], results[k], marker='o', markersize=4, label=k)
+
+# plt.title(image_name)
+# plt.xlabel('Weight Density(%)')
+# plt.ylabel('Accuracy(%)')
+# plt.legend(loc=4, prop={'size':8})
+# plt.grid()
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
+# plt.close()
+# result_df = pd.DataFrame(results)
+# result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+
+
+# ablation ff vs vp+ff
+# ff_hydra = [0.96, 0.9628, 0.9592, 0.9544, 0.9475, 0.9383, 0.9276, 0.9246, 0.9183, 0.9201]
+# ff_imp = [0.96, 0.9637, 0.96, 0.9627, 0.9639, 0.9629, 0.9608, 0.9594, 0.9589, 0.9603]
+# vp_ff_hydra = [0.9427, 0.8959, 0.895, 0.8872, 0.8827]
+# vp_ff_imp = [0.9427, 0.9416, 0.9418, 0.9406]
+
+# save_dir = os.path.join('results/ablation_plot', str(datetime.datetime.now().date()))
+# image_name = 'FF vs VP+FF - Accuracy'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728]]
+#     ,'ff_hydra': [_*100 for _ in ff_hydra]
+#     ,'ff_imp': [_*100 for _ in ff_imp]
+#     ,'vp_ff_hydra': [_*100 for _ in vp_ff_hydra]
+#     ,'vp_ff_imp': [_*100 for _ in vp_ff_imp]
+# }
+# for k in results.keys():
+#     if k != 'density':
+#         plt.plot(results['density'][:len(results[k])], results[k], marker='o', markersize=4, label=k)
+
+# plt.xlabel('Weight Density(%)')
+# plt.ylabel('Accuracy(%)')
+# plt.legend(loc=4)
+# plt.grid()
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
+# plt.close()
+# result_df = pd.DataFrame(results)
+# result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+
+# ablation vp vs notune
+
+# notune_hydra = [0.502, 0.9292]
+# notune_imp = [0.502, 0.4985, 0.4704, 0.4369, 0.3781, 0.2663, 0.2353, 0.1757, 0.1868, 0.1899]
+# notune_omp = [0.502, 0.4996, 0.4703, 0.4547, 0.3484, 0.2767, 0.1896, 0.1961, 0.2069, 0.1643]
+# vp_hydra = [0.8353, 0.9427, 0.9285, 0.9058, 0.8839, 0.8841, 0.8741, 0.8613, 0.8543, 0.8565]
+# vp_imp = [0.8353, 0.8111, 0.826, 0.7954, 0.7397, 0.6795, 0.6741, 0.6481, 0.6619, 0.6377]
+# vp_omp = [0.8353, 0.8088, 0.8112, 0.7888, 0.7536, 0.6904, 0.672, 0.6677, 0.6506, 0.6429]
+
+# save_dir = os.path.join('results/ablation_plot', str(datetime.datetime.now().date()))
+# image_name = 'VP vs NoTune - Accuracy'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728]]
+#     ,'notune_hydra': [_*100 for _ in notune_hydra]
+#     ,'notune_imp': [_*100 for _ in notune_imp]
+#     ,'notune_omp': [_*100 for _ in notune_omp]
+#     ,'vp_hydra': [_*100 for _ in vp_hydra]
+#     ,'vp_imp': [_*100 for _ in vp_imp]
+#     ,'vp_omp': [_*100 for _ in vp_omp]
+# }
+# for k in results.keys():
+#     if k != 'density':
+#         plt.plot(results['density'][:len(results[k])], results[k], marker='o', markersize=4, label=k)
+
+# plt.xlabel('Weight Density(%)')
+# plt.ylabel('Accuracy(%)')
+# plt.legend(loc=4)
+# plt.grid()
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
+# plt.close()
+# result_df = pd.DataFrame(results)
+# result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+
+
+
+# 0610
+# ablation vp/ff/no_tune/vp+ff
+# scaled_initilization = [0.8353, 0.9407, 0.9319, 0.9148, 0.8877, 0.8754, 0.8754, 0.8641, 0.8549, 0.8427]
+# kaiming_uniform = [0.8353, 0.9398, 0.9238, 0.9092, 0.8918, 0.8681, 0.8674, 0.8614, 0.8569, 0.8484]
+
+# save_dir = os.path.join('results/ablation_plot', str(datetime.datetime.now().date()))
+# image_name = 'Hydra Score Initialization - Accuracy'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728]]
+#     ,'scaled_initilization': [_*100 for _ in scaled_initilization]
+#     ,'kaiming_uniform': [_*100 for _ in kaiming_uniform]
+# }
+# for k in results.keys():
+#     if k != 'density':
+#         plt.plot(results['density'], results[k], marker='o', markersize=4, label=k)
+
+# plt.xlabel('Weight Density(%)')
+# plt.ylabel('Accuracy(%)')
+# plt.legend(loc=2)
+# plt.grid()
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
+# plt.close()
+# result_df = pd.DataFrame(results)
+# result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+
+
+# ablation hydra init
+# scaled_initilization = [0.8353, 0.9407, 0.9319, 0.9148, 0.8877, 0.8754, 0.8754, 0.8641, 0.8549, 0.8427]
+# kaiming_uniform = [0.8353, 0.9398, 0.9238, 0.9092, 0.8918, 0.8681, 0.8674, 0.8614, 0.8569, 0.8484]
+
+# save_dir = os.path.join('results/ablation_plot', str(datetime.datetime.now().date()))
+# image_name = 'Hydra Score Initialization - Accuracy'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728]]
+#     ,'scaled_initilization': [_*100 for _ in scaled_initilization]
+#     ,'kaiming_uniform': [_*100 for _ in kaiming_uniform]
+# }
+# for k in results.keys():
+#     if k != 'density':
+#         plt.plot(results['density'], results[k], marker='o', markersize=4, label=k)
+
+# plt.xlabel('Weight Density(%)')
+# plt.ylabel('Accuracy(%)')
+# plt.legend(loc=2)
+# plt.grid()
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
+# plt.close()
+# result_df = pd.DataFrame(results)
+# result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
 
 # ablation randomcrop
 # no_randomcrop=[0.8353, 0.8111, 0.826, 0.7954, 0.7397, 0.6795, 0.6741, 0.6481, 0.6619, 0.6377]
@@ -49,7 +212,7 @@ result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
 # plt.ylabel('Accuracy(%)')
 # plt.legend(loc=2)
 # plt.grid()
-# plt.savefig(os.path.join(save_dir, image_name+'.png'))
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
 # plt.close()
 # result_df = pd.DataFrame(results)
 # result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
@@ -74,7 +237,7 @@ result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
 # plt.ylabel('Accuracy(%)')
 # plt.legend(loc=2)
 # plt.grid()
-# plt.savefig(os.path.join(save_dir, image_name+'.png'))
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
 # plt.close()
 # result_df = pd.DataFrame(results)
 # result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
@@ -100,7 +263,7 @@ result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
 # plt.ylabel('Accuracy(%)')
 # plt.legend(loc=2)
 # plt.grid()
-# plt.savefig(os.path.join(save_dir, image_name+'.png'))
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
 # plt.close()
 # result_df = pd.DataFrame(results)
 # result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
@@ -127,7 +290,7 @@ result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
 # plt.ylabel('Accuracy(%)')
 # plt.legend(loc=2)
 # plt.grid()
-# plt.savefig(os.path.join(save_dir, image_name+'.png'))
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
 # plt.close()
 # result_df = pd.DataFrame(results)
 # result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
@@ -162,7 +325,7 @@ result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
 # plt.ylabel('Accuracy(%)')
 # plt.legend(loc=4, prop={'size':8})
 # plt.grid()
-# plt.savefig(os.path.join(save_dir, image_name+'.png'))
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
 # plt.close()
 # result_df = pd.DataFrame(results)
 # result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
@@ -197,7 +360,7 @@ result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
 # plt.ylabel('Accuracy(%)')
 # plt.legend(loc=4, prop={'size':8})
 # plt.grid()
-# plt.savefig(os.path.join(save_dir, image_name+'.png'))
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
 # plt.close()
 # result_df = pd.DataFrame(results)
 # result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))

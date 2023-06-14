@@ -4,17 +4,68 @@ import pickle
 
 
 if __name__ == '__main__':
-    dir_path = '/data4/hop20001/can/ILM-VP/results/resnet18/cifar10/VPFalse/PRUNEimp/LMflm/LPFalse/sgd/LR0.01/cosine/EPOCHS200/IMAGESIZE32/GPU5/ff_pruneargs.pkl'
-    with open(dir_path, 'rb') as file:
-        data = pickle.load(file)
-    print(file)
-    # ckpt_path = []
-    # acc = []
-    # for i in range(0,10):
-    #     ckpt_path.append(os.path.join(dir_path, str(i) + 'best.pth'))
-    # for path in ckpt_path:
-    #     acc.append(torch.load(path)['ckpt_test_acc'])
-    # print(acc)
+    dir_path = '/data4/hop20001/can/ILM-VP/results/vp_model_dataset/resnet18/cifar100/VPpad/FF0/LP0/PRUNEimp/LMilm/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE128_48_183/SEED7/GPU7/DENSITY0.8'
+    # with open(dir_path, 'rb') as file:
+    #     data = pickle.load(file)
+    # print(file)
+    ckpt_path = []
+    acc = []
+    for i in range(0,10):
+        ckpt_path.append(os.path.join(dir_path, str(i) + 'best.pth'))
+    for path in ckpt_path:
+        acc.append(torch.load(path)['ckpt_test_acc'])
+    print(acc)
+
+# 0614 
+vp_ilm_cifar10 = [0.8353, 0.8111, 0.826, 0.7954, 0.7397, 0.6795, 0.6741, 0.6481, 0.6619, 0.6377]
+vp_ilm_cifar100 = [0.4546, 0.4602, 0.4688, 0.4574, 0.4515, 0.4321, 0.4021, 0.3656, 0.3261, 0.2735]
+
+
+# ablation vp_optimizer lr = 0.01
+adam_cosine = 0.8304
+adam_multistep = 0.8353
+sgd_cosine = 0.7491
+sgd_multistep = 0.7456
+
+
+# ablation lm_interval
+interval_1 = [0.8353, 0.8111, 0.826, 0.7954, 0.7397, 0.6795, 0.6741, 0.6481, 0.6619, 0.6377]
+interval_5 = [0.7668, 0.8191, 0.8234, 0.7646, 0.7447, 0.7305, 0.6974, 0.6646, 0.6512, 0.6449]
+interval_10 = [0.7779, 0.8205, 0.7903, 0.7408, 0.7363, 0.7028, 0.6532, 0.6344, 0.6429, 0.6205]
+interval_15 = [0.7737, 0.8289, 0.7532, 0.7599, 0.7362, 0.6862, 0.683, 0.6598, 0.6308, 0.6278]
+interval_20 = [0.7503, 0.7127, 0.7377, 0.7127, 0.667, 0.6458, 0.6462, 0.6547, 0.6393, 0.6136]
+
+
+# 0612
+# resnet50+cifar10
+ff_flm_imp = [0.9766, 0.9731, 0.9758, 0.977]
+notune_ilm_imp = [0.5721, 0.5711, 0.5277, 0.4724, 0.3405, 0.3105, 0.2687, 0.209, 0.1745, 0.1038]
+notune_ilm_omp = [0.5721, 0.5693, 0.5284, 0.4807, 0.3591, 0.3386, 0.2708, 0.2162, 0.1815, 0.1018]
+
+# resnet50+cifar100
+notune_ilm_imp = [0.2975, 0.3129, 0.3007, 0.256, 0.1957, 0.1585, 0.0995, 0.0666, 0.0394, 0.0145]
+notune_ilm_omp = [0.3036, 0.3005, 0.3011, 0.2574, 0.2087, 0.1626, 0.1073, 0.0689, 0.0402, 0.0121]
+
+# resnet18+cifar100
+ff_flm_imp = [0.8084, 0.8117, 0.8137, 0.8151, 0.8094, 0.8131, 0.81, 0.8021, 0.8014, 0.7971]
+notune_ilm_imp = [0.2447, 0.2384, 0.2295, 0.2239, 0.2085, 0.1332, 0.0806, 0.0445, 0.0398, 0.0409]
+notune_ilm_omp = [0.2411, 0.245, 0.2266, 0.2292, 0.1911, 0.1134, 0.0653, 0.0375, 0.0443, 0.0293]
+vp_ilm_hydra = [0.1951, 0.7673, 0.7442, 0.7063, 0.6638, 0.6385, 0.6319, 0.6178]
+vp_ilm_imp = [0.4546, 0.4602, 0.4688, 0.4574, 0.4515, 0.4321, 0.4021, 0.3656]
+vp_ilm_omp = [0.1951, 0.4709, 0.4646, 0.4523, 0.4478, 0.4342, 0.3843, 0.3568]
+
+# ablation vp/ff/no_tune/vp+ff
+# do more experiments about ff_hydra(whether use scaled init), hydra_no_tune(lr 0.0001)
+ff_flm_hydra = [0.96, 0.9124, 0.9119, 0.9031, 0.9018, 0.8994, 0.892, 0.885, 0.8765]
+ff_flm_imp = [0.96, 0.9637, 0.96, 0.9627, 0.9639, 0.9629, 0.9608, 0.9594, 0.9589, 0.9603]
+notune_ilm_hydra = [0.502, 0.9292]
+notune_ilm_imp = [0.502, 0.4985, 0.4704, 0.4369, 0.3781, 0.2663, 0.2353, 0.1757, 0.1868, 0.1899]
+notune_ilm_omp = [0.502, 0.4996, 0.4703, 0.4547, 0.3484, 0.2767, 0.1896, 0.1961, 0.2069, 0.1643]
+vp_ff_flm_hydra = [0.9427, 0.8959, 0.895, 0.8872, 0.8827]
+vp_ff_flm_imp = [0.9427, 0.9416, 0.9418, 0.9406]
+vp_ilm_hydra = [0.8353, 0.9427, 0.9285, 0.9058, 0.8839, 0.8841, 0.8741, 0.8613, 0.8543, 0.8565]
+vp_ilm_imp = [0.8353, 0.8111, 0.826, 0.7954, 0.7397, 0.6795, 0.6741, 0.6481, 0.6619, 0.6377]
+vp_ilm_omp = [0.8353, 0.8088, 0.8112, 0.7888, 0.7536, 0.6904, 0.672, 0.6677, 0.6506, 0.6429]
 
 # 0609
 # ablation_vp_search_exp

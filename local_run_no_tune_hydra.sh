@@ -35,20 +35,21 @@ fi
 # ucf101   eurosat   oxfordpets   stanfordcars   sun397
 # datasets=("cifar100" "dtd" "flowers102" "ucf101" "food101" "gtsrb" "svhn" "eurosat" "oxfordpets" "stanfordcars" "sun397")
 # datasets=("ucf101" "eurosat" "oxfordpets" "stanfordcars" "sun397") 
-networks=('resnet18' 'resnet50')
-datasets=('cifar10' 'cifar100')
+networks=('resnet18')
+datasets=('cifar10')
 is_finetunes=(0)
 label_mapping_modes=('ilm')
 prune_methods=('hydra')
 prompt_methods=('None')
 optimizers=('adam')
-lr_schedulers=('cosine')
-gpus=(0)
+lr_schedulers=('multistep')
+gpus=(2)
 input_sizes=(128)
 pad_sizes=(48)
 pruning_times=10
 epochs=200
 seed=7
+lr=0.001
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for m in ${!is_finetunes[@]};do
@@ -71,6 +72,7 @@ for j in ${!networks[@]};do
                         --pruning_times ${pruning_times} \
                         --epochs ${epochs} \
                         --seed ${seed} \
+                        --lr ${lr} \
                         > $log_filename 2>&1 &
                 done
                 wait

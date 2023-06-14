@@ -11,16 +11,17 @@ datasets=('cifar10')
 networks=('resnet18')
 is_finetunes=(1)
 label_mapping_modes=('flm')
-prune_methods=('imp' 'omp' 'hydra')
+prune_methods=('imp' 'hydra')
 prompt_methods=('pad')
 optimizers=('sgd')
 lr_schedulers=('cosine')
-gpus=(7 6 5 4)
+gpus=(1 3)
 input_sizes=(128)
 pad_sizes=(48)
 pruning_times=10
 epochs=200
 seed=7
+start_state=1
 for i in ${!datasets[@]};do
     for j in ${!networks[@]};do
         for l in ${!prune_methods[@]};do

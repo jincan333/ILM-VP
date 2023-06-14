@@ -26,25 +26,24 @@
 
 # test dataset and model 
 
-experiment_name='ff_model_dataset'
+experiment_name='no_tune_model_dataset'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
 fi
 
-
+# ucf101   eurosat   oxfordpets   stanfordcars   sun397
 # datasets=("cifar100" "dtd" "flowers102" "ucf101" "food101" "gtsrb" "svhn" "eurosat" "oxfordpets" "stanfordcars" "sun397")
-# networks=('resnet18')
+# datasets=("ucf101" "eurosat" "oxfordpets" "stanfordcars" "sun397") 
 networks=('resnet18' 'resnet50')
 datasets=('cifar10' 'cifar100')
-is_finetunes=(1)
-label_mapping_modes=('flm')
-# prune_methods=('imp' 'omp' 'hydra')
-prune_methods=('hydra')
+is_finetunes=(0)
+label_mapping_modes=('ilm')
+prune_methods=('imp' 'omp')
 prompt_methods=('None')
-optimizers=('sgd')
-lr_schedulers=('cosine')
-gpus=(4)
+optimizers=('adam')
+lr_schedulers=('multistep')
+gpus=(2 2 2)
 input_sizes=(128)
 pad_sizes=(48)
 pruning_times=10

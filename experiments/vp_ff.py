@@ -21,23 +21,23 @@ def main():
     global args
 
     # Frequently change
-    parser.add_argument('--label_mapping_mode', type=str, default='ilm', choices=['flm', 'ilm'], required=True)
-    parser.add_argument('--prompt_method', type=str, default='pad', choices=['pad', 'fix', 'random', 'None'], required=True)
-    parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'], required=True)
-    parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'], required=True)
-    parser.add_argument('--prune_method', type=str, default='hydra', choices=['imp', 'omp', 'grasp', 'hydra'], required=True)
-    parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1], required=True)
-    parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"], required=True)
-    parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"], required=True)
+    # parser.add_argument('--label_mapping_mode', type=str, default='ilm', choices=['flm', 'ilm'], required=True)
+    # parser.add_argument('--prompt_method', type=str, default='pad', choices=['pad', 'fix', 'random', 'None'], required=True)
+    # parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'], required=True)
+    # parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'], required=True)
+    # parser.add_argument('--prune_method', type=str, default='hydra', choices=['imp', 'omp', 'grasp', 'hydra'], required=True)
+    # parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1], required=True)
+    # parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"], required=True)
+    # parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"], required=True)
 
-    # parser.add_argument('--label_mapping_mode', type=str, default='ilm', choices=['flm', 'ilm'])
-    # parser.add_argument('--prompt_method', type=str, default='pad', choices=['pad', 'fix', 'random', 'None'])
-    # parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
-    # parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
-    # parser.add_argument('--prune_method', type=str, default='hydra', choices=['imp', 'omp', 'grasp', 'hydra'])
-    # parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1])
-    # parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"])
-    # parser.add_argument('--dataset', default="ucf101", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
+    parser.add_argument('--label_mapping_mode', type=str, default='ilm', choices=['flm', 'ilm'])
+    parser.add_argument('--prompt_method', type=str, default='pad', choices=['pad', 'fix', 'random', 'None'])
+    parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
+    parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
+    parser.add_argument('--prune_method', type=str, default='hydra', choices=['imp', 'omp', 'grasp', 'hydra'])
+    parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1])
+    parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"])
+    parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
 
 
     parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
@@ -53,14 +53,14 @@ def main():
     parser.add_argument('--flm_loc', type=str, default='pre', help='pre-train flm or after-prune flm.', choices=['pre', 'after'])
     parser.add_argument('--randomcrop', type=int, default=0, help='dataset randomcrop.', choices=[0, 1])
     parser.add_argument('--is_adjust_linear_head', type=int, default=0, choices=[0, 1])
-    parser.add_argument('--start_state', type=int, default=0, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    parser.add_argument('--is_vp_after_ff', type=int, default=0, choices=[0, 1])
+    parser.add_argument('--resume_checkpoint', default='', help="resume checkpoint path")
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results', type=str)
     # parser.add_argument('--experiment_name', default='test', type=str, help='name of experiment, the save directory will be save_dir+exp_name')
     # parser.add_argument('--gpu', type=int, default=6, help='gpu device id')
     parser.add_argument('--workers', type=int, default=2, help='number of workers in dataloader')
-    parser.add_argument('--resume_checkpoint', default='', help="resume checkpoint path")
     parser.add_argument('--print_freq', default=200, type=int, help='print frequency')
 
     ##################################### Dataset #################################################
@@ -146,33 +146,59 @@ def main():
     # Label Mapping
     label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
     # Prune initiate type
-    initalization = copy.deepcopy(network.state_dict())
-    best_acc = 0. 
-    start_state = 0
-    all_results={}
-    all_results['train_acc'] = []
-    all_results['val_acc'] = []
-    # Accuracy before train
-    test_acc, test_loss = evaluate(test_loader, network, label_mapping, visual_prompt)
-    print(f'Accuracy before train: {test_acc:.4f}, loss {test_loss:.4f}')
-    all_results['no_train_acc'] = test_acc
-    checkpoint = {
-            'state_dict': network.state_dict()
-            ,"optimizer_dict": optimizer.state_dict() if optimizer else None
-            ,'scheduler': scheduler.state_dict() if scheduler else None
-            ,'visual_prompt': visual_prompt.state_dict() if visual_prompt else None
-            ,'mapping_sequence': mapping_sequence
-            ,"epoch": 0
-            ,"val_best_acc": 0
-            ,'ckpt_test_acc': test_acc
-            ,'all_results': all_results
-            ,'init_weight': initalization
-            ,'state': start_state
-        }
-    torch.save(checkpoint, os.path.join(save_path, str(start_state)+'best.pth'))
-    if args.prune_method in ('omp', 'grasp', 'hydra'):
-        start_state+=1
-    start_state = args.start_state if args.start_state > 0 else start_state
+    if args.resume_checkpoint:
+        print('resume from checkpoint {}'.format(args.resume_checkpoint))
+        checkpoint = torch.load(args.resume_checkpoint, map_location = torch.device('cuda:'+str(args.gpu)))
+        best_acc = checkpoint['val_best_acc']
+        start_epoch = checkpoint['epoch']
+        all_results = checkpoint['all_results']
+        start_state = checkpoint['state']
+        visual_prompt = checkpoint['visual_prompt']
+        mapping_sequence = checkpoint['mapping_sequence']
+        initalization = checkpoint['init_weight']
+        if start_state>0:
+            if args.prune_method == 'imp':
+                current_mask = extract_mask(checkpoint['state_dict'])
+                prune_model_custom(network, current_mask)
+                check_sparsity(network)
+        network.load_state_dict(checkpoint['state_dict'])
+        # adding an extra forward process to enable the masks
+        x_rand = torch.rand(1,3,args.input_size, args.input_size).cuda()
+        network.eval()
+        with torch.no_grad:
+            network(x_rand)
+        if not args.is_vp_after_ff:
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            scheduler.load_state_dict(checkpoint['scheduler'])
+        print('loading state:', start_state)
+        print('loading from epoch: ',start_epoch, 'best_acc=', best_acc)
+    else:
+        initalization = copy.deepcopy(network.state_dict())
+        best_acc = 0. 
+        start_state = 0
+        all_results={}
+        all_results['train_acc'] = []
+        all_results['val_acc'] = []
+        # Accuracy before train
+        test_acc, test_loss = evaluate(test_loader, network, label_mapping, visual_prompt)
+        print(f'Accuracy before train: {test_acc:.4f}, loss {test_loss:.4f}')
+        all_results['no_train_acc'] = test_acc
+        checkpoint = {
+                'state_dict': network.state_dict()
+                ,"optimizer_dict": optimizer.state_dict() if optimizer else None
+                ,'scheduler': scheduler.state_dict() if scheduler else None
+                ,'visual_prompt': visual_prompt.state_dict() if visual_prompt else None
+                ,'mapping_sequence': mapping_sequence
+                ,"epoch": 0
+                ,"val_best_acc": 0
+                ,'ckpt_test_acc': test_acc
+                ,'all_results': all_results
+                ,'init_weight': initalization
+                ,'state': start_state
+            }
+        torch.save(checkpoint, os.path.join(save_path, str(start_state)+'best.pth'))
+        if args.prune_method in ('omp', 'grasp', 'hydra'):
+            start_state+=1
     # if optimizer=None, it means there are no need to finetune or visual prompt
     if not optimizer:
         epochs = 1
