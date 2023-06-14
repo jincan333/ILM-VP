@@ -8,6 +8,7 @@ import time
 from matplotlib import pyplot as plt
 import copy
 import warnings
+import json
 
 from utils import set_seed, setup_optimizer_and_prompt, calculate_label_mapping, obtain_label_mapping, save_args
 from get_model_dataset import get_torch_dataset, get_model
@@ -26,19 +27,21 @@ def main():
     # parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'], required=True)
     # parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'], required=True)
     # parser.add_argument('--prune_method', type=str, default='hydra', choices=['imp', 'omp', 'grasp', 'hydra'], required=True)
-    # parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1], required=True)
+    # parser.add_argument('--is_finetune', default=0, type=int, choices=[0], required=True)
     # parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"], required=True)
     # parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"], required=True)
 
+    parser.add_argument('--prune_mode', type=str, default='normal', choices=['normal', 'no_tune', 'visual_prompt'], help='prune method implement ways')
+    parser.add_argument('--is_ff_after_prune', type=int, default=1, choices=[0, 1])
+    parser.add_argument('--ckpt_directory', type=str, default='', help='sub-network ckpt directory')
     parser.add_argument('--label_mapping_mode', type=str, default='ilm', choices=['flm', 'ilm'])
     parser.add_argument('--prompt_method', type=str, default='pad', choices=['pad', 'fix', 'random', 'None'])
     parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
-    parser.add_argument('--prune_method', type=str, default='hydra', choices=['imp', 'omp', 'grasp', 'hydra'])
-    parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1])
+    parser.add_argument('--prune_method', type=str, default='hydra', choices=['imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra'])
+    
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"])
     parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
-
 
     parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
@@ -47,18 +50,18 @@ def main():
     parser.add_argument('--mask_size', type=int, default=183, help='only for fixadd and randomadd, no more than 224, parameters cnt mask**2', choices=[115, 156, 183, 202, 214, 221, 224])
     parser.add_argument('--epochs', default=200, type=int, help='number of total eopchs to run')
     parser.add_argument('--pruning_times', default=10, type=int, help='overall times of pruning')
-    parser.add_argument('--density', type=float, default=0.80, help='The density of the overall sparse network.')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
-    parser.add_argument('--hydra_scaled_init', type=int, default=1, help='whether use scaled initialization for hydra or not.', choices=[0, 1])
+    parser.add_argument('--hydra_scaled_init', type=int, default=0, help='whether use scaled initialization for hydra or not.', choices=[0, 1])
     parser.add_argument('--flm_loc', type=str, default='pre', help='pre-train flm or after-prune flm.', choices=['pre', 'after'])
     parser.add_argument('--randomcrop', type=int, default=0, help='dataset randomcrop.', choices=[0, 1])
-    parser.add_argument('--is_adjust_linear_head', type=int, default=0, choices=[0, 1])
+    
     parser.add_argument('--start_state', type=int, default=0, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # can be removed
+    parser.add_argument('--is_finetune', default=0, type=int)
+    parser.add_argument('--is_adjust_linear_head', type=int, default=0, choices=[0])
 
     ##################################### General setting ############################################
-    parser.add_argument('--save_dir', help='The directory used to save the trained models', default='results', type=str)
-    # parser.add_argument('--experiment_name', default='test', type=str, help='name of experiment, the save directory will be save_dir+exp_name')
-    # parser.add_argument('--gpu', type=int, default=6, help='gpu device id')
+    parser.add_argument('--save_dir', help='The directory used to save the trained models', default='result', type=str)
     parser.add_argument('--workers', type=int, default=2, help='number of workers in dataloader')
     parser.add_argument('--resume_checkpoint', default='', help="resume checkpoint path")
     parser.add_argument('--print_freq', default=200, type=int, help='print frequency')
@@ -67,32 +70,21 @@ def main():
     parser.add_argument('--data', type=str, default='dataset', help='location of the data corpus')
 
     ##################################### Architecture ############################################
-    # parser.add_argument('--label_mapping_mode', type=str, default='flm', help='label mapping methods: rlm, flm, ilm, None')
     parser.add_argument('--label_mapping_interval', type=int, default=1, help='in ilm, the interval of epoch to implement label mapping')
 
     ##################################### Visual Prompt ############################################
-    # parser.add_argument('--prompt_method', type=str, default='pad', help='None, expand, pad, fix, random')
-    # parser.add_argument('--input_size', type=int, default=32, help='image size before prompt, only work for exapnd')
     parser.add_argument('--output_size', type=int, default=224, help='image size after prompt, fix to 224')
-    # parser.add_argument('--pad_size', type=int, default=96, help='pad size of padprompt, no more than 112, parameters cnt 4*pad**2+896pad')
-    # parser.add_argument('--mask_size', type=int, default=96, help='mask size of fixadd and randomadd, no more than 224, parameters cnt mask**2')
     
     ##################################### Training setting #################################################
     parser.add_argument('--batch_size', type=int, default=256, help='batch size')
-    # parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use. Default: sgd. Options: sgd, adam.')
     parser.add_argument('--lr', default=0.01, type=float, help='initial learning rate')
-    # parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy. Default: cosine, multistep')
     parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
     parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
-    # parser.add_argument('--epochs', default=200, type=int, help='number of total epochs to run')
     parser.add_argument('--warmup', default=0, type=int, help='warm up epochs')
     parser.add_argument('--decreasing_step', default=[0.5,0.72], type = list, help='decreasing strategy')
     parser.add_argument('--multiplier', type=int, default=1, metavar='N', help='extend training time by multiplier times')
 
     ##################################### Pruning setting #################################################
-    # parser.add_argument('--prune_method', type=str, default='hydra', help='prune methods: imp, omp, grasp, hydra')
-    # parser.add_argument('--pruning_times', default=10, type=int, help='overall times of pruning')
-    # parser.add_argument('--density', type=float, default=0.80, help='The density of the overall sparse network.')
     parser.add_argument('--fix', default='true', action='store_true', help='Fix sparse connectivity during training. Default: True.')
     parser.add_argument('--growth', type=str, default='random', help='Growth mode. Choose from: momentum, random, random_unfired, and gradient.')
     parser.add_argument('--death', type=str, default='magnitude', help='Death mode / pruning mode. Choose from: magnitude, SET, threshold.')
@@ -102,6 +94,7 @@ def main():
     parser.add_argument('--decay_schedule', type=str, default='cosine', help='The decay schedule for the pruning rate. Default: cosine. Choose from: cosine, linear.')
     parser.add_argument('--bench', action='store_true', help='Enables the benchmarking of layers and estimates sparse speedups')
     parser.add_argument('--scaled', action='store_true', help='scale the initialization by 1/density')
+    parser.add_argument('--density', type=float, default=0.80, help='The density of the overall sparse network.')
     # IMP
     parser.add_argument('--imp_prune_type', default='pt', type=str, help='IMP type (lt, pt or rewind_lt)')
     parser.add_argument('--imp_random_prune', action='store_true', help='whether using random prune')
@@ -119,18 +112,20 @@ def main():
     args = parser.parse_args()
     if args.prompt_method=='None':
         args.prompt_method=None
-    print(args)
+    print(json.dumps(vars(args), indent=4))
     # Device
     device = torch.device(f"cuda:{args.gpu}")
     args.device=device
     torch.cuda.set_device(int(args.gpu))
     set_seed(args.seed)
     # Save Path
-    save_path = os.path.join(args.save_dir, args.experiment_name, args.network, args.dataset, 'VP'+str(args.prompt_method), 'FF'+str(args.is_finetune), 'LP'+str(args.is_adjust_linear_head), 
-                'PRUNE'+str(args.prune_method), 'LM'+str(args.label_mapping_mode), args.optimizer, 'LR'+str(args.lr), args.lr_scheduler, 'EPOCHS'+str(args.epochs), 
-                'IMAGESIZE'+str(args.input_size)+'_'+str(args.pad_size)+'_'+str(args.mask_size), 'SEED'+str(args.seed), 'GPU'+str(args.gpu), 'DENSITY'+str(args.k))
+    save_path = os.path.join(args.save_dir, args.experiment_name, args.network, args.dataset, 
+                'PRUNE_MODE'+args.prune_mode, 'FF_AFTER_PRUNE'+str(args.is_ff_after_prune), 'VP'+str(args.prompt_method), 'PRUNE'+str(args.prune_method), 'LM'+str(args.label_mapping_mode), 
+                'SIZE'+str(args.output_size)+'_'+str(args.input_size)+'_'+str(args.pad_size)+'_'+str(args.mask_size),
+                args.optimizer, args.lr_scheduler, 'LR'+str(args.lr),  
+                'PRUNE_TIMES'+str(args.pruning_times), 'EPOCHS'+str(args.epochs), 'SEED'+str(args.seed),'GPU'+str(args.gpu))
     os.makedirs(save_path, exist_ok=True)
-    save_args(args, save_path+'args.pkl')
+    save_args(args, save_path+'args.json')
     logger = SummaryWriter(os.path.join(save_path, 'tensorboard'))
     print('Save path: ',save_path)
     # Network and Dataset
