@@ -2,7 +2,7 @@ from __future__ import print_function
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from grasp import SNIP, GraSP
+from grasp import SNIP, GraSP, SynFlow
 import numpy as np
 import math
 
@@ -36,13 +36,15 @@ class LinearDecay(object):
 
 
 class Masking(object):
-    def __init__(self, optimizer, death_rate=0.3, growth_death_ratio=1.0, death_rate_decay=None, death_mode='magnitude', growth_mode='momentum', redistribution_mode='momentum', threshold=0.001, args=False, train_loader=False):
+    def __init__(self, optimizer, death_rate=0.3, growth_death_ratio=1.0, death_rate_decay=None, death_mode='magnitude', growth_mode='momentum', redistribution_mode='momentum', threshold=0.001, args=False, train_loader=False, visual_prompt=None, label_mapping=None):
         growth_modes = ['random', 'momentum', 'momentum_neuron', 'gradient']
         if growth_mode not in growth_modes:
             print('Growth mode: {0} not supported!'.format(growth_mode))
             print('Supported modes are:', str(growth_modes))
 
         self.train_loader = train_loader
+        self.visual_prompt = visual_prompt
+        self.label_mapping = label_mapping
         self.args = args
         self.device = torch.device(f"cuda:{args.gpu}")
         self.growth_mode = growth_mode
@@ -67,7 +69,7 @@ class Masking(object):
         if self.args.fix: self.prune_every_k_steps = None
         else: self.prune_every_k_steps = self.args.update_frequency
 
-    def init(self, mode='ERK', density=0.05, erk_power_scale=1.0, label_mapping=None):
+    def init(self, mode='ERK', density=0.05, erk_power_scale=1.0):
         self.density = density
         if mode == 'omp':
             print('initialize by OMP')
@@ -91,18 +93,21 @@ class Masking(object):
 
         elif mode == 'snip':
             print('initialize by snip')
-            layer_wise_sparsities = SNIP(self.module, self.density, self.train_loader, self.device)
+            layer_wise_sparsities = SNIP(self.module, self.density, self.train_loader, self.device, self.visual_prompt, self.label_mapping)
             # re-sample mask positions
             for sparsity_, name in zip(layer_wise_sparsities, self.masks):
                 self.masks[name][:] = (torch.rand(self.masks[name].shape) < (1-sparsity_)).float().data.cuda()
 
         elif mode == 'grasp':
             print('initialize by GraSP')
-            layer_wise_sparsities = GraSP(self.module, self.density, self.train_loader, self.device ,label_mapping=label_mapping)
+            layer_wise_sparsities = GraSP(self.module, self.density, self.train_loader, self.device , self.visual_prompt, self.label_mapping, num_classes=self.args.class_cnt)
             # re-sample mask positions
             for sparsity_, name in zip(layer_wise_sparsities, self.masks):
                 self.masks[name][:] = (torch.rand(self.masks[name].shape) < (1-sparsity_)).float().data.cuda()
 
+        elif mode == 'synflow':
+            print('initialize by Synflow')
+            self.masks = SynFlow(self.masks, self.module, self.density, self.train_loader, self.device , self.visual_prompt, self.label_mapping)
 
         elif mode == 'uniform_plus':
             print('initialize by uniform+')
@@ -132,8 +137,8 @@ class Masking(object):
                         if name not in self.masks: continue
                         self.masks[name][:] = (torch.rand(weight.shape) < self.density).float().data.cuda()
 
-        elif mode == 'uniform':
-            print('initialize by uniform')
+        elif mode == 'random':
+            print('initialize by random')
             self.baseline_nonzero = 0
             for module in self.modules:
                 for name, weight in module.named_parameters():
@@ -284,7 +289,7 @@ class Masking(object):
                 self.print_nonzero_counts()
 
 
-    def add_module(self, module, density, sparse_init='ER', label_mapping=None):
+    def add_module(self, module, density, sparse_init='ER'):
         self.modules.append(module)
         self.module = module
         for name, tensor in module.named_parameters():
@@ -297,7 +302,7 @@ class Masking(object):
         self.remove_type(nn.BatchNorm2d)
         print('Removing 1D batch norms...')
         self.remove_type(nn.BatchNorm1d)
-        self.init(mode=sparse_init, density=density, label_mapping=label_mapping)
+        self.init(mode=sparse_init, density=density)
 
 
     def remove_weight(self, name):

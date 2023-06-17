@@ -17,7 +17,7 @@ def snip_forward_linear(self, x):
         return F.linear(x, self.weight * self.weight_mask, self.bias)
 
 
-def SNIP(net, keep_ratio, train_dataloader, device):
+def SNIP(net, keep_ratio, train_dataloader, device, visual_prompt, label_mapping):
 
     # Grab a single batch from the training dataset
     inputs, targets = next(iter(train_dataloader))
@@ -45,8 +45,9 @@ def SNIP(net, keep_ratio, train_dataloader, device):
 
     # Compute gradients (but don't apply them)
     net.zero_grad()
-    outputs = net.forward(inputs)
-    loss = F.nll_loss(outputs, targets)
+    
+    outputs = label_mapping(net.forward(visual_prompt(inputs))) if visual_prompt else label_mapping(net.forward(inputs))
+    loss = F.cross_entropy(outputs, targets)
     loss.backward()
 
     grads_abs = []
@@ -65,12 +66,13 @@ def SNIP(net, keep_ratio, train_dataloader, device):
 
     layer_wise_sparsities = []
     for g in grads_abs:
-        mask = ((g / norm_factor) >= acceptable_score).float()
+        mask = ((g / norm_factor) > acceptable_score).float()
         sparsity = float((mask==0).sum().item() / mask.numel())
         layer_wise_sparsities.append(sparsity)
     print(f'layer-wise sparsity is {layer_wise_sparsities}')
 
     return layer_wise_sparsities
+
 
 def SNIP_training(net, keep_ratio, train_dataloader, device, masks, death_rate):
     # TODO: shuffle?
@@ -175,7 +177,7 @@ def count_fc_parameters(net):
     return total
 
 
-def GraSP(net, ratio, train_dataloader, device, label_mapping=None, num_classes=10, samples_per_class=25, num_iters=1, T=200, reinit=True):
+def GraSP(net, ratio, train_dataloader, device, visual_prompt, label_mapping, num_classes=10, samples_per_class=25, num_iters=1, T=200, reinit=True):
     eps = 1e-10
     keep_ratio = ratio
     old_net = net
@@ -208,7 +210,8 @@ def GraSP(net, ratio, train_dataloader, device, label_mapping=None, num_classes=
         targets_one.append(dtarget[N // 2:])
         inputs = inputs.to(device)
         targets = targets.to(device)
-        outputs = label_mapping(net.forward(inputs[:N//2]))/T if label_mapping else net.forward(inputs[:N//2])/T
+
+        outputs = label_mapping(net.forward(visual_prompt(inputs[:N//2])))/T if visual_prompt else label_mapping(net.forward(inputs[:N//2]))/T
         if print_once:
             # import pdb; pdb.set_trace()
             x = F.softmax(outputs)
@@ -224,7 +227,7 @@ def GraSP(net, ratio, train_dataloader, device, label_mapping=None, num_classes=
             for idx in range(len(grad_w)):
                 grad_w[idx] += grad_w_p[idx]
 
-        outputs = label_mapping(net.forward(inputs[N // 2:]))/T if label_mapping else net.forward(inputs[N // 2:])/T
+        outputs = label_mapping(net.forward(visual_prompt(inputs[N // 2:])))/T if visual_prompt else label_mapping(net.forward(inputs[N // 2:]))/T
         loss = F.cross_entropy(outputs, targets[N // 2:])
         grad_w_p = autograd.grad(loss, weights, create_graph=False)
         if grad_w is None:
@@ -242,7 +245,7 @@ def GraSP(net, ratio, train_dataloader, device, label_mapping=None, num_classes=
         targets = targets_one.pop(0).to(device)
         ret_inputs.append(inputs)
         ret_targets.append(targets)
-        outputs = label_mapping(net.forward(inputs))/T  if label_mapping else net.forward(inputs)/T
+        outputs = label_mapping(net.forward(visual_prompt(inputs)))/T  if visual_prompt else label_mapping(net.forward(inputs))/T
         loss = F.cross_entropy(outputs, targets)
         # ===== debug ==============
 
@@ -283,34 +286,44 @@ def GraSP(net, ratio, train_dataloader, device, label_mapping=None, num_classes=
 
     return layer_wise_sparsities
 
-# def synflow(net, keep_ratio, train_dataloader, device):
 
-#     @torch.no_grad()
-#     def linearize(model):
-#         # model.double()
-#         signs = {}
-#         for name, param in model.state_dict().items():
-#             signs[name] = torch.sign(param)
-#             param.abs_()
-#         return signs
+def SynFlow(masks, net, keep_ratio, train_dataloader, device, visual_prompt, label_mapping):
 
-#     @torch.no_grad()
-#     def nonlinearize(model, signs):
-#         # model.float()
-#         for name, param in model.state_dict().items():
-#             param.mul_(signs[name])
+    inputs, targets = next(iter(train_dataloader))
+    inputs = inputs.to(device)
+    targets = targets.to(device)
+    inputs.requires_grad = True
+    net = copy.deepcopy(net).to(device)
 
-#     signs = linearize(net)
+    scores = {}
+    # linearize
+    signs = {}
+    for name, param in net.state_dict().items():
+        signs[name] = torch.sign(param)
+        param.abs_()
+    input_dim = list(inputs[0, :].shape)
+    input = torch.ones([1] + input_dim).to(device)
+    output = label_mapping(net(visual_prompt(input))) if visual_prompt else label_mapping(net(input))
+    torch.sum(output).backward()
+    # calculate scores
+    for name, weight in net.named_parameters():
+        if name not in masks: continue
+        scores[name] = torch.clone(weight.grad * weight).detach().abs_()
+        weight.grad.data.zero_()
+    # unlinearize
+    for name, param in net.state_dict().items():
+        param.mul_(signs[name])
 
-#     (data, _) = next(iter(train_dataloader))
-#     input_dim = list(data[0, :].shape)
-#     input = torch.ones([1] + input_dim).to(device)  # , dtype=torch.float64).to(device)
-#     output = model(input)
-#     torch.sum(output).backward()
+    # calculate mask
+    global_scores = torch.cat([torch.flatten(v) for v in scores.values()])
+    k = int((1 - keep_ratio) * global_scores.numel())
+    if not k < 1:
+        threshold, _ = torch.kthvalue(global_scores, k)
+        for name, weight in net.named_parameters():
+            if name not in masks: continue
+            score = scores[name] 
+            zero = torch.tensor([0.]).to(device)
+            one = torch.tensor([1.]).to(device)
+            masks[name].copy_(torch.where(score <= threshold, zero, one))
 
-#     for _, p in self.masked_parameters:
-#         self.scores[id(p)] = torch.clone(p.grad * p).detach().abs_()
-#         p.grad.data.zero_()
-
-#     nonlinearize(model, signs)
-
+    return masks

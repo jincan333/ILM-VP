@@ -4,19 +4,43 @@ import pickle
 
 
 if __name__ == '__main__':
-    dir_path = '/data4/hop20001/can/ILM-VP/results/vp_model_dataset/resnet18/cifar100/VPpad/FF0/LP0/PRUNEimp/LMilm/adam/LR0.01/multistep/EPOCHS200/IMAGESIZE128_48_183/SEED7/GPU7/DENSITY0.8'
+    dir_path = '/data4/hop20001/can/ILM-VP/result/ablation_ff_optimizer_scheduler/resnet18/cifar10/PRUNE_MODEno_tune/PRUNEimp/VPpad/LMflm/SIZE224_128_48_183/sgd_adam_adam/multistep_multistep_multistep/LR0.01_0.01_0.001/DENSITY[1, 0.8, 0.2, 0.1, 0.05]/EPOCHS50/SEED7/GPU7'
     # with open(dir_path, 'rb') as file:
     #     data = pickle.load(file)
     # print(file)
     ckpt_path = []
     acc = []
-    for i in range(0,10):
+    for i in range(0,1):
         ckpt_path.append(os.path.join(dir_path, str(i) + 'best.pth'))
     for path in ckpt_path:
         acc.append(torch.load(path)['ckpt_test_acc'])
     print(acc)
+# 0617
+# hydra vp_lr: nearly same
+lr01 = 0
+lr001=0
+
+
+# hydra lm: ilm is better
+
+
+
+# hydra score optimizer: adam is better
+
+
+# ff optimizer: sgd is better
+sgd_cosine=0.9586
+sgd_multistep=0.9582
+
 
 # 0614 
+# ablation ff_optimizer
+sgd_cosine = 0.9584
+sgd_multistep = 0.9618
+adam_cosine = 0.8531
+adam_multistep = 0.8485
+
+
 vp_ilm_cifar10 = [0.8353, 0.8111, 0.826, 0.7954, 0.7397, 0.6795, 0.6741, 0.6481, 0.6619, 0.6377]
 vp_ilm_cifar100 = [0.4546, 0.4602, 0.4688, 0.4574, 0.4515, 0.4321, 0.4021, 0.3656, 0.3261, 0.2735]
 
@@ -58,7 +82,7 @@ vp_ilm_omp = [0.1951, 0.4709, 0.4646, 0.4523, 0.4478, 0.4342, 0.3843, 0.3568]
 # do more experiments about ff_hydra(whether use scaled init), hydra_no_tune(lr 0.0001)
 ff_flm_hydra = [0.96, 0.9124, 0.9119, 0.9031, 0.9018, 0.8994, 0.892, 0.885, 0.8765]
 ff_flm_imp = [0.96, 0.9637, 0.96, 0.9627, 0.9639, 0.9629, 0.9608, 0.9594, 0.9589, 0.9603]
-notune_ilm_hydra = [0.502, 0.9292]
+notune_ilm_hydra = [0.502, 0.9292, 0.9358, 0.9342, 0.9294, 0.9337, 0.9311]
 notune_ilm_imp = [0.502, 0.4985, 0.4704, 0.4369, 0.3781, 0.2663, 0.2353, 0.1757, 0.1868, 0.1899]
 notune_ilm_omp = [0.502, 0.4996, 0.4703, 0.4547, 0.3484, 0.2767, 0.1896, 0.1961, 0.2069, 0.1643]
 vp_ff_flm_hydra = [0.9427, 0.8959, 0.895, 0.8872, 0.8827]

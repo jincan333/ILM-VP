@@ -21,23 +21,23 @@ def main():
     global args
 
     # Frequently change
-    # parser.add_argument('--label_mapping_mode', type=str, default='ilm', choices=['flm', 'ilm'], required=True)
-    # parser.add_argument('--prompt_method', type=str, default='pad', choices=['pad', 'fix', 'random', 'None'], required=True)
-    # parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'], required=True)
-    # parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'], required=True)
-    # parser.add_argument('--prune_method', type=str, default='hydra', choices=['imp', 'omp', 'grasp', 'hydra'], required=True)
-    # parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1], required=True)
-    # parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"], required=True)
-    # parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"], required=True)
+    parser.add_argument('--label_mapping_mode', type=str, default='ilm', choices=['flm', 'ilm'], required=True)
+    parser.add_argument('--prompt_method', type=str, default='pad', choices=['pad', 'fix', 'random', 'None'], required=True)
+    parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'], required=True)
+    parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'], required=True)
+    parser.add_argument('--prune_method', type=str, default='hydra', choices=['imp', 'omp', 'grasp', 'hydra'], required=True)
+    parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1], required=True)
+    parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"], required=True)
+    parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"], required=True)
 
-    parser.add_argument('--label_mapping_mode', type=str, default='ilm', choices=['flm', 'ilm'])
-    parser.add_argument('--prompt_method', type=str, default='pad', choices=['pad', 'fix', 'random', 'None'])
-    parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
-    parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
-    parser.add_argument('--prune_method', type=str, default='hydra', choices=['imp', 'omp', 'grasp', 'hydra'])
-    parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1])
-    parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"])
-    parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
+    # parser.add_argument('--label_mapping_mode', type=str, default='ilm', choices=['flm', 'ilm'])
+    # parser.add_argument('--prompt_method', type=str, default='pad', choices=['pad', 'fix', 'random', 'None'])
+    # parser.add_argument('--optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
+    # parser.add_argument('--lr_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
+    # parser.add_argument('--prune_method', type=str, default='hydra', choices=['imp', 'omp', 'grasp', 'hydra'])
+    # parser.add_argument('--is_finetune', default=0, type=int, choices=[0, 1])
+    # parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "instagram"])
+    # parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"])
 
 
     parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
@@ -122,7 +122,6 @@ def main():
     print(args)
     # Device
     device = torch.device(f"cuda:{args.gpu}")
-    args.device=device
     torch.cuda.set_device(int(args.gpu))
     set_seed(args.seed)
     # Save Path
@@ -131,6 +130,7 @@ def main():
                 'IMAGESIZE'+str(args.input_size)+'_'+str(args.pad_size)+'_'+str(args.mask_size), 'SEED'+str(args.seed), 'GPU'+str(args.gpu), 'DENSITY'+str(args.k))
     os.makedirs(save_path, exist_ok=True)
     save_args(args, save_path+'args.pkl')
+    args.device=device
     logger = SummaryWriter(os.path.join(save_path, 'tensorboard'))
     print('Save path: ',save_path)
     # Network and Dataset

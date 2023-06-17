@@ -9,7 +9,7 @@ from torch.nn import Conv2d, Linear
 
 
 
-def replace_layers(model, old_layer, new_layer,channelPrune):
+def replace_layers(model, old_layer, new_layer, channelPrune):
     for name, module in reversed(model._modules.items()):
         if len(list(module.children())) > 0:
             model._modules[name] = replace_layers(module, old_layer, new_layer,channelPrune)
@@ -171,9 +171,9 @@ class SubnetLinear(nn.Linear):
 
 
 def set_hydra_network(network, args):
-    cl, ll = get_layers(args.layer_type)
-    network=replace_layers(network,Conv2d,cl,args.ChannelPrune)
-    network=replace_layers(network,Linear,ll,args.ChannelPrune)
+    cl, ll = get_layers('subnet')
+    network=replace_layers(network,Conv2d,cl,'weight')
+    network=replace_layers(network,Linear,ll,'weight')
     network.to(args.device)
     if args.hydra_scaled_init:
         print('Using hydra scaled score initialization\n')
@@ -182,10 +182,14 @@ def set_hydra_network(network, args):
     return network
 
 
-def set_hydra_prune_rate(network, prune_rate, args):
-    cl, ll = get_layers(args.layer_type)
+def set_hydra_prune_rate(network, prune_rate):
+    cl, ll = get_layers('subnet')
     for name, module in network.named_modules():
         if isinstance(module,cl):
             module.set_prune_rate(prune_rate)
         if  isinstance(module,ll):
             module.set_prune_rate(prune_rate)
+
+
+def extract_hydra_mask():
+    pass

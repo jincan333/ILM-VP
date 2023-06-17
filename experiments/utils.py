@@ -142,12 +142,12 @@ def obtain_label_mapping(mapping_sequence):
 
 
 def save_args(args, file_path):
-    with open(file_path, 'wb') as file:
+    with open(file_path, 'w') as file:
         json.dump(vars(args), file)
 
 
 def load_args(file_path):
-    with open(file_path, 'rb') as file:
+    with open(file_path, 'r') as file:
         load_args = json.load(file)
 
     return load_args

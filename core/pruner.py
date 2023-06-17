@@ -12,10 +12,11 @@ __all__  = ['pruning_model', 'pruning_model_random', 'prune_model_custom', 'remo
 # Pruning operation
 def pruning_model(model, px):
 
-    print('Apply Unstructured L1 Pruning Globally (all conv layers)')
+    # TODO only prune conv layers?
+    print('Apply Unstructured L1 Pruning Globally')
     parameters_to_prune =[]
     for name,m in model.named_modules():
-        if isinstance(m, nn.Conv2d):
+        if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
             parameters_to_prune.append((m,'weight'))
 
     parameters_to_prune = tuple(parameters_to_prune)
@@ -28,10 +29,10 @@ def pruning_model(model, px):
 
 def pruning_model_random(model, px):
 
-    print('Apply Unstructured Random Pruning Globally (all conv layers)')
+    print('Apply Unstructured Random Pruning Globally')
     parameters_to_prune =[]
     for name,m in model.named_modules():
-        if isinstance(m, nn.Conv2d):
+        if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
             parameters_to_prune.append((m,'weight'))
 
     parameters_to_prune = tuple(parameters_to_prune)
@@ -44,9 +45,9 @@ def pruning_model_random(model, px):
 
 def prune_model_custom(model, mask_dict):
 
-    print('Pruning with custom mask (all conv layers)')
+    print('Pruning with custom mask')
     for name,m in model.named_modules():
-        if isinstance(m, nn.Conv2d):
+        if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
             mask_name = name+'.weight_mask'
             if mask_name in mask_dict.keys():
                 prune.CustomFromMask.apply(m, 'weight', mask=mask_dict[name+'.weight_mask'])
@@ -56,9 +57,9 @@ def prune_model_custom(model, mask_dict):
 
 def remove_prune(model):
     
-    print('Remove hooks for multiplying masks (all conv layers)')
+    print('Remove hooks for multiplying masks')
     for name,m in model.named_modules():
-        if isinstance(m, nn.Conv2d):
+        if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
             prune.remove(m,'weight')
 
 
@@ -72,6 +73,7 @@ def extract_mask(model_dict):
 
     return new_dict
 
+
 def reverse_mask(mask_dict):
 
     new_dict = {}
@@ -81,6 +83,7 @@ def reverse_mask(mask_dict):
 
     return new_dict
 
+
 # Mask statistic function
 def check_sparsity(model):
     
@@ -88,7 +91,7 @@ def check_sparsity(model):
     zero_sum = 0
 
     for name,m in model.named_modules():
-        if isinstance(m, nn.Conv2d):
+        if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
             sum_list = sum_list+float(m.weight.nelement())
             zero_sum = zero_sum+float(torch.sum(m.weight == 0))  
 
@@ -100,6 +103,7 @@ def check_sparsity(model):
         remain_weight_ratie = None
 
     return remain_weight_ratie
+
 
 def check_sparsity_dict(state_dict):
     

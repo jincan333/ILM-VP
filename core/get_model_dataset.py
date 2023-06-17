@@ -3,7 +3,7 @@ import json
 from collections import OrderedDict
 from torchvision import  transforms
 from torch.utils.data import DataLoader, Subset
-from torchvision.datasets import CIFAR10, CIFAR100, SVHN, GTSRB, Food101, SUN397, EuroSAT, UCF101, StanfordCars, Flowers102, DTD, OxfordIIITPet
+from torchvision.datasets import CIFAR10, CIFAR100, SVHN, GTSRB, Food101, SUN397, EuroSAT, UCF101, StanfordCars, Flowers102, DTD, OxfordIIITPet, MNIST
 import numpy as np
 
 from const import GTSRB_LABEL_MAP, IMAGENETNORMALIZE
@@ -22,7 +22,11 @@ from const import GTSRB_LABEL_MAP, IMAGENETNORMALIZE
         10. FLOWERS-102
         11. DTD
         12. Oxford Pets
+        13. MNIST
 '''
+import os
+
+
 
 def get_model(args):
     # network
@@ -42,11 +46,10 @@ def get_model(args):
 
 
 # Imagenet Transform
-def image_transform(args):
+def image_transform(args, transform_type):
     normalize = transforms.Normalize(mean=IMAGENETNORMALIZE['mean'], std=IMAGENETNORMALIZE['std'])
-    if args.prompt_method:
-        
-        if args.randomcrop and args.dataset=='cifar10':
+    if transform_type == 'vp':
+        if args.randomcrop:
             print('Using randomcrop\n')
             train_transform = transforms.Compose([
                 transforms.RandomCrop((32, 32), padding=4),
@@ -67,7 +70,7 @@ def image_transform(args):
                 transforms.Resize((args.input_size, args.input_size)),
                 transforms.ToTensor(),
             ])
-    else:
+    elif transform_type == 'ff':
         train_transform = transforms.Compose([
             transforms.Resize((256,256)),
             transforms.RandomCrop(224),
@@ -85,10 +88,10 @@ def image_transform(args):
     return train_transform, test_transform, normalize
 
 
-def get_torch_dataset(args):
+def get_torch_dataset(args, transform_type):
     data_path = os.path.join(args.data, args.dataset)
     dataset = args.dataset
-    train_transform, test_transform, normalize = image_transform(args)
+    train_transform, test_transform, normalize = image_transform(args, transform_type)
 
     if dataset == "cifar10":
         full_data = CIFAR10(root = data_path, train = True, download = True)
@@ -149,11 +152,14 @@ def get_torch_dataset(args):
         class_cnt = 10
 
     elif dataset == 'ucf101':
-        full_data = UCF101(root = data_path, split = 'train', download = True)
+        annotation_path = os.path.join(data_path, 'ucfTrainTestlist')
+        data_path = os.path.join(data_path, 'UCF-101')
+        full_data = UCF101(root = data_path,  annotation_path=annotation_path, frames_per_clip=1, fold=1, train = True)
+        # frames_per_clip=16, step_between_clips=1, 
         train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(UCF101(data_path, split = 'train', transform=train_transform, download=True), train_indices)
-        val_set = Subset(UCF101(data_path, split = 'train', transform=test_transform, download=True), val_indices)
-        test_set = UCF101(data_path, split = 'test', transform=test_transform, download=True)
+        train_set = Subset(UCF101(data_path, train = True, annotation_path=annotation_path, frames_per_clip=1, fold=1, transform=train_transform), train_indices)
+        val_set = Subset(UCF101(data_path, train = True, annotation_path=annotation_path, frames_per_clip=1, fold=1, transform=test_transform), val_indices)
+        test_set = UCF101(data_path, train = False, annotation_path=annotation_path, frames_per_clip=1, fold=1, transform=test_transform)
         class_cnt = 101
     
     elif dataset == 'stanfordcars':
@@ -187,6 +193,14 @@ def get_torch_dataset(args):
         val_set = Subset(OxfordIIITPet(data_path, split = 'trainval', transform=test_transform, download=True), val_indices)
         test_set = OxfordIIITPet(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 37
+    
+    elif dataset == 'mnist':
+        full_data = MNIST(root = data_path, train = True, download = True)
+        train_indices, val_indices = get_indices(full_data)
+        train_set = Subset(MNIST(data_path, train = True, transform=train_transform, download=True), train_indices)
+        val_set = Subset(MNIST(data_path, train = True, transform=test_transform, download=True), val_indices)
+        test_set = MNIST(data_path, train = False, transform=test_transform, download=True)
+        class_cnt = 10
 
     else:
         raise NotImplementedError(f"{dataset} not supported")
@@ -214,3 +228,12 @@ def get_indices(full_data):
     val_indices = indices[train_len:]
 
     return train_indices, val_indices
+
+
+def choose_dataloader(args, phase):
+    train_loader, val_loader, test_loader = get_torch_dataset(args, 'ff')
+    if phase == 'subnetwork':
+        if args.prune_mode in ('vp', 'vp_ff'):
+            train_loader, val_loader, test_loader = get_torch_dataset(args, 'vp')            
+    
+    return train_loader, val_loader, test_loader
