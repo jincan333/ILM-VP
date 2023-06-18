@@ -231,9 +231,11 @@ def get_indices(full_data):
 
 
 def choose_dataloader(args, phase):
-    train_loader, val_loader, test_loader = get_torch_dataset(args, 'ff')
-    if phase == 'subnetwork':
-        if args.prune_mode in ('vp', 'vp_ff'):
-            train_loader, val_loader, test_loader = get_torch_dataset(args, 'vp')            
+    if phase == 'subnetwork' and args.prune_mode in ('vp', 'vp_ff'):
+        print('choose visual prompt dataset')
+        train_loader, val_loader, test_loader = get_torch_dataset(args, 'vp')       
+    else:
+        print('choose full finetune dataset')
+        train_loader, val_loader, test_loader = get_torch_dataset(args, 'ff')
     
     return train_loader, val_loader, test_loader

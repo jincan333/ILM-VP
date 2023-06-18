@@ -293,37 +293,46 @@ def SynFlow(masks, net, keep_ratio, train_dataloader, device, visual_prompt, lab
     inputs = inputs.to(device)
     targets = targets.to(device)
     inputs.requires_grad = True
+
     net = copy.deepcopy(net).to(device)
-
+    net.train()
     scores = {}
-    # linearize
-    signs = {}
-    for name, param in net.state_dict().items():
-        signs[name] = torch.sign(param)
-        param.abs_()
-    input_dim = list(inputs[0, :].shape)
-    input = torch.ones([1] + input_dim).to(device)
-    output = label_mapping(net(visual_prompt(input))) if visual_prompt else label_mapping(net(input))
-    torch.sum(output).backward()
-    # calculate scores
-    for name, weight in net.named_parameters():
-        if name not in masks: continue
-        scores[name] = torch.clone(weight.grad * weight).detach().abs_()
-        weight.grad.data.zero_()
-    # unlinearize
-    for name, param in net.state_dict().items():
-        param.mul_(signs[name])
-
-    # calculate mask
-    global_scores = torch.cat([torch.flatten(v) for v in scores.values()])
-    k = int((1 - keep_ratio) * global_scores.numel())
-    if not k < 1:
-        threshold, _ = torch.kthvalue(global_scores, k)
+    epochs=1000
+    # mask iteratively
+    for epoch in range(epochs):
+        # linearize
+        signs = {}
+        for name, param in net.state_dict().items():
+            signs[name] = torch.sign(param)
+            param.abs_()
+        input_dim = list(inputs[0, :].shape)
+        input = torch.ones([1] + input_dim).to(device)
+        output = label_mapping(net(visual_prompt(input))) if visual_prompt else label_mapping(net(input))
+        torch.sum(output).backward()
+        # calculate scores
         for name, weight in net.named_parameters():
             if name not in masks: continue
-            score = scores[name] 
-            zero = torch.tensor([0.]).to(device)
-            one = torch.tensor([1.]).to(device)
-            masks[name].copy_(torch.where(score <= threshold, zero, one))
+            scores[name] = torch.clone(weight.grad * weight).detach().abs_()
+            weight.grad.data.zero_()
+        # unlinearize
+        for name, param in net.state_dict().items():
+            param.mul_(signs[name])
+        # calculate ratio to mask
+        ratio = keep_ratio**((epoch+1)/epochs)
+        # calculate mask
+        global_scores = torch.cat([torch.flatten(v) for v in scores.values()])
+        k = int((1 - ratio) * global_scores.numel())
+        if not k < 1:
+            threshold, _ = torch.kthvalue(global_scores, k)
+            for name, weight in net.named_parameters():
+                if name not in masks: continue
+                score = scores[name] 
+                zero = torch.tensor([0.]).to(device)
+                one = torch.tensor([1.]).to(device)
+                masks[name].copy_(torch.where(score <= threshold, zero, one))
+        # apply mask to net
+        for name, weight in net.named_parameters():
+            if name not in masks: continue
+            weight.data=weight.data.mul_(masks[name])
 
     return masks
