@@ -31,7 +31,7 @@ def main():
     parser.add_argument('--vp_lr', default=0.01, type=float, help='initial learning rate')
     parser.add_argument('--hydra_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--hydra_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
-    parser.add_argument('--hydra_lr', default=0.001, type=float, help='initial learning rate')
+    parser.add_argument('--hydra_lr', default=0.01, type=float, help='initial learning rate')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50"])
     parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397", 'mnist'])
     parser.add_argument('--experiment_name', default='exp_new', type=str, help='name of experiment')
@@ -126,6 +126,7 @@ def main():
     # Initialize before train init dense network
     mask = None
     state_init = copy.deepcopy(network.state_dict())
+    pre_state_init = copy.deepcopy(network.state_dict())
     visual_prompt_init = copy.deepcopy(visual_prompt.state_dict()) if visual_prompt else None
     visual_prompt, hydra_optimizer, hydra_scheduler, vp_optimizer, vp_scheduler, ff_optimizer, ff_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(
         network, visual_prompt_init, mapping_sequence, None, args)
@@ -229,10 +230,14 @@ def main():
         # prune
         if args.prune_method == 'imp':
             print('IMP pruning')
+            network.load_state_dict(pre_state_init)
             prune_model_custom(network, current_mask)
             check_sparsity(network)
         else:
             network, mask = prune_network(network, ff_optimizer, visual_prompt, label_mapping, train_loader, state, args)
+            if args.prune_method in ('omp', 'random'):
+                network.load_state_dict(pre_state_init)
+                mask.apply_mask()
         masks = get_masks(mask) if mask else None
         if args.prune_method != 'hydra':
             label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)

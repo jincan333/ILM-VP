@@ -4,17 +4,34 @@ import pickle
 
 
 if __name__ == '__main__':
-    dir_path = '/data4/hop20001/can/ILM-VP/result/ablation_ff_optimizer_scheduler/resnet18/cifar10/PRUNE_MODEno_tune/PRUNEimp/VPpad/LMflm/SIZE224_128_48_183/sgd_adam_adam/multistep_multistep_multistep/LR0.01_0.01_0.001/DENSITY[1, 0.8, 0.2, 0.1, 0.05]/EPOCHS50/SEED7/GPU7'
+    dir_path = '/data4/hop20001/can/ILM-VP/result/vp_ff/resnet18/cifar10/SECOND_PHASEvp+ff_cotrain/PRUNE_MODEvp_ff/PRUNEhydra/VPpad/LMilm/SIZE224_128_48_183/sgd_adam_adam/cosine_multistep_multistep/LR0.01_0.01_0.001/DENSITY[1, 0.2, 0.1, 0.05]/EPOCHS100/SEED7/GPU5'
     # with open(dir_path, 'rb') as file:
     #     data = pickle.load(file)
     # print(file)
     ckpt_path = []
     acc = []
-    for i in range(0,1):
+    for i in range(0,4):
         ckpt_path.append(os.path.join(dir_path, str(i) + 'best.pth'))
     for path in ckpt_path:
         acc.append(torch.load(path)['ckpt_test_acc'])
     print(acc)
+# 0618
+# vp_ff
+freeze_vp_ff=[0.3837, 0.9052, 0.8952, 0.8708]
+vp_ff_cotrain=[0.3837, 0.9055, 0.8938, 0.8717]
+
+# normal
+vp_hydra=[0.3837, 0.9482, 0.9152, 0.9016, 0.8896]
+hydra=[0.502, 0.9609, 0.945, 0.9364, 0.9289]
+imp=[]
+omp=[0.9601, 0.9605, 0.9543, 0.949, 0.9325]
+random=[0.9568, 0.9557, 0.9104, 0.8845, 0.8785]
+grasp=[0.502, 0.9482, 0.918, 0.9074, 0.8922]
+snip=[]
+synflow=[]
+
+# no_tune
+
 # 0617
 # hydra vp_lr: nearly same
 lr01 = 0

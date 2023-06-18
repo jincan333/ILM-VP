@@ -15,7 +15,7 @@ prune_modes=('vp_ff')
 prune_methods=('hydra')
 
 second_phases=('freeze_vp+ff' 'vp+ff_cotrain')
-gpus=(3 2 1)
+gpus=(6 5)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for l in ${!prune_methods[@]};do

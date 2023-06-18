@@ -15,8 +15,8 @@ epochs=100
 seed=7
 
 prune_modes=('normal')
-prune_methods=('hydra' 'random' 'imp' 'omp' 'grasp' 'snip' 'synflow')
-gpus=(0 1 2 3 0 1 2 3)
+prune_methods=('hydra' 'imp' 'omp' 'random' 'snip' 'synflow' 'grasp')
+gpus=(3 2 1 0 3 2 1 0)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

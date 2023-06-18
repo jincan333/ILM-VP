@@ -10,12 +10,12 @@ fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra']
 networks=('resnet18')
 datasets=('cifar10')
-epochs=3
+epochs=2
 seed=7
 
 prune_modes=('normal')
-prune_methods=('synflow')
-gpus=(0)
+prune_methods=('omp' 'random')
+gpus=(0 1)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
