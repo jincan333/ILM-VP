@@ -17,7 +17,7 @@ def snip_forward_linear(self, x):
         return F.linear(x, self.weight * self.weight_mask, self.bias)
 
 
-def SNIP(net, keep_ratio, train_dataloader, device, visual_prompt, label_mapping):
+def SNIP(masks, net, keep_ratio, train_dataloader, device, visual_prompt, label_mapping):
 
     # Grab a single batch from the training dataset
     inputs, targets = next(iter(train_dataloader))
@@ -35,28 +35,26 @@ def SNIP(net, keep_ratio, train_dataloader, device, visual_prompt, label_mapping
             layer.weight_mask = nn.Parameter(torch.ones_like(layer.weight))
             nn.init.xavier_normal_(layer.weight)
             layer.weight.requires_grad = False
-
         # Override the forward methods:
         if isinstance(layer, nn.Conv2d):
             layer.forward = types.MethodType(snip_forward_conv2d, layer)
-
         if isinstance(layer, nn.Linear):
             layer.forward = types.MethodType(snip_forward_linear, layer)
 
     # Compute gradients (but don't apply them)
     net.zero_grad()
-    
-    outputs = label_mapping(net.forward(visual_prompt(inputs))) if visual_prompt else label_mapping(net.forward(inputs))
+    # outputs = label_mapping(net.forward(visual_prompt(inputs))) if visual_prompt else label_mapping(net.forward(inputs))
+    outputs = net.forward(visual_prompt(inputs)) if visual_prompt else net.forward(inputs)
     loss = F.cross_entropy(outputs, targets)
     loss.backward()
 
-    grads_abs = []
-    for layer in net.modules():
-        if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-            grads_abs.append(torch.abs(layer.weight_mask.grad))
+    grads_abs={}
+    for name, weight in net.named_parameters():
+        if name[:-5] not in masks: continue
+        grads_abs[name[:-5]] = torch.abs(weight.grad)
 
     # Gather all scores in a single vector and normalise
-    all_scores = torch.cat([torch.flatten(x) for x in grads_abs])
+    all_scores = torch.cat([torch.flatten(x) for x in grads_abs.values()])
     norm_factor = torch.sum(all_scores)
     all_scores.div_(norm_factor)
 
@@ -64,14 +62,9 @@ def SNIP(net, keep_ratio, train_dataloader, device, visual_prompt, label_mapping
     threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
     acceptable_score = threshold[-1]
 
-    layer_wise_sparsities = []
-    for g in grads_abs:
-        mask = ((g / norm_factor) > acceptable_score).float()
-        sparsity = float((mask==0).sum().item() / mask.numel())
-        layer_wise_sparsities.append(sparsity)
-    print(f'layer-wise sparsity is {layer_wise_sparsities}')
-
-    return layer_wise_sparsities
+    # calculate mask
+    for name in grads_abs.keys():
+        masks[name] = ((grads_abs[name] / norm_factor) >= acceptable_score).float()
 
 
 def SNIP_training(net, keep_ratio, train_dataloader, device, masks, death_rate):
@@ -177,11 +170,10 @@ def count_fc_parameters(net):
     return total
 
 
-def GraSP(net, ratio, train_dataloader, device, visual_prompt, label_mapping, num_classes=10, samples_per_class=25, num_iters=1, T=200, reinit=True):
+def GraSP(masks, net, ratio, train_dataloader, device, visual_prompt, label_mapping, num_classes=10, samples_per_class=25, num_iters=1, T=200, reinit=True):
     eps = 1e-10
     keep_ratio = ratio
     old_net = net
-
     net = copy.deepcopy(net)  # .eval()
     net.zero_grad()
 
@@ -189,14 +181,11 @@ def GraSP(net, ratio, train_dataloader, device, visual_prompt, label_mapping, nu
     for layer in net.modules():
         if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
             weights.append(layer.weight)
-
     inputs_one = []
     targets_one = []
-
     grad_w = None
     for w in weights:
         w.requires_grad_(True)
-
     print_once = False
     for it in range(num_iters):
         print("(1): Iterations %d/%d." % (it, num_iters))
@@ -211,7 +200,8 @@ def GraSP(net, ratio, train_dataloader, device, visual_prompt, label_mapping, nu
         inputs = inputs.to(device)
         targets = targets.to(device)
 
-        outputs = label_mapping(net.forward(visual_prompt(inputs[:N//2])))/T if visual_prompt else label_mapping(net.forward(inputs[:N//2]))/T
+        # outputs = label_mapping(net.forward(visual_prompt(inputs[:N//2])))/T if visual_prompt else label_mapping(net.forward(inputs[:N//2]))/T
+        outputs = net.forward(visual_prompt(inputs[:N//2]))/T if visual_prompt else net.forward(inputs[:N//2])/T
         if print_once:
             # import pdb; pdb.set_trace()
             x = F.softmax(outputs)
@@ -227,7 +217,8 @@ def GraSP(net, ratio, train_dataloader, device, visual_prompt, label_mapping, nu
             for idx in range(len(grad_w)):
                 grad_w[idx] += grad_w_p[idx]
 
-        outputs = label_mapping(net.forward(visual_prompt(inputs[N // 2:])))/T if visual_prompt else label_mapping(net.forward(inputs[N // 2:]))/T
+        # outputs = label_mapping(net.forward(visual_prompt(inputs[N // 2:])))/T if visual_prompt else label_mapping(net.forward(inputs[N // 2:]))/T
+        outputs = net.forward(visual_prompt(inputs[N // 2:]))/T if visual_prompt else net.forward(inputs[N // 2:])/T
         loss = F.cross_entropy(outputs, targets[N // 2:])
         grad_w_p = autograd.grad(loss, weights, create_graph=False)
         if grad_w is None:
@@ -245,7 +236,8 @@ def GraSP(net, ratio, train_dataloader, device, visual_prompt, label_mapping, nu
         targets = targets_one.pop(0).to(device)
         ret_inputs.append(inputs)
         ret_targets.append(targets)
-        outputs = label_mapping(net.forward(visual_prompt(inputs)))/T  if visual_prompt else label_mapping(net.forward(inputs))/T
+        # outputs = label_mapping(net.forward(visual_prompt(inputs)))/T  if visual_prompt else label_mapping(net.forward(inputs))/T
+        outputs = net.forward(visual_prompt(inputs))/T  if visual_prompt else net.forward(inputs)/T
         loss = F.cross_entropy(outputs, targets)
         # ===== debug ==============
 
@@ -259,10 +251,9 @@ def GraSP(net, ratio, train_dataloader, device, visual_prompt, label_mapping, nu
         z.backward()
 
     grads = dict()
-    old_modules = list(old_net.modules())
-    for idx, layer in enumerate(net.modules()):
-        if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-            grads[old_modules[idx]] = -layer.weight.data * layer.weight.grad  # -theta_q Hg
+    for name, weight in net.named_parameters():
+        if name not in masks: continue
+        grads[name] = -weight.data * weight.grad
 
     # Gather all scores in a single vector and normalise
     all_scores = torch.cat([torch.flatten(x) for x in grads.values()])
@@ -275,16 +266,10 @@ def GraSP(net, ratio, train_dataloader, device, visual_prompt, label_mapping, nu
     # import pdb; pdb.set_trace()
     acceptable_score = threshold[-1]
     print('** accept: ', acceptable_score)
+    # calculate mask
+    for name in grads.keys():
+        masks[name] = ((grads[name] / norm_factor) <= acceptable_score).float()
 
-    layer_wise_sparsities = []
-    for m, g in grads.items():
-        mask = ((g / norm_factor) <= acceptable_score).float()
-        sparsity = float((mask == 0).sum().item() / mask.numel())
-        layer_wise_sparsities.append(sparsity)
-
-    print(f'layer-wise sparsity is {layer_wise_sparsities}')
-
-    return layer_wise_sparsities
 
 
 def SynFlow(masks, net, keep_ratio, train_dataloader, device, visual_prompt, label_mapping):
@@ -295,9 +280,8 @@ def SynFlow(masks, net, keep_ratio, train_dataloader, device, visual_prompt, lab
     inputs.requires_grad = True
 
     net = copy.deepcopy(net).to(device)
-    net.train()
     scores = {}
-    epochs=1000
+    epochs=100
     # mask iteratively
     for epoch in range(epochs):
         # linearize
@@ -305,9 +289,11 @@ def SynFlow(masks, net, keep_ratio, train_dataloader, device, visual_prompt, lab
         for name, param in net.state_dict().items():
             signs[name] = torch.sign(param)
             param.abs_()
-        input_dim = list(inputs[0, :].shape)
-        input = torch.ones([1] + input_dim).to(device)
-        output = label_mapping(net(visual_prompt(input))) if visual_prompt else label_mapping(net(input))
+        # input_dim = list(inputs[0, :].shape)
+        # input = torch.ones([1] + input_dim).to(device)
+        # Use visual prompt
+        input = inputs[epoch:]
+        output = net(visual_prompt(input)) if visual_prompt else net(input)
         torch.sum(output).backward()
         # calculate scores
         for name, weight in net.named_parameters():
@@ -334,5 +320,3 @@ def SynFlow(masks, net, keep_ratio, train_dataloader, device, visual_prompt, lab
         for name, weight in net.named_parameters():
             if name not in masks: continue
             weight.data=weight.data.mul_(masks[name])
-
-    return masks

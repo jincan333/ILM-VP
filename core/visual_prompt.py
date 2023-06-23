@@ -47,7 +47,8 @@ class PadVisualPrompt(nn.Module):
             raise ValueError("Pad Should Not Exceed Half Of Output Size")
 
     def forward(self, x):
-        x = F.pad(x, (self.l_pad, self.r_pad, self.l_pad, self.r_pad), value=0) + torch.sigmoid(self.program) * self.mask
+        # x = F.pad(x, (self.l_pad, self.r_pad, self.l_pad, self.r_pad), value=0) + torch.sigmoid(self.program) * self.mask
+        x = F.pad(x, (self.l_pad, self.r_pad, self.l_pad, self.r_pad), value=0) + self.program * self.mask
         if self.normalize is not None:
             x = self.normalize(x)
         return x

@@ -4,7 +4,7 @@ import pickle
 
 
 if __name__ == '__main__':
-    dir_path = '/data4/hop20001/can/ILM-VP/result/vp_ff/resnet18/cifar10/SECOND_PHASEvp+ff_cotrain/PRUNE_MODEvp_ff/PRUNEhydra/VPpad/LMilm/SIZE224_128_48_183/sgd_adam_adam/cosine_multistep_multistep/LR0.01_0.01_0.001/DENSITY[1, 0.2, 0.1, 0.05]/EPOCHS100/SEED7/GPU5'
+    dir_path = '/data4/hop20001/can/ILM-VP/result/normal/resnet18/cifar10/PRUNE_MODEnormal/PRUNEsynflow/VPpad/LMilm/SIZE224_128_48_183/sgd_adam_adam/cosine_multistep_multistep/LR0.01_0.01_0.01/DENSITY[1, 0.2, 0.1, 0.05]/EPOCHS100/SEED7/GPU2'
     # with open(dir_path, 'rb') as file:
     #     data = pickle.load(file)
     # print(file)
@@ -15,20 +15,85 @@ if __name__ == '__main__':
     for path in ckpt_path:
         acc.append(torch.load(path)['ckpt_test_acc'])
     print(acc)
+# 0619
+# TODO what if we don't add VP?
+# ablation vp_hydra vp search
+
+
+
+# ablation vp_hydra ff_lr search
+no_tune=[0.9315]
+hydra_ff01=[0.9413]
+hydra_ff001=[0.9321]
+hydra_ff0001=[0.9041]
+
+# ablation vp_hydra lr search no_tune
+hydra001_vp01=[0.9033]
+hydra001_vp001=[0.9073]
+hydra001_vp0001=[0.9052]
+hydra0001_vp01=[0.9336]
+hydra0001_vp001=[0.9315]
+hydra0001_vp0001=[0.9291]
+
+# ablation vp_hydra lr search ff
+hydra001_vp01=[0.9089]
+hydra001_vp001=[0.9059]
+hydra001_vp0001=[0.9074]
+hydra0001_vp01=[0.9418]
+hydra0001_vp001=[0.9413]
+hydra0001_vp0001=[0.9396]
+
+# ablation vp_hydra vp search ff 0.01
+pad16=[0.7056, 0.7519, 0.8099, 0.8411, 0.8492, 0.8686, 0.8760]
+pad32=[0.8732]
+pad48=[0.8780]
+pad64=[0.8692]
+
+# ablation vp_hydra vp search no_tune 0.01
+pad16=[0.7796, 0.8020, 0.8357, 0.8487, 0.8740, 0.8679, 0.8695]
+pad32=[0.8655]
+pad48=[0.8717]
+pad64=[0.8592]
+
 # 0618
 # vp_ff
-freeze_vp_ff=[0.3837, 0.9052, 0.8952, 0.8708]
-vp_ff_cotrain=[0.3837, 0.9055, 0.8938, 0.8717]
+# TODO vp hydra 001 experiment
+freeze_vp_ff_001=[0.3837, 0.9052, 0.8952, 0.8708]
+vp_ff_cotrain_001=[0.3837, 0.9055, 0.8938, 0.8717]
+# vp_hydra_001=[0.3837, 0.9482, 0.9152, 0.9016, 0.8896]
+vp_hydra_001=[0.3837, 0.9152, 0.9016, 0.8896]
+vp_hydra_01=[0.3837, 0.8422, 0.8410, 0.8397]
+vp_hydra_01_no_scale=[0.3837, 0.8474, 0.8373, 0.8228]
+
+# vp_no_tune 
+freeze_vp_ff_001=[0.3837, 0.9051, 8925, 0.8704]
+vp_ff_cotrain_001=[0.3837, 0.9051, 8925, 0.8704]
+# vp_hydra_001=[0.3837, 0.9399, 0.9087, 0.8905, 0.8782]
+vp_hydra_001=[0.3837, 0.9087, 0.8905, 0.8782]
+vp_hydra_01=[0.3837, 0.8495, 0.8442, 0.8274]
+vp_hydra_01_no_scale=[0.3837, 0.8501, 0.8311, 0.8353]
 
 # normal
-vp_hydra=[0.3837, 0.9482, 0.9152, 0.9016, 0.8896]
-hydra=[0.502, 0.9609, 0.945, 0.9364, 0.9289]
-imp=[]
-omp=[0.9601, 0.9605, 0.9543, 0.949, 0.9325]
-random=[0.9568, 0.9557, 0.9104, 0.8845, 0.8785]
-grasp=[0.502, 0.9482, 0.918, 0.9074, 0.8922]
-snip=[]
-synflow=[]
+hydra_01=[0.9568, 0.9190, 0.9084, 0.9015]
+# hydra_001=[0.9568, 0.9609, 0.945, 0.9364, 0.9289]
+hydra_001=[0.9568, 0.945, 0.9364, 0.9289]
+imp=[0.9568, 0.9559, 0.9486, 0.9377]
+omp=[0.9568, 0.9559, 0.9443, 0.9309]
+random=[0.9568, 0.8984, 0.8914, 0.8743]
+# grasp=[0.9568, 0.9482, 0.918, 0.9074, 0.8922]
+grasp=[0.9568, 0.918, 0.9074, 0.8922]
+snip=[0.9568, 0.8964, 0.8928, 0.1]
+synflow=[0.9568, 0.9457, 0.9372, 0.9137]
+
+# normal_no_tune
+hydra_01=[0.502, 0.9197, 0.9104, 0.8988]
+imp=[0.502, 0.2057, 0.1915, 0.1011]
+omp=[0.502, 0.2057, 0.1220, 0.1146]
+random=[0.502, 0.1, 0.1, 0.1]
+# grasp=[0.502, 0.1747, 0.1, 0.1, 0.1]
+grasp=[0.502, 0.1, 0.1, 0.1]
+snip=[0.502, 0.1, 0.1, 0.1]
+synflow=[0.502, 0.1703, 0.1002, 0.1018]
 
 # no_tune
 
@@ -43,11 +108,6 @@ lr001=0
 
 
 # hydra score optimizer: adam is better
-
-
-# ff optimizer: sgd is better
-sgd_cosine=0.9586
-sgd_multistep=0.9582
 
 
 # 0614 

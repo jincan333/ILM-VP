@@ -1,36 +1,37 @@
 #!/bin/sh
 
-experiment_name='normal'
+experiment_name='ablation_hydra_no_nettrain'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
 fi
-# datasets=("cifar100" "dtd" "flowers102" "ucf101" "food101" "gtsrb" "svhn" "eurosat" "oxfordpets" "stanfordcars" "sun397")
-# datasets=("ucf101" "eurosat" "oxfordpets" "stanfordcars" "sun397") 
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra']
-# dataset=('cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102' 'ucf101')
+# dataset=('ucf101' 'cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102')
 networks=('resnet18')
-datasets=('cifar100')
-epochs=100
+datasets=('cifar10')
+epochs=50
 seed=7
-density_list='1,0.20,0.10,0.05'
+density_list=('1,0.2')
 
-prune_modes=('normal')
 prune_methods=('hydra')
-gpus=(4)
+prompt_methods=('pad')
+
+prune_modes=('vp_ff' 'normal')
+gpus=(7 6)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
-        for k in ${!prune_modes[@]};do
-            for l in ${!prune_methods[@]};do
-                log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}.log
+        for l in ${!prune_methods[@]};do
+            for k in ${!prune_modes[@]};do
+                log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_methods[l]}_${prune_modes[k]}.log
                     python ./core/vpns.py \
                         --experiment_name ${experiment_name} \
                         --dataset ${datasets[i]} \
                         --network ${networks[j]} \
-                        --prune_method ${prune_methods[l]} \
                         --prune_mode ${prune_modes[k]} \
-                        --density_list ${density_list} \
-                        --gpu ${gpus[l]} \
+                        --prune_method ${prune_methods[l]} \
+                        --prompt_method ${prompt_methods[0]} \
+                        --density_list ${density_list[0]} \
+                        --gpu ${gpus[k]} \
                         --epochs ${epochs} \
                         --seed ${seed} \
                         > $log_filename 2>&1 &

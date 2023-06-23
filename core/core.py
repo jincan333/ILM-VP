@@ -93,21 +93,15 @@ class Masking(object):
 
         elif mode == 'snip':
             print('initialize by snip')
-            layer_wise_sparsities = SNIP(self.module, self.density, self.train_loader, self.device, self.visual_prompt, self.label_mapping)
-            # re-sample mask positions
-            for sparsity_, name in zip(layer_wise_sparsities, self.masks):
-                self.masks[name][:] = (torch.rand(self.masks[name].shape) < (1-sparsity_)).float().data.cuda()
+            SNIP(self.masks, self.module, self.density, self.train_loader, self.device, self.visual_prompt, self.label_mapping)
 
         elif mode == 'grasp':
             print('initialize by GraSP')
-            layer_wise_sparsities = GraSP(self.module, self.density, self.train_loader, self.device , self.visual_prompt, self.label_mapping, num_classes=self.args.class_cnt)
-            # re-sample mask positions
-            for sparsity_, name in zip(layer_wise_sparsities, self.masks):
-                self.masks[name][:] = (torch.rand(self.masks[name].shape) < (1-sparsity_)).float().data.cuda()
+            GraSP(self.masks, self.module, self.density, self.train_loader, self.device , self.visual_prompt, self.label_mapping, num_classes=self.args.class_cnt)
 
         elif mode == 'synflow':
             print('initialize by Synflow')
-            self.masks = SynFlow(self.masks, self.module, self.density, self.train_loader, self.device , self.visual_prompt, self.label_mapping)
+            SynFlow(self.masks, self.module, self.density, self.train_loader, self.device , self.visual_prompt, self.label_mapping)
 
         elif mode == 'uniform_plus':
             print('initialize by uniform+')

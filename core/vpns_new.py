@@ -26,20 +26,20 @@ def main():
     parser.add_argument('--ff_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--ff_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--ff_lr', default=0.01, type=float, help='initial learning rate')
-    parser.add_argument('--vp_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
+    parser.add_argument('--vp_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--vp_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--vp_lr', default=0.01, type=float, help='initial learning rate')
     parser.add_argument('--hydra_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
-    parser.add_argument('--hydra_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
-    parser.add_argument('--hydra_lr', default=0.01, type=float, help='initial learning rate')
+    parser.add_argument('--hydra_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
+    parser.add_argument('--hydra_lr', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50"])
     parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397", 'mnist'])
     parser.add_argument('--experiment_name', default='exp_new', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
     parser.add_argument('--epochs', default=100, type=int, help='number of total eopchs to run')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
-    parser.add_argument('--density_list', default=[1, 0.20, 0.10, 0.05], type=list, help='density list(1-sparsity), choose from [1, 0.50, 0.40, 0.30, 0.20, 0.10, 0.05]')
-    parser.add_argument('--label_mapping_mode', type=str, default='ilm', choices=['flm', 'ilm'])
+    parser.add_argument('--density_list', default='1,0.20,0.10,0.05', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
+    parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='result', type=str)
@@ -50,8 +50,8 @@ def main():
     ##################################### Dataset #################################################
     parser.add_argument('--data', type=str, default='dataset', help='location of the data corpus')
     parser.add_argument('--randomcrop', type=int, default=0, help='dataset randomcrop.', choices=[0, 1])
-    parser.add_argument('--input_size', type=int, default=128, help='image size before prompt, no more than 224', choices=[224, 192, 160, 128, 96, 64, 32])
-    parser.add_argument('--pad_size', type=int, default=48, help='only for padprompt, no more than 112, parameters cnt 4*pad**2+896pad', choices=[0, 16, 32, 48, 64, 80, 96, 112])
+    parser.add_argument('--input_size', type=int, default=192, help='image size before prompt, no more than 224', choices=[224, 192, 160, 128, 96, 64, 32])
+    parser.add_argument('--pad_size', type=int, default=16, help='only for padprompt, no more than 112, parameters cnt 4*pad**2+896pad', choices=[0, 16, 32, 48, 64, 80, 96, 112])
     parser.add_argument('--mask_size', type=int, default=183, help='only for fixadd and randomadd, no more than 224, parameters cnt mask**2', choices=[115, 156, 183, 202, 214, 221, 224])
 
     ##################################### Architecture ############################################
@@ -82,6 +82,7 @@ def main():
 
     args = parser.parse_args()
     args.prompt_method=None if args.prompt_method=='None' else args.prompt_method        
+    args.density_list=[float(i) for i in args.density_list.split(',')]
     print(json.dumps(vars(args), indent=4))
     # Device
     device = torch.device(f"cuda:{args.gpu}")

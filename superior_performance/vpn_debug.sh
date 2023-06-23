@@ -11,13 +11,13 @@ fi
 # dataset=('cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102' 'ucf101')
 networks=('resnet18')
 datasets=('cifar10')
-epochs=2
+epochs=5
 seed=7
 prune_modes=('vp_ff')
 
 second_phases=('freeze_vp+ff' 'vp+ff_cotrain' 'ff_then_vp')
-prune_methods=('hydra' 'snip' 'synflow')
-gpus=(3 2 1)
+prune_methods=('snip' 'synflow')
+gpus=(3 4 5)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!second_phases[@]};do

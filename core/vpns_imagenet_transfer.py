@@ -1,12 +1,10 @@
 import os
 import torch
 from torch.nn import functional as F
-from torch.cuda.amp import autocast, GradScaler
 import argparse
 import time
 from matplotlib import pyplot as plt
 import copy
-import warnings
 import json
 
 from utils import set_seed, setup_optimizer_and_prompt, calculate_label_mapping, obtain_label_mapping, save_args, get_masks
