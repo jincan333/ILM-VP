@@ -32,7 +32,7 @@ def main():
     parser.add_argument('--hydra_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--hydra_lr', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50"])
-    parser.add_argument('--dataset', default="cifar10", choices=["cifar10", "cifar100", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397", 'mnist'])
+    parser.add_argument('--dataset', default="cifar10", choices=['cifar10', 'cifar100', 'svhn', 'mnist', 'flowers102', 'imagenet'])
     parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
     parser.add_argument('--epochs', default=100, type=int, help='number of total eopchs to run')
@@ -261,6 +261,12 @@ def main():
                     train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
                                     ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=hydra_optimizer, 
                                     ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=hydra_scheduler)
+                    # train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                    #                 ff_optimizer=None, vp_optimizer=None, hydra_optimizer=hydra_optimizer, 
+                    #                 ff_scheduler=None, vp_scheduler=None, hydra_scheduler=hydra_scheduler)
+                    # train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                    #                 ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
+                    #                 ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=None)
                 val_acc = evaluate(val_loader, network, label_mapping, visual_prompt)
                 all_results['train_acc'].append(train_acc)
                 all_results['val_acc'].append(val_acc)

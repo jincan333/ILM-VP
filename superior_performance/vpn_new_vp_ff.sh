@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vp_ff_no_sigmoid_new_optimizer'
+experiment_name='vp_ff_ff_then_vp'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -13,10 +13,10 @@ epochs=100
 seed=7
 prune_modes=('vp_ff')
 prune_methods=('hydra')
-density_list='1,0.10,0.05'
+density_list='1,0.20,0.10,0.05'
 
-second_phases=('freeze_vp+ff' 'vp+ff_cotrain')
-gpus=(1 2)
+second_phases=('vp+ff_cotrain')
+gpus=(6 5)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for l in ${!prune_methods[@]};do

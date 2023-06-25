@@ -17,8 +17,8 @@ pad_size=16
 density_list='1,0.20'
 prune_methods=('hydra')
 
-vp_optimizers=('adam' 'sgd')
-vp_schedulers=('cosine' 'multistep')
+vp_optimizers=('sgd')
+vp_schedulers=('cosine')
 vp_lrs=(0.01 0.001 0.0001)
 gpus=(7 6 5)
 for j in ${!networks[@]};do

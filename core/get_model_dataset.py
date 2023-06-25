@@ -3,7 +3,7 @@ import json
 from collections import OrderedDict
 from torchvision import  transforms
 from torch.utils.data import DataLoader, Subset
-from torchvision.datasets import CIFAR10, CIFAR100, SVHN, GTSRB, Food101, SUN397, EuroSAT, UCF101, StanfordCars, Flowers102, DTD, OxfordIIITPet, MNIST
+from torchvision.datasets import CIFAR10, CIFAR100, SVHN, GTSRB, Food101, SUN397, EuroSAT, UCF101, StanfordCars, Flowers102, DTD, OxfordIIITPet, MNIST, ImageNet
 import numpy as np
 
 from const import GTSRB_LABEL_MAP, IMAGENETNORMALIZE
@@ -23,6 +23,7 @@ from const import GTSRB_LABEL_MAP, IMAGENETNORMALIZE
         11. DTD
         12. Oxford Pets
         13. MNIST
+        14. ImageNet
 '''
 import os
 
@@ -69,6 +70,7 @@ def image_transform(args, transform_type):
             train_transform = transforms.Compose([
                 transforms.Resize((int(args.input_size*9/8), int(args.input_size*9/8))),
                 transforms.RandomCrop(args.input_size),
+                # transforms.RandomResizedCrop(args.input_size),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
             ])
@@ -207,6 +209,14 @@ def get_torch_dataset(args, transform_type):
         val_set = Subset(MNIST(data_path, train = True, transform=test_transform, download=True), val_indices)
         test_set = MNIST(data_path, train = False, transform=test_transform, download=True)
         class_cnt = 10
+
+    elif dataset == 'imagenet':
+        full_data = ImageNet(root = data_path, split = 'train', download = True)
+        train_indices, val_indices = get_indices(full_data)
+        train_set = Subset(ImageNet(data_path, split = 'train', transform=train_transform, download=True), train_indices)
+        val_set = Subset(ImageNet(data_path, split = 'train', transform=test_transform, download=True), val_indices)
+        test_set = ImageNet(data_path, split = 'test', transform=test_transform, download=True)
+        class_cnt = 1000
 
     else:
         raise NotImplementedError(f"{dataset} not supported")

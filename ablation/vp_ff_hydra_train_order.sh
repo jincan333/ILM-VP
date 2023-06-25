@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='ablation_vp_ff_hydra_randomresizedcrop'
+experiment_name='ablation_vp_ff_hydra_hydra_then_vp'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -14,7 +14,7 @@ seed=7
 prune_modes=('vp_ff')
 prune_methods=('hydra')
 prompt_methods=('pad')
-density_list=('1,0.2')
+density_list=('1,0.2,0.1,0.05')
 
 gpus=(6)
 for j in ${!networks[@]};do
@@ -28,6 +28,7 @@ for j in ${!networks[@]};do
                     --prune_mode ${prune_modes[0]} \
                     --prune_method ${prune_methods[0]} \
                     --prompt_method ${prompt_methods[0]} \
+                    --density_list ${density_list} \
                     --gpu ${gpus[k]} \
                     --epochs ${epochs} \
                     --seed ${seed} \
