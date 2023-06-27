@@ -38,7 +38,7 @@ def main():
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
     parser.add_argument('--epochs', default=100, type=int, help='number of total eopchs to run')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
-    parser.add_argument('--density_list', default='1,0.20,0.10,0.05', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
+    parser.add_argument('--density_list', default='1,0.10,0.05,0.01', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
 
     ##################################### General setting ############################################
@@ -257,9 +257,15 @@ def main():
                     if args.label_mapping_mode == 'ilm':
                         label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
                         print('mapping_sequence: ', mapping_sequence)
+                    # train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                    #                 ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=hydra_optimizer, 
+                    #                 ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=hydra_scheduler)
                     train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
-                                    ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=hydra_optimizer, 
-                                    ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=hydra_scheduler)
+                                    ff_optimizer=None, vp_optimizer=None, hydra_optimizer=hydra_optimizer, 
+                                    ff_scheduler=None, vp_scheduler=None, hydra_scheduler=hydra_scheduler)
+                    train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                                    ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
+                                    ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=None)
                 val_acc = evaluate(val_loader, network, label_mapping, visual_prompt)
                 all_results['train_acc'].append(train_acc)
                 all_results['val_acc'].append(val_acc)
@@ -318,15 +324,17 @@ def main():
                                     ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
                                     ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)
                 elif args.second_phase == 'vp+ff_cotrain':
+                    train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                                    ff_optimizer=ff_optimizer, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
+                                    ff_scheduler=ff_scheduler, vp_scheduler=vp_scheduler, hydra_scheduler=None)
                     # train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
-                    #                 ff_optimizer=ff_optimizer, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
-                    #                 ff_scheduler=ff_scheduler, vp_scheduler=vp_scheduler, hydra_scheduler=None)
-                    train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
-                                    ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
-                                    ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)
-                    train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
-                                    ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
-                                    ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=None)
+                    #                 ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
+                    #                 ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=None)
+                    # train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                    #                 ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
+                    #                 ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)
+
+
                 val_acc = evaluate(val_loader, network, label_mapping, visual_prompt)
                 all_results['train_acc'].append(train_acc)
                 all_results['val_acc'].append(val_acc)

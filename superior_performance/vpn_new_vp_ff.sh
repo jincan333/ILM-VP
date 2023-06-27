@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vp_ff_ff_then_vp'
+experiment_name='vp_ff_hydra_freeze_vp_ff'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -13,10 +13,10 @@ epochs=100
 seed=7
 prune_modes=('vp_ff')
 prune_methods=('hydra')
-density_list='1,0.20,0.10,0.05'
+density_list='1,0.10,0.05,0.01,0.005'
 
-second_phases=('vp+ff_cotrain')
-gpus=(6 5)
+second_phases=('freeze_vp+ff')
+gpus=(4)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for l in ${!prune_methods[@]};do

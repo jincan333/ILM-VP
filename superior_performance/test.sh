@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='normal_0.01'
+experiment_name='normal_hydra_0.01sparse'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -10,8 +10,8 @@ fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra']
 # dataset=('cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102' 'ucf101')
 networks=('resnet18')
-datasets=('cifar10')
-epochs=50
+datasets=('cifar10' 'cifar100' 'svhn')
+epochs=100
 # seed 7 9 17
 seed=(7)
 density_list='1,0.01'

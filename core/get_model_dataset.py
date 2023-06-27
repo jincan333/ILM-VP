@@ -211,16 +211,18 @@ def get_torch_dataset(args, transform_type):
         class_cnt = 10
 
     elif dataset == 'imagenet':
-        full_data = ImageNet(root = data_path, split = 'train', download = True)
-        train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(ImageNet(data_path, split = 'train', transform=train_transform, download=True), train_indices)
-        val_set = Subset(ImageNet(data_path, split = 'train', transform=test_transform, download=True), val_indices)
-        test_set = ImageNet(data_path, split = 'test', transform=test_transform, download=True)
+        train_set = ImageNet('/data/imagenet', split='train', transform=train_transform)
+        val_set = ImageNet('/data/imagenet', split='val', transform=test_transform)
+        test_set = ImageNet('/data/imagenet', split='val', transform=test_transform)
         class_cnt = 1000
 
     else:
         raise NotImplementedError(f"{dataset} not supported")
-    if dataset not in ['dtd', 'oxfordpets']:
+    if dataset == 'imagenet':
+        train_loader = DataLoader(train_set, batch_size=512, shuffle=True, num_workers=2, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=512, shuffle=False, num_workers=2, pin_memory=True)
+        test_loader = DataLoader(test_set, batch_size=512, shuffle=False, num_workers=2, pin_memory=True)
+    elif dataset not in ['dtd', 'oxfordpets']:
         train_loader = DataLoader(train_set, batch_size=256, shuffle=True, num_workers=args.workers, pin_memory=True)
         val_loader = DataLoader(val_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)
         test_loader = DataLoader(test_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)
