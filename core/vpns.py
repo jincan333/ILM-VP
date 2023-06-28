@@ -25,12 +25,15 @@ def main():
     parser.add_argument('--ff_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--ff_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--ff_lr', default=0.01, type=float, help='initial learning rate')
-    parser.add_argument('--vp_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
+    parser.add_argument('--ff_weight_decay', default=5e-4, type=float, help='finetune weight decay')
+    parser.add_argument('--vp_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--vp_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
-    parser.add_argument('--vp_lr', default=0.01, type=float, help='initial learning rate')
+    parser.add_argument('--vp_lr', default=0.001, type=float, help='initial learning rate')
+    parser.add_argument('--vp_weight_decay', default=5e-4, type=float, help='visual prompt weight decay')
     parser.add_argument('--hydra_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--hydra_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--hydra_lr', default=0.0001, type=float, help='initial learning rate')
+    parser.add_argument('--hydra_weight_decay', default=1e-4, type=float, help='hydra weight decay')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50"])
     parser.add_argument('--dataset', default="cifar10", choices=['cifar10', 'cifar100', 'svhn', 'mnist', 'flowers102', 'imagenet'])
     parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
@@ -306,8 +309,9 @@ def main():
             all_results['ckpt_epoch'] = best_ckpt['epoch']
             plot_train(all_results, save_path, str(state)+'prune')
             # init
+            vp_init = visual_prompt.state_dict() if visual_prompt else None
             visual_prompt, hydra_optimizer, hydra_scheduler, vp_optimizer, vp_scheduler, ff_optimizer, ff_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(
-                network, visual_prompt_init, mapping_sequence, None, args)
+                network, vp_init, mapping_sequence, None, args)
         print(f'Accuracy after prune: {test_acc:.4f}')
         all_results['no_train_acc'] = test_acc
         torch.save(checkpoint, os.path.join(save_path, str(state)+'after_prune.pth'))
@@ -376,7 +380,6 @@ def train(train_loader, network, epoch, label_mapping, visual_prompt, mask, ff_o
     # if ff_optimizer:
     #     network.train()
     network.train()
-    start = time.time()
     start = time.time()
     total_num = 0
     true_num = 0
@@ -454,13 +457,18 @@ def train(train_loader, network, epoch, label_mapping, visual_prompt, mask, ff_o
         train_acc= true_num / total_num
         loss_sum += loss.item() * fx.size(0)
         # measure accuracy and record loss
-        if i % args.print_freq == 0:
+        if (i+1) % args.print_freq == 0:
             end = time.time()
             print(f'Epoch: [{epoch}][{i}/{len(train_loader)}]\t'
                 f'loss_sum {loss_sum:.4f}\t'
                 f'Accuracy {train_acc:.4f}\t'
                 f'Time {end-start:.2f}')
             start = time.time()
+    end = time.time()
+    print(f'Epoch: [{epoch}][{i}/{len(train_loader)}]\t'
+        f'loss_sum {loss_sum:.4f}\t'
+        f'Accuracy {train_acc:.4f}\t'
+        f'Time {end-start:.2f}')
     print(f'train_accuracy {train_acc:.3f}')
     if ff_scheduler:
         print('ff_lr: ', ff_optimizer.param_groups[0]['lr'])
@@ -498,11 +506,15 @@ def evaluate(val_loader, network, label_mapping, visual_prompt):
         true_num += torch.argmax(fx, 1).eq(y).float().sum().item()
         test_acc = true_num / total_num
         loss_sum += loss.item() * fx.size(0)
-        if i % args.print_freq == 0:
+        if (i+1) % args.print_freq == 0:
             print(f'evaluate: [{i}/{len(val_loader)}]\t'
                 f'Loss_sum {loss_sum:.4f}\t'
                 f'Accuracy {test_acc:.4f}\t'
             )
+    print(f'evaluate: [{i}/{len(val_loader)}]\t'
+        f'Loss_sum {loss_sum:.4f}\t'
+        f'Accuracy {test_acc:.4f}\t'
+    )
     print(f'evaluate_accuracy {test_acc:.3f}')
 
     return test_acc

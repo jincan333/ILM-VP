@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vp_ff_first_phase_vp_hydra_co_train'
+experiment_name='ablation_add_weight_decay'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -8,20 +8,20 @@ fi
 # ['imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra']
 # dataset=('ucf101' 'cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102')
 networks=('resnet18')
-epochs=100
+epochs=50
 seed=7
-prune_modes=('vp_ff')
+prune_modes=('normal')
 input_size=192
 pad_size=16
-density_list='1,0.1,0.01,0.005'
+density_list='1,0.1'
 
 prune_methods=('hydra')
-datasets=('cifar100')
+datasets=('cifar10')
 gpus=(7)
 for j in ${!networks[@]};do
     for l in ${!prune_methods[@]};do
         for i in ${!datasets[@]};do
-            log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_methods[l]}_${seed}.log
+            log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[0]}_${prune_methods[l]}_${seed}.log
                 python ./core/vpns.py \
                     --experiment_name ${experiment_name} \
                     --dataset ${datasets[i]} \

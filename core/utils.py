@@ -29,11 +29,11 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def get_optimizer(parameters, optimizer, scheduler, lr, args):
+def get_optimizer(parameters, optimizer, scheduler, lr, weight_decay, args):
     if optimizer == 'sgd':
-        optimizer = torch.optim.SGD(parameters, lr=lr, momentum=args.momentum)
+        optimizer = torch.optim.SGD(parameters, lr=lr, momentum=args.momentum, weight_decay=weight_decay)
     elif optimizer == 'adam':
-        optimizer = torch.optim.Adam(parameters, lr=lr)
+        optimizer = torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay)
     else:
         raise ValueError('optimizer should be one of [sgd, adam]')
 
@@ -64,13 +64,13 @@ def setup_optimizer_and_prompt(network, args):
             visual_prompt = RandomVisualPrompt(args, normalize=normalize).to(device)
         else:
             raise ValueError("Prompt method should be one of [pad, fix, random]")
-        vp_optimizer, vp_scheduler = get_optimizer(visual_prompt.parameters(), args.vp_optimizer, args.vp_scheduler, args.vp_lr, args)
+        vp_optimizer, vp_scheduler = get_optimizer(visual_prompt.parameters(), args.vp_optimizer, args.vp_scheduler, args.vp_lr, args.vp_weight_decay, args)
 
     if args.prune_method == 'hydra':
         score_params= [param for param in network.parameters() if hasattr(param, 'is_score') and param.is_score]
-        hydra_optimizer, hydra_scheduler = get_optimizer(score_params, args.hydra_optimizer, args.hydra_scheduler, args.hydra_lr, args)
+        hydra_optimizer, hydra_scheduler = get_optimizer(score_params, args.hydra_optimizer, args.hydra_scheduler, args.hydra_lr, args.hydra_weight_decay, args)
         
-    ff_optimizer, ff_scheduler = get_optimizer(network.parameters(), args.ff_optimizer, args.ff_scheduler, args.ff_lr, args)
+    ff_optimizer, ff_scheduler = get_optimizer(network.parameters(), args.ff_optimizer, args.ff_scheduler, args.ff_lr, args.ff_weight_decay, args)
     
     return visual_prompt, hydra_optimizer, hydra_scheduler, vp_optimizer, vp_scheduler, ff_optimizer, ff_scheduler
 

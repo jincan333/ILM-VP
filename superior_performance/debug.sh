@@ -17,7 +17,7 @@ density_list='1,0.2'
 
 prune_modes=('vp_ff')
 prune_methods=('hydra')
-gpus=(2)
+gpus=(1)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

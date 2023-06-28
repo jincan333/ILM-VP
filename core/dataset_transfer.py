@@ -37,7 +37,7 @@ def main():
     parser.add_argument('--seed', default=7, type=int, help='random seed')
     parser.add_argument('--density_list', default='1,0.20,0.10,0.05,0.01,0.005', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05,0.01')
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
-    parser.add_argument('--dataset_list', type=str, default='cifar10,cifar100,svhn,mnist,flowers102')
+    parser.add_argument('--dataset_list', type=str, default='cifar100,food101')
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='result', type=str)

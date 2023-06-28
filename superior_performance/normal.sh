@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='normal'
+experiment_name='normal_hydra'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -10,11 +10,11 @@ fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra']
 # dataset=('cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102' 'ucf101')
 networks=('resnet18')
-datasets=('cifar100' 'svhn' 'mnist' 'flowers102')
+datasets=('cifar100')
 epochs=100
 # seed 7 9 17
 seed=(7)
-density_list='1,0.01'
+density_list='1,0.005'
 
 prune_modes=('normal')
 prune_methods=('hydra')

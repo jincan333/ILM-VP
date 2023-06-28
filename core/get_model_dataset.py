@@ -72,10 +72,12 @@ def image_transform(args, transform_type):
                 transforms.RandomCrop(args.input_size),
                 # transforms.RandomResizedCrop(args.input_size),
                 transforms.RandomHorizontalFlip(),
+                transforms.Lambda(lambda x: x.convert('RGB') if hasattr(x, 'convert') else x),
                 transforms.ToTensor(),
             ])
             test_transform = transforms.Compose([
                 transforms.Resize((args.input_size, args.input_size)),
+                transforms.Lambda(lambda x: x.convert('RGB') if hasattr(x, 'convert') else x),
                 transforms.ToTensor(),
             ])
     elif transform_type == 'ff':
@@ -83,13 +85,13 @@ def image_transform(args, transform_type):
             transforms.Resize((252,252)),
             transforms.RandomCrop(224),
             transforms.RandomHorizontalFlip(),
-            # transforms.Lambda(lambda x: x.convert('RGB') if hasattr(x, 'convert') else x),
+            transforms.Lambda(lambda x: x.convert('RGB') if hasattr(x, 'convert') else x),
             transforms.ToTensor(),
             normalize
         ])
         test_transform = transforms.Compose([
             transforms.Resize((224, 224)),
-            # transforms.Lambda(lambda x: x.convert('RGB') if hasattr(x, 'convert') else x),
+            transforms.Lambda(lambda x: x.convert('RGB') if hasattr(x, 'convert') else x),
             transforms.ToTensor(),
             normalize
         ])
