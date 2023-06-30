@@ -85,6 +85,9 @@ def main():
     args = parser.parse_args()
     args.prompt_method=None if args.prompt_method=='None' else args.prompt_method
     args.density_list=[float(i) for i in args.density_list.split(',')]
+    if args.prune_method != 'hydra':
+        args.ff_optimizer = 'sgd'
+        args.ff_lr = 0.01
     print(json.dumps(vars(args), indent=4))
     # Device
     device = torch.device(f"cuda:{args.gpu}")
