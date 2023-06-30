@@ -2,9 +2,12 @@ import os
 import json
 from collections import OrderedDict
 from torchvision import  transforms
-from torch.utils.data import DataLoader, Subset
-from torchvision.datasets import CIFAR10, CIFAR100, SVHN, GTSRB, Food101, SUN397, EuroSAT, UCF101, StanfordCars, Flowers102, DTD, OxfordIIITPet, MNIST, ImageNet
+from torch.utils.data import DataLoader, Subset, ConcatDataset, Dataset
+from torchvision.datasets import CIFAR10, CIFAR100, SVHN, GTSRB, Food101, SUN397, EuroSAT, UCF101, StanfordCars, Flowers102, DTD, OxfordIIITPet, MNIST, ImageNet, ImageFolder
 import numpy as np
+from PIL import Image
+import deeplake
+from sklearn.model_selection import train_test_split
 
 from const import GTSRB_LABEL_MAP, IMAGENETNORMALIZE
 '''
@@ -40,6 +43,9 @@ def get_model(args):
     elif args.network == "instagram":
         from torch import hub
         network = hub.load('facebookresearch/WSL-Images', 'resnext101_32x8d_wsl').to(args.device)
+    elif args.network == 'vgg':
+        from torchvision.models import vgg16
+        network = vgg16(pretrained=True)
     else:
         raise NotImplementedError(f"{args.network} is not supported")
     
@@ -98,6 +104,8 @@ def image_transform(args, transform_type):
     return train_transform, test_transform, normalize
 
 
+
+
 def get_torch_dataset(args, transform_type):
     data_path = os.path.join(args.data, args.dataset)
     dataset = args.dataset
@@ -146,11 +154,40 @@ def get_torch_dataset(args, transform_type):
         class_cnt = 101
 
     elif dataset == 'sun397':
-        full_data = SUN397(root = data_path, split = 'train', download = True)
+        # data_path = os.path.join(data_path, 'SUN397')
+        # full_data = ImageFolder(data_path)
+        # image_to_idx = {k:v for v,k in enumerate(full_data.imgs)}
+        # train_names = []
+        # test_names = []
+        # with open(os.path.join(data_path, 'Partitions/Training_01.txt'), 'r') as f:
+        #     lines = f.readlines()
+        # for l in lines:
+        #     l = l.strip()
+        #     label_name, image_name = os.path.split(l)
+        #     train_names.append(image_name)
+        # train_indices = [image_to_idx[x] for x in train_names]
+        # train_indices, val_indices = train_test_split(train_indices, test_size=0.1)
+
+        # with open(os.path.join(data_path, 'Partitions/Testing_01.txt'), 'r') as f:
+        #     lines = f.readlines()
+        # for l in lines:
+        #     l = l.strip()
+        #     label_name, image_name = os.path.split(l)
+        #     test_names.append(image_name)
+        # test_indices = [image_to_idx[x] for x in test_names]
+        
+        # train_set = Subset(full_data, train_indices)
+        # val_set = Subset(full_data, val_indices)
+        # test_set = Subset(full_data, test_indices)
+        img_dir = os.path.join(data_path, 'SUN397')
+        train_partition_file = os.path.join(data_path, 'Partitions/Training_01.txt')
+        test_partition_file = os.path.join(data_path, 'Partitions/Testing_01.txt')
+        target_file = os.path.join(data_path, 'Partitions/ClassName.txt')
+        full_data = SUN397Dataset(img_dir = img_dir, partition_file = train_partition_file,  target_file=target_file)
         train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(SUN397(data_path, split = 'train', transform=train_transform, download=True), train_indices)
-        val_set = Subset(SUN397(data_path, split = 'train', transform=test_transform, download=True), val_indices)
-        test_set = SUN397(data_path, split = 'test', transform=test_transform, download=True)
+        train_set = Subset(SUN397Dataset(img_dir = img_dir, partition_file = train_partition_file, target_file=target_file, transform=train_transform), train_indices)
+        val_set = Subset(SUN397Dataset(img_dir = img_dir, partition_file = train_partition_file, target_file=target_file, transform=test_transform), val_indices)
+        test_set = SUN397Dataset(img_dir = img_dir, partition_file = test_partition_file, target_file=target_file, transform=test_transform)
         class_cnt = 397
 
     elif dataset == 'eurosat':
@@ -173,11 +210,18 @@ def get_torch_dataset(args, transform_type):
         class_cnt = 101
     
     elif dataset == 'stanfordcars':
-        full_data = StanfordCars(root = data_path, split = 'train', download = True)
+        data_path = os.path.join(data_path, 'car_data/car_data')
+        full_data = ImageFolder(root = data_path+'/train/')
         train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(StanfordCars(data_path, split = 'train', transform=train_transform, download=True), train_indices)
-        val_set = Subset(StanfordCars(data_path, split = 'train', transform=test_transform, download=True), val_indices)
-        test_set = StanfordCars(data_path, split = 'test', transform=test_transform, download=True)
+        train_set = Subset(ImageFolder(data_path+'/train/', transform=train_transform), train_indices)
+        val_set = Subset(ImageFolder(data_path+'/train/', transform=test_transform), val_indices)
+        test_set = ImageFolder(data_path+'/test/', transform=test_transform)
+        # train_set = deeplake.load("hub://activeloop/stanford-cars-train")
+        # test_set = deeplake.load("hub://activeloop/stanford-cars-test")
+        # val_set = test_set
+        # train_loader = train_set.pytorch(num_workers=args.workers, batch_size=256, transform=train_transform, shuffle=True)
+        # test_loader = test_set.pytorch(num_workers=args.workers, batch_size=256, transform=test_transform, shuffle=False)
+        # val_loader = test_loader
         class_cnt = 196
     
     elif dataset == 'flowers102':
@@ -189,10 +233,12 @@ def get_torch_dataset(args, transform_type):
         class_cnt = 102
     
     elif dataset == 'dtd':
-        full_data = DTD(root = data_path, split = 'train', download = True)
+        train1 = DTD(root = data_path, split = 'train', download = True)
+        train2 = DTD(root = data_path, split = 'val', download = True)
+        full_data = ConcatDataset([train1, train2])
         train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(DTD(data_path, split = 'train', transform=train_transform, download=True), train_indices)
-        val_set = Subset(DTD(data_path, split = 'train', transform=test_transform, download=True), val_indices)
+        train_set = SubsetWithTransform(full_data, train_indices, transform=train_transform)
+        val_set = SubsetWithTransform(full_data, val_indices, transform=test_transform)
         test_set = DTD(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 47
 
@@ -217,6 +263,12 @@ def get_torch_dataset(args, transform_type):
         val_set = ImageNet('/data/imagenet', split='val', transform=test_transform)
         test_set = ImageNet('/data/imagenet', split='val', transform=test_transform)
         class_cnt = 1000
+    
+    elif dataset == 'tiny_imagenet':
+        train_set = ImageFolder(root='/data/tiny-imagenet-200/train', transform=train_transform)
+        val_set = ImageFolder(root='/data/tiny-imagenet-200/val', transform=test_transform)
+        test_set = ImageFolder(root='/data/tiny-imagenet-200/test', transform=test_transform)
+        class_cnt = 200
 
     else:
         raise NotImplementedError(f"{dataset} not supported")
@@ -259,3 +311,47 @@ def choose_dataloader(args, phase):
         train_loader, val_loader, test_loader = get_torch_dataset(args, 'ff')
     
     return train_loader, val_loader, test_loader
+
+
+class SubsetWithTransform(Subset):
+    def __init__(self, dataset, indices, transform=None):
+        super(SubsetWithTransform, self).__init__(dataset, indices)
+        self.transform = transform
+
+    def __getitem__(self, idx):
+        x, y = self.dataset[self.indices[idx]]
+        if self.transform:
+            x = self.transform(x)
+        return x, y
+
+
+class SUN397Dataset(Dataset):
+    def __init__(self, img_dir, partition_file, target_file, transform=None):
+        self.img_dir = img_dir
+        self.transform = transform
+
+        with open(target_file, 'r') as f:
+            self.label_names = [l.strip() for l in f.readlines()]
+        self.label_idx = {name: idx for idx,name in enumerate(self.label_names)}
+
+        self.img_names = []
+        self.targets = []
+        with open(partition_file, 'r') as f:
+            lines = f.readlines()
+        for l in lines:
+            l = l.strip()
+            self.img_names.append(l)
+            label_name, _ = os.path.split(l)
+            self.targets.append(self.label_idx[label_name])
+
+    def __len__(self):
+        return len(self.img_names)
+
+    def __getitem__(self, idx):
+        img_name = self.img_names[idx]
+        img_path = self.img_dir+img_name
+        image = Image.open(img_path).convert('RGB')
+        if self.transform:
+            image = self.transform(image)
+        target = self.targets[idx]
+        return image, target

@@ -5,26 +5,26 @@ foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
 fi
-# datasets=("cifar100" "dtd" "flowers102" "ucf101" "food101" "gtsrb" "svhn" "eurosat" "oxfordpets" "stanfordcars" "sun397")
-# datasets=("ucf101" "eurosat" "oxfordpets" "stanfordcars" "sun397") 
+# datasets=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'sun397', 'tiny_imagenet', 'imagenet']
+# stanfordcars
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra']
-networks=('resnet18')
-datasets=('imagenet')
+networks=('vgg')
+datasets=('tiny_imagenet')
 epochs=1
 #7 9 17
 seed=(7)
-density_list='1,0.2'
-
+density_list='1,0.1'
 prune_modes=('vp_ff')
 prune_methods=('hydra')
-gpus=(1)
+
+gpus=(3)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
             for l in ${!prune_methods[@]};do
                 for m in ${!seed[@]};do
                 log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seed[m]}.log
-                    python ./core/dataset_transfer.py \
+                    python ./core/vpns.py \
                         --experiment_name ${experiment_name} \
                         --dataset ${datasets[i]} \
                         --network ${networks[j]} \

@@ -20,24 +20,27 @@ def main():
     parser.add_argument('--prune_mode', type=str, default='vp_ff', choices=['normal', 'vp_ff', 'no_tune', 'vp'], help='prune method implement ways')
     parser.add_argument('--prune_method', type=str, default='hydra', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra'])
     parser.add_argument('--ckpt_directory', type=str, default='', help='sub-network ckpt directory')
-    parser.add_argument('--ff_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
+    parser.add_argument('--ff_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--ff_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
-    parser.add_argument('--ff_lr', default=0.01, type=float, help='initial learning rate')
-    parser.add_argument('--vp_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
+    parser.add_argument('--ff_lr', default=0.001, type=float, help='initial learning rate')
+    parser.add_argument('--ff_weight_decay', default=1e-4, type=float, help='finetune weight decay')
+    parser.add_argument('--vp_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--vp_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
-    parser.add_argument('--vp_lr', default=0.01, type=float, help='initial learning rate')
+    parser.add_argument('--vp_lr', default=0.001, type=float, help='initial learning rate')
+    parser.add_argument('--vp_weight_decay', default=1e-4, type=float, help='visual prompt weight decay')
     parser.add_argument('--hydra_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--hydra_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--hydra_lr', default=0.0001, type=float, help='initial learning rate')
+    parser.add_argument('--hydra_weight_decay', default=1e-4, type=float, help='hydra weight decay')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50"])
     parser.add_argument('--dataset', default="imagenet", choices=['imagenet'])
     parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
-    parser.add_argument('--epochs', default=1, type=int, help='number of total eopchs to run')
+    parser.add_argument('--epochs', default=120, type=int, help='number of total eopchs to run')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
-    parser.add_argument('--density_list', default='1,0.20,0.10,0.05,0.01,0.005', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05,0.01')
+    parser.add_argument('--density_list', default='1,0.10,0.01,0.001', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05,0.01')
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
-    parser.add_argument('--dataset_list', type=str, default='cifar100,food101')
+    parser.add_argument('--dataset_list', type=str, default='cifar10,cifar100')
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='result', type=str)
@@ -48,7 +51,7 @@ def main():
     ##################################### Dataset #################################################
     parser.add_argument('--data', type=str, default='dataset', help='location of the data corpus')
     parser.add_argument('--randomcrop', type=int, default=0, help='dataset randomcrop.', choices=[0, 1])
-    parser.add_argument('--input_size', type=int, default=192, help='image size before prompt, no more than 224', choices=[224, 192, 160, 128, 96, 64, 32])
+    parser.add_argument('--input_size', type=int, default=224, help='image size before prompt, no more than 224', choices=[224, 192, 160, 128, 96, 64, 32])
     parser.add_argument('--pad_size', type=int, default=16, help='only for padprompt, no more than 112, parameters cnt 4*pad**2+896pad', choices=[0, 16, 32, 48, 64, 80, 96, 112])
     parser.add_argument('--mask_size', type=int, default=183, help='only for fixadd and randomadd, no more than 224, parameters cnt mask**2', choices=[115, 156, 183, 202, 214, 221, 224])
 
@@ -337,6 +340,9 @@ def main():
                     train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
                                     ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
                                     ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)
+                    train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                                    ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
+                                    ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=None)
                     val_acc = evaluate(val_loader, network, label_mapping, visual_prompt)
                     all_results['train_acc'].append(train_acc)
                     all_results['val_acc'].append(val_acc)

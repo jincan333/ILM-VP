@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='ablation_vp_hydra_ff_optimizer_lr'
+experiment_name='ablation_vp_hydra_ff_weight_decay'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -16,16 +16,15 @@ pad_size=16
 density_list='1,0.01'
 prune_methods=('hydra')
 datasets=('cifar10')
-
 second_phases=('vp+ff_cotrain')
-ff_optimizers=('adam')
-ff_lrs=(0.01 0.001 0.0001)
-gpus=(5 4 3)
+
+ff_weight_decays=(0.00001 0.00005 0.0001 0.001)
+gpus=(7 6 5 4)
 for j in ${!networks[@]};do
     for l in ${!prune_methods[@]};do
         for i in ${!datasets[@]};do
-            for k in ${!ff_lrs[@]};do
-                log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[0]}_${prune_methods[l]}_${ff_optimizers[0]}_${ff_lrs[k]}_${seed}.log
+            for k in ${!ff_weight_decays[@]};do
+                log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[0]}_${prune_methods[l]}_${ff_weight_decays[k]}_${seed}.log
                     python ./core/vpns_new.py \
                         --experiment_name ${experiment_name} \
                         --dataset ${datasets[i]} \
@@ -36,8 +35,7 @@ for j in ${!networks[@]};do
                         --pad_size ${pad_size} \
                         --density_list ${density_list} \
                         --second_phase ${second_phases[0]} \
-                        --ff_optimizer ${ff_optimizers[0]} \
-                        --ff_lr ${ff_lrs[k]} \
+                        --ff_weight_decay ${ff_weight_decays[k]} \
                         --gpu ${gpus[k]} \
                         --epochs ${epochs} \
                         --seed ${seed} \

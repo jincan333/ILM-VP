@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='normal'
+experiment_name='vpns_dataset_transfer'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -10,22 +10,22 @@ fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra']
 # dataset=('cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102' 'ucf101')
 networks=('resnet18')
-datasets=('cifar100' 'svhn' 'mnist' 'flowers102')
-epochs=100
+datasets=('imagenet')
+epochs=2
 # seed 7 9 17
 seed=(7)
-density_list='1,0.01'
+density_list='1,0.1,0.01,0.001'
 
-prune_modes=('normal')
+prune_modes=('vp_ff')
 prune_methods=('hydra')
-gpus=(5)
+gpus=(3)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
             for l in ${!prune_methods[@]};do
                 for m in ${!seed[@]};do
                     log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seed[m]}.log
-                        python ./core/vpns.py \
+                        python ./core/dataset_transfer.py \
                             --experiment_name ${experiment_name} \
                             --dataset ${datasets[i]} \
                             --network ${networks[j]} \
