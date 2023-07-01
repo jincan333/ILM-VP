@@ -11,14 +11,14 @@ fi
 # dataset=('cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102' 'ucf101')
 networks=('resnet18')
 datasets=('imagenet')
-epochs=2
+epochs=100
 # seed 7 9 17
 seed=(7)
-density_list='1,0.1,0.01,0.001'
+density_list='1,0.1'
 
 prune_modes=('vp_ff')
 prune_methods=('hydra')
-gpus=(3)
+gpus=(1)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
