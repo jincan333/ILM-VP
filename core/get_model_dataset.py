@@ -44,8 +44,8 @@ def get_model(args):
         from torch import hub
         network = hub.load('facebookresearch/WSL-Images', 'resnext101_32x8d_wsl').to(args.device)
     elif args.network == 'vgg':
-        from torchvision.models import vgg16
-        network = vgg16(pretrained=True)
+        from torchvision.models import vgg16, VGG16_Weights
+        network = vgg16(weights=VGG16_Weights.IMAGENET1K_V1).to(args.device)
     else:
         raise NotImplementedError(f"{args.network} is not supported")
     
@@ -267,15 +267,15 @@ def get_torch_dataset(args, transform_type):
     elif dataset == 'tiny_imagenet':
         train_set = ImageFolder(root='/data/tiny-imagenet-200/train', transform=train_transform)
         val_set = ImageFolder(root='/data/tiny-imagenet-200/val', transform=test_transform)
-        test_set = ImageFolder(root='/data/tiny-imagenet-200/test', transform=test_transform)
+        test_set = ImageFolder(root='/data/tiny-imagenet-200/val', transform=test_transform)
         class_cnt = 200
 
     else:
         raise NotImplementedError(f"{dataset} not supported")
     if dataset == 'imagenet':
-        train_loader = DataLoader(train_set, batch_size=512, shuffle=True, num_workers=2, pin_memory=True)
-        val_loader = DataLoader(val_set, batch_size=512, shuffle=False, num_workers=2, pin_memory=True)
-        test_loader = DataLoader(test_set, batch_size=512, shuffle=False, num_workers=2, pin_memory=True)
+        train_loader = DataLoader(train_set, batch_size=512, shuffle=True, num_workers=8, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=512, shuffle=False, num_workers=8, pin_memory=True)
+        test_loader = DataLoader(test_set, batch_size=512, shuffle=False, num_workers=8, pin_memory=True)
     elif dataset not in ['dtd', 'oxfordpets']:
         train_loader = DataLoader(train_set, batch_size=256, shuffle=True, num_workers=args.workers, pin_memory=True)
         val_loader = DataLoader(val_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)

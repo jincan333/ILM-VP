@@ -1,5 +1,4 @@
 #!/bin/sh
-
 experiment_name='vpns_dataset_transfer'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
@@ -11,14 +10,14 @@ fi
 # dataset=('cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102' 'ucf101')
 networks=('resnet18')
 datasets=('imagenet')
-epochs=100
+epochs=120
 # seed 7 9 17
 seed=(7)
 density_list='1,0.1'
 
 prune_modes=('vp_ff')
 prune_methods=('hydra')
-gpus=(1)
+gpus=(0)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

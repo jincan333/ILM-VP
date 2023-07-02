@@ -1,12 +1,14 @@
 import os
+os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2,3"
+
 import torch
+import torch.nn as nn
 from torch.nn import functional as F
 import argparse
 import time
 from matplotlib import pyplot as plt
 import copy
 import json
-
 from utils import set_seed, setup_optimizer_and_prompt, calculate_label_mapping, obtain_label_mapping, save_args, get_masks
 from get_model_dataset import choose_dataloader, get_model
 from pruner import extract_mask, prune_model_custom, check_sparsity, remove_prune, pruning_model
@@ -107,6 +109,7 @@ def main():
     if args.prune_method == 'hydra':
         print('\nset hydra network.\n')
         network = set_hydra_network(network, args)
+    network = nn.DataParallel(network)
     print(network)
     # set phase
     print('*********************set phase as subnetwork**********************')
@@ -225,11 +228,12 @@ def main():
         else:
             network.load_state_dict(state_init)
             if args.prune_method == 'hydra':
-                if args.density_list[state] >= 0.01:
-                    print('change ff optimizer and lr')
+                if args.density_list[state] >= 0.1:
+                    print('change ff optimizer to sgd')
                     args.ff_optimizer = 'sgd'
                     args.ff_lr = 0.01
                 else:
+                    print('change ff optimizer to adam')
                     args.ff_optimizer = 'adam'
                     args.ff_lr = 0.001
                 set_hydra_prune_rate(network, 1)

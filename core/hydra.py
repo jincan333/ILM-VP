@@ -9,18 +9,23 @@ from torch.nn import Conv2d, Linear
 
 
 
-def replace_layers(model, old_layer, new_layer, channelPrune):
+def replace_layers(model, old_layer, new_layer, channelPrune,args):
     for name, module in reversed(model._modules.items()):
         if len(list(module.children())) > 0:
-            model._modules[name] = replace_layers(module, old_layer, new_layer,channelPrune)
+            model._modules[name] = replace_layers(module, old_layer, new_layer,channelPrune,args)
 
         if type(module) == old_layer:
             if isinstance(module, nn.Conv2d):
-                layer_new = new_layer(module.in_channels, module.out_channels, module.kernel_size, module.stride, module.padding, module.dilation, module.groups, module.bias,channelPrune)
+                if args.network == 'vgg':
+                    layer_new = new_layer(module.in_channels, module.out_channels, module.kernel_size, module.stride, module.padding, module.dilation, module.groups, False,channelPrune)
+                else:
+                    layer_new = new_layer(module.in_channels, module.out_channels, module.kernel_size, module.stride, module.padding, module.dilation, module.groups, module.bias,channelPrune)
             elif isinstance(module, nn.Linear):
                 layer_new = new_layer(module.in_features, module.out_features, module.bias,channelPrune)
             layer_new.weight.data=module.weight.data
-            if module.bias is not None:
+            if args.network == 'vgg' and isinstance(module, nn.Conv2d):
+                pass
+            elif module.bias is not None:
                 layer_new.bias.data=module.bias.data
             model._modules[name] = layer_new
 
@@ -172,8 +177,8 @@ class SubnetLinear(nn.Linear):
 
 def set_hydra_network(network, args):
     cl, ll = get_layers('subnet')
-    network=replace_layers(network,Conv2d,cl,'weight')
-    network=replace_layers(network,Linear,ll,'weight')
+    network=replace_layers(network,Conv2d,cl,'weight',args)
+    network=replace_layers(network,Linear,ll,'weight',args)
     network.to(args.device)
     if args.hydra_scaled_init:
         print('Using hydra scaled score initialization\n')
