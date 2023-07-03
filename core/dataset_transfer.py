@@ -43,6 +43,7 @@ def main():
     parser.add_argument('--density_list', default='1,0.10,0.01,0.001', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05,0.01')
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
     parser.add_argument('--dataset_list', type=str, default='cifar10,cifar100')
+    parser.add_argument('--imagenet_path', type=str, default='/data/imagenet')
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='result', type=str)

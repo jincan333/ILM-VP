@@ -259,9 +259,10 @@ def get_torch_dataset(args, transform_type):
         class_cnt = 10
 
     elif dataset == 'imagenet':
-        train_set = ImageNet('/data/imagenet', split='train', transform=train_transform)
-        val_set = ImageNet('/data/imagenet', split='val', transform=test_transform)
-        test_set = ImageNet('/data/imagenet', split='val', transform=test_transform)
+        imagenet_path = args.imagenet_path
+        train_set = ImageNet(imagenet_path, split='train', transform=train_transform)
+        val_set = ImageNet(imagenet_path, split='val', transform=test_transform)
+        test_set = ImageNet(imagenet_path, split='val', transform=test_transform)
         class_cnt = 1000
     
     elif dataset == 'tiny_imagenet':
@@ -273,9 +274,9 @@ def get_torch_dataset(args, transform_type):
     else:
         raise NotImplementedError(f"{dataset} not supported")
     if dataset == 'imagenet':
-        train_loader = DataLoader(train_set, batch_size=512, shuffle=True, num_workers=8, pin_memory=True)
-        val_loader = DataLoader(val_set, batch_size=512, shuffle=False, num_workers=8, pin_memory=True)
-        test_loader = DataLoader(test_set, batch_size=512, shuffle=False, num_workers=8, pin_memory=True)
+        train_loader = DataLoader(train_set, batch_size=1024, shuffle=True, num_workers=16, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=1024, shuffle=False, num_workers=16, pin_memory=True)
+        test_loader = DataLoader(test_set, batch_size=1024, shuffle=False, num_workers=16, pin_memory=True)
     elif dataset not in ['dtd', 'oxfordpets']:
         train_loader = DataLoader(train_set, batch_size=256, shuffle=True, num_workers=args.workers, pin_memory=True)
         val_loader = DataLoader(val_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)

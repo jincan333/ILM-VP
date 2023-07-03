@@ -13,7 +13,8 @@ datasets=('imagenet')
 epochs=120
 # seed 7 9 17
 seed=(7)
-density_list='1,0.1'
+density_list='1,0.1,0.01,0.001'
+imagenet_path='/data/imagenet'
 
 prune_modes=('vp_ff')
 prune_methods=('hydra')
@@ -33,6 +34,7 @@ for j in ${!networks[@]};do
                             --density_list ${density_list} \
                             --gpu ${gpus[m]} \
                             --epochs ${epochs} \
+                            --imagenet_path ${imagenet_path} \
                             --seed ${seed[m]} \
                             > $log_filename 2>&1 &
                 done
