@@ -260,14 +260,18 @@ def get_torch_dataset(args, transform_type):
 
     elif dataset == 'imagenet':
         imagenet_path = args.imagenet_path
-        train_set = ImageNet(imagenet_path, split='train', transform=train_transform)
-        val_set = ImageNet(imagenet_path, split='val', transform=test_transform)
-        test_set = ImageNet(imagenet_path, split='val', transform=test_transform)
+        full_data = ImageFolder(os.path.join(imagenet_path, 'train'))
+        train_indices, val_indices = get_indices(full_data)
+        train_set = Subset(ImageFolder(os.path.join(imagenet_path, 'train'), transform=train_transform), train_indices)
+        val_set = Subset(ImageFolder(os.path.join(imagenet_path, 'train'), transform=test_transform), val_indices)
+        test_set = ImageFolder(os.path.join(imagenet_path, 'val'), transform=test_transform)
         class_cnt = 1000
     
     elif dataset == 'tiny_imagenet':
-        train_set = ImageFolder(root='/data/tiny-imagenet-200/train', transform=train_transform)
-        val_set = ImageFolder(root='/data/tiny-imagenet-200/val', transform=test_transform)
+        full_data = ImageFolder(root='/data/tiny-imagenet-200/train')
+        train_indices, val_indices = get_indices(full_data)
+        train_set = Subset(ImageFolder(root='/data/tiny-imagenet-200/train', transform=train_transform), train_indices)
+        val_set = Subset(ImageFolder(root='/data/tiny-imagenet-200/train', transform=test_transform), val_indices)
         test_set = ImageFolder(root='/data/tiny-imagenet-200/val', transform=test_transform)
         class_cnt = 200
 
@@ -277,14 +281,18 @@ def get_torch_dataset(args, transform_type):
         train_loader = DataLoader(train_set, batch_size=1024, shuffle=True, num_workers=16, pin_memory=True)
         val_loader = DataLoader(val_set, batch_size=1024, shuffle=False, num_workers=16, pin_memory=True)
         test_loader = DataLoader(test_set, batch_size=1024, shuffle=False, num_workers=16, pin_memory=True)
-    elif dataset not in ['dtd', 'oxfordpets']:
-        train_loader = DataLoader(train_set, batch_size=256, shuffle=True, num_workers=args.workers, pin_memory=True)
-        val_loader = DataLoader(val_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)
-        test_loader = DataLoader(test_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)
-    else:
+    elif dataset in ['dtd', 'oxfordpets']:
         train_loader = DataLoader(train_set, batch_size=64, shuffle=True, num_workers=args.workers, pin_memory=True)
         val_loader = DataLoader(val_set, batch_size=64, shuffle=False, num_workers=args.workers, pin_memory=True)
         test_loader = DataLoader(test_set, batch_size=64, shuffle=False, num_workers=args.workers, pin_memory=True)
+    elif dataset in ['flowers102', 'stanfordca']:
+        train_loader = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=args.workers, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=128, shuffle=False, num_workers=args.workers, pin_memory=True)
+        test_loader = DataLoader(test_set, batch_size=128, shuffle=False, num_workers=args.workers, pin_memory=True)
+    else:
+        train_loader = DataLoader(train_set, batch_size=256, shuffle=True, num_workers=args.workers, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)
+        test_loader = DataLoader(test_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)
     args.class_cnt = class_cnt
     args.normalize = normalize
     print(f'Dataset information: {dataset}\t {len(train_set)} images for training \t {len(val_set)} images for validation\t')
