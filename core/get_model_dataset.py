@@ -6,10 +6,8 @@ from torch.utils.data import DataLoader, Subset, ConcatDataset, Dataset
 from torchvision.datasets import CIFAR10, CIFAR100, SVHN, GTSRB, Food101, SUN397, EuroSAT, UCF101, StanfordCars, Flowers102, DTD, OxfordIIITPet, MNIST, ImageNet, ImageFolder
 import numpy as np
 from PIL import Image
-import deeplake
-from sklearn.model_selection import train_test_split
 
-from const import GTSRB_LABEL_MAP, IMAGENETNORMALIZE
+from const import IMAGENETNORMALIZE
 '''
     function for loading datasets
     contains: 
@@ -285,7 +283,7 @@ def get_torch_dataset(args, transform_type):
         train_loader = DataLoader(train_set, batch_size=64, shuffle=True, num_workers=args.workers, pin_memory=True)
         val_loader = DataLoader(val_set, batch_size=64, shuffle=False, num_workers=args.workers, pin_memory=True)
         test_loader = DataLoader(test_set, batch_size=64, shuffle=False, num_workers=args.workers, pin_memory=True)
-    elif dataset in ['flowers102', 'stanfordca']:
+    elif dataset in ['flowers102', 'stanfordcars']:
         train_loader = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=args.workers, pin_memory=True)
         val_loader = DataLoader(val_set, batch_size=128, shuffle=False, num_workers=args.workers, pin_memory=True)
         test_loader = DataLoader(test_set, batch_size=128, shuffle=False, num_workers=args.workers, pin_memory=True)
