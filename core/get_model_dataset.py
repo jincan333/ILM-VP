@@ -223,10 +223,8 @@ def get_torch_dataset(args, transform_type):
         class_cnt = 196
     
     elif dataset == 'flowers102':
-        full_data = Flowers102(root = data_path, split = 'train', download = True)
-        train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(Flowers102(data_path, split = 'train', transform=train_transform, download=True), train_indices)
-        val_set = Subset(Flowers102(data_path, split = 'train', transform=test_transform, download=True), val_indices)
+        train_set = Flowers102(data_path, split = 'train', transform=train_transform, download=True)
+        val_set = Flowers102(data_path, split = 'val', transform=test_transform, download=True)
         test_set = Flowers102(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 102
     
@@ -266,11 +264,11 @@ def get_torch_dataset(args, transform_type):
         class_cnt = 1000
     
     elif dataset == 'tiny_imagenet':
-        full_data = ImageFolder(root='/data/tiny-imagenet-200/train')
+        full_data = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'))
         train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(ImageFolder(root='/data/tiny-imagenet-200/train', transform=train_transform), train_indices)
-        val_set = Subset(ImageFolder(root='/data/tiny-imagenet-200/train', transform=test_transform), val_indices)
-        test_set = ImageFolder(root='/data/tiny-imagenet-200/val', transform=test_transform)
+        train_set = Subset(ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=train_transform), train_indices)
+        val_set = Subset(ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=test_transform), val_indices)
+        test_set = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/val'), transform=test_transform)
         class_cnt = 200
 
     else:
