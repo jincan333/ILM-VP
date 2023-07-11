@@ -19,7 +19,7 @@ from hydra import set_hydra_prune_rate, set_hydra_network
 def main():    
     parser = argparse.ArgumentParser(description='PyTorch Visual Prompt + Prune Experiments')
     global args
-    parser.add_argument('--prune_mode', type=str, default='vp_ff', choices=['normal', 'vp_ff', 'no_tune', 'vp'], help='prune method implement ways')
+    parser.add_argument('--prune_mode', type=str, default='normal', choices=['normal', 'vp_ff', 'no_tune', 'vp'], help='prune method implement ways')
     parser.add_argument('--prune_method', type=str, default='hydra', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra'])
     parser.add_argument('--ckpt_directory', type=str, default='', help='sub-network ckpt directory')
     parser.add_argument('--ff_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
@@ -34,13 +34,13 @@ def main():
     parser.add_argument('--hydra_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--hydra_lr', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--hydra_weight_decay', default=1e-4, type=float, help='hydra weight decay')
-    parser.add_argument('--network', default='vgg', choices=["resnet18", "resnet50", "vgg"])
-    parser.add_argument('--dataset', default="vifar10", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'sun397', 'tiny_imagenet', 'imagenet'])
+    parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg"])
+    parser.add_argument('--dataset', default="flowers102", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'tiny_imagenet', 'imagenet'])
     parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
     parser.add_argument('--epochs', default=120, type=int, help='number of total eopchs to run')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
-    parser.add_argument('--density_list', default='1,0.10,0.05,0.01', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
+    parser.add_argument('--density_list', default='1,0.10,0.01,0.001', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
 
     ##################################### General setting ############################################
@@ -85,9 +85,9 @@ def main():
     args = parser.parse_args()
     args.prompt_method=None if args.prompt_method=='None' else args.prompt_method
     args.density_list=[float(i) for i in args.density_list.split(',')]
-    if args.prune_method != 'hydra':
-        args.ff_optimizer = 'sgd'
-        args.ff_lr = 0.01
+    # if args.prune_method != 'hydra':
+    #     args.ff_optimizer = 'sgd'
+    #     args.ff_lr = 0.01
     print(json.dumps(vars(args), indent=4))
     # Device
     device = torch.device(f"cuda:{args.gpu}")

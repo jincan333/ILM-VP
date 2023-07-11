@@ -160,8 +160,11 @@ def main():
         elif args.prune_mode in ('vp', 'vp_ff'):
             if args.prune_method in ('imp', 'random', 'omp'):
                 train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
-                                ff_optimizer=ff_optimizer, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
-                                ff_scheduler=ff_scheduler, vp_scheduler=vp_scheduler, hydra_scheduler=None)
+                                ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
+                                ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)
+                train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                                ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
+                                ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=None)
             elif args.prune_method in ('grasp', 'synflow', 'snip'):
                 label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
                 print('mapping_sequence: ', mapping_sequence)

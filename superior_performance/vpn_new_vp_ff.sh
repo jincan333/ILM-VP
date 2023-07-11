@@ -7,24 +7,25 @@ if [ ! -d ${foler_name} ]; then
 fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra']
 # dataset=('ucf101' 'cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102')
-networks=('resnet18')
+networks=('resnet50' 'vgg')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
-datasets=('dtd' 'food101' 'oxfordpets')
+datasets=('tiny_imagenet')
 epochs=120
 prune_modes=('vp_ff')
 prune_methods=('hydra')
 density_list='1,0.1,0.01,0.001'
 second_phases=('vp+ff_cotrain')
 
-seeds=(7 9 17)
-ff_optimizer='sgd'
-ff_lr=0.01
-gpus=(0 1 2)
-for j in ${!networks[@]};do
-    for i in ${!datasets[@]};do
-        for l in ${!prune_methods[@]};do
-            for k in ${!second_phases[@]};do
-                for m in ${!seeds[@]};do
+seeds=(7)
+ff_optimizer='adam'
+ff_lr=0.001
+gpus=(3 2)
+
+for i in ${!datasets[@]};do
+    for l in ${!prune_methods[@]};do
+        for k in ${!second_phases[@]};do
+            for m in ${!seeds[@]};do
+                for j in ${!networks[@]};do
                     log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${second_phases[k]}_${prune_methods[l]}_${seeds[m]}_${ff_optimizer}_${ff_lr}.log
                         python ./core/vpns_new.py \
                             --experiment_name ${experiment_name} \
@@ -36,7 +37,7 @@ for j in ${!networks[@]};do
                             --density_list ${density_list} \
                             --ff_optimizer ${ff_optimizer} \
                             --ff_lr ${ff_lr} \
-                            --gpu ${gpus[m]} \
+                            --gpu ${gpus[j]} \
                             --epochs ${epochs} \
                             --seed ${seeds[m]} \
                             > $log_filename 2>&1 &

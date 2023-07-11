@@ -6,6 +6,9 @@ from torch.utils.data import DataLoader, Subset, ConcatDataset, Dataset
 from torchvision.datasets import CIFAR10, CIFAR100, SVHN, GTSRB, Food101, SUN397, EuroSAT, UCF101, StanfordCars, Flowers102, DTD, OxfordIIITPet, MNIST, ImageNet, ImageFolder
 import numpy as np
 from PIL import Image
+import lmdb
+import pickle
+import six
 
 from const import IMAGENETNORMALIZE
 '''
@@ -223,9 +226,12 @@ def get_torch_dataset(args, transform_type):
         class_cnt = 196
     
     elif dataset == 'flowers102':
-        train_set = Flowers102(data_path, split = 'train', transform=train_transform, download=True)
-        val_set = Flowers102(data_path, split = 'val', transform=test_transform, download=True)
-        test_set = Flowers102(data_path, split = 'test', transform=test_transform, download=True)
+        # train_set = Flowers102(data_path, split = 'test', transform=train_transform, download=True)
+        # val_set = Flowers102(data_path, split = 'val', transform=test_transform, download=True)
+        # test_set = Flowers102(data_path, split = 'train', transform=test_transform, download=True)
+        train_set = COOPLMDBDataset(root = data_path, split="train", transform = train_transform)
+        val_set = COOPLMDBDataset(root = data_path, split="val", transform = test_transform)
+        test_set = COOPLMDBDataset(root = data_path, split="test", transform = test_transform)
         class_cnt = 102
     
     elif dataset == 'dtd':
@@ -268,11 +274,13 @@ def get_torch_dataset(args, transform_type):
         train_indices, val_indices = get_indices(full_data)
         train_set = Subset(ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=train_transform), train_indices)
         val_set = Subset(ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=test_transform), val_indices)
-        test_set = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/val'), transform=test_transform)
+        test_set = TinyImageNet(os.path.join(data_path, 'tiny-imagenet-200/val/images'), os.path.join(data_path, 'tiny-imagenet-200/val/val_annotations.txt'), 
+                                os.path.join(data_path, 'tiny-imagenet-200/wnids.txt'), transform=test_transform)
         class_cnt = 200
 
     else:
         raise NotImplementedError(f"{dataset} not supported")
+    
     if dataset == 'imagenet':
         train_loader = DataLoader(train_set, batch_size=1024, shuffle=True, num_workers=16, pin_memory=True)
         val_loader = DataLoader(val_set, batch_size=1024, shuffle=False, num_workers=16, pin_memory=True)
@@ -360,3 +368,84 @@ class SUN397Dataset(Dataset):
             image = self.transform(image)
         target = self.targets[idx]
         return image, target
+
+
+class TinyImageNet(Dataset):
+    def __init__(self, root_dir, annotations_file, label_ids_file, transform=None):
+        self.root_dir = root_dir
+        self.transform = transform
+        self.entries = open(annotations_file).read().strip().split('\n')
+
+        with open(label_ids_file, 'r') as f:
+            self.label_names = [l.strip() for l in f.readlines()]
+        self.label_names = sorted(self.label_names)
+        self.label_idx = {name: idx for idx,name in enumerate(self.label_names)}
+
+        
+    def __len__(self):
+        return len(self.entries)
+    
+    def __getitem__(self, index):
+        line = self.entries[index].split('\t')
+        img_path, annotation = line[0], line[1]
+        image = Image.open(self.root_dir + '/' + img_path).convert('RGB')
+        if self.transform is not None:
+            image = self.transform(image)
+            
+        return image, int(self.label_idx[annotation])
+
+
+class LMDBDataset(Dataset):
+    def __init__(self, root, split='train', transform=None, target_transform=None):
+        super().__init__()
+        db_path = os.path.join(root, f"{split}.lmdb")
+        self.env = lmdb.open(db_path, subdir=os.path.isdir(db_path),
+                             readonly=True, lock=False,
+                             readahead=False, meminit=False)
+        with self.env.begin(write=False) as txn:
+            self.length = pickle.loads(txn.get(b'__len__'))
+            self.keys = pickle.loads(txn.get(b'__keys__'))
+
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __getitem__(self, index):
+        env = self.env
+        with env.begin(write=False) as txn:
+            byteflow = txn.get(self.keys[index])
+
+        unpacked = pickle.loads(byteflow)
+
+        # load img
+        imgbuf = unpacked[0]
+        buf = six.BytesIO()
+        buf.write(imgbuf)
+        buf.seek(0)
+        img = Image.open(buf)
+
+        # load label
+        target = unpacked[1]
+
+        if self.transform is not None:
+            img = self.transform(img)
+
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        # return img, target
+        return img, target
+
+    def __len__(self):
+        return self.length
+
+    def __repr__(self):
+        return self.__class__.__name__ + ' (' + self.db_path + ')'
+
+
+class COOPLMDBDataset(LMDBDataset):
+    def __init__(self, root, split="train", transform=None) -> None:
+        super().__init__(root, split, transform=transform)
+        with open(os.path.join(root, "split.json")) as f:
+            split_file = json.load(f)
+        idx_to_class = OrderedDict(sorted({s[-2]: s[-1] for s in split_file["test"]}.items()))
+        self.classes = list(idx_to_class.values())

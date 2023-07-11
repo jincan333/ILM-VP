@@ -64,7 +64,25 @@ def SNIP(masks, net, keep_ratio, train_dataloader, device, visual_prompt, label_
 
     # calculate mask
     for name in grads_abs.keys():
-        masks[name] = ((grads_abs[name] / norm_factor) >= acceptable_score).float()
+        def unravel_index(index, shape):
+            out = []
+            for dim in reversed(shape):
+                out.append(index % dim)
+                index = index // dim
+            return tuple(reversed(out))
+
+        for name in grads_abs.keys():
+            mask = ((grads_abs[name] / norm_factor) >= acceptable_score).float()
+            if torch.sum(mask) == 0:  # If all values are 0...
+                flat_idx = torch.argmax(grads_abs[name])
+                unflat_idx = unravel_index(flat_idx, grads_abs[name].size())
+                mask[unflat_idx] = 1  # set the maximum argument to 1
+
+            masks[name] = mask
+
+
+    # for name in grads_abs.keys():
+        # masks[name] = ((grads_abs[name] / norm_factor) >= acceptable_score).float()
 
 
 def SNIP_training(net, keep_ratio, train_dataloader, device, masks, death_rate):
@@ -133,12 +151,17 @@ def SNIP_training(net, keep_ratio, train_dataloader, device, masks, death_rate):
 
 
 def GraSP_fetch_data(dataloader, num_classes, samples_per_class):
+    samples_per_class = min(int(512 // num_classes), samples_per_class)
     datas = [[] for _ in range(num_classes)]
     labels = [[] for _ in range(num_classes)]
     mark = dict()
     dataloader_iter = iter(dataloader)
     while True:
-        inputs, targets = next(dataloader_iter)
+        try:
+            inputs, targets = next(dataloader_iter)
+        except StopIteration:
+            print("The iterator has now run out of items.")
+            break
         for idx in range(inputs.shape[0]):
             x, y = inputs[idx:idx+1], targets[idx:idx+1]
             category = y.item()
