@@ -16,7 +16,7 @@ seed=(7)
 density_list='1,0.1,0.01,0.001'
 imagenet_path='/data/imagenet'
 
-prune_modes=('vp_ff')
+prune_modes=('normal')
 prune_methods=('hydra')
 gpus=(0)
 for j in ${!networks[@]};do
