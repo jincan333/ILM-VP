@@ -9,7 +9,7 @@ fi
 # datasets=("ucf101" "eurosat" "oxfordpets" "stanfordcars" "sun397") 
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra']
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
-networks=('resnet50' 'vgg')
+networks=('vgg' 'resnet50')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 datasets=('tiny_imagenet')
 epochs=120
@@ -18,10 +18,10 @@ density_list='1,0.1,0.01,0.001'
 prune_modes=('normal')
 
 
-ff_optimizer='adam'
-ff_lr=0.001
+ff_optimizer='sgd'
+ff_lr=0.01
 seeds=(7)
-prune_methods=('hydra')
+prune_methods=('imp')
 gpus=(1 0)
 
 for i in ${!datasets[@]};do
