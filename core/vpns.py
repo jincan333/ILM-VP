@@ -20,7 +20,7 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch Visual Prompt + Prune Experiments')
     global args
     parser.add_argument('--prune_mode', type=str, default='normal', choices=['normal', 'vp_ff', 'no_tune', 'vp'], help='prune method implement ways')
-    parser.add_argument('--prune_method', type=str, default='hydra', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra'])
+    parser.add_argument('--prune_method', type=str, default='synflow', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra'])
     parser.add_argument('--ckpt_directory', type=str, default='', help='sub-network ckpt directory')
     parser.add_argument('--ff_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--ff_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
@@ -35,7 +35,7 @@ def main():
     parser.add_argument('--hydra_lr', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--hydra_weight_decay', default=1e-4, type=float, help='hydra weight decay')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg"])
-    parser.add_argument('--dataset', default="flowers102", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'tiny_imagenet', 'imagenet'])
+    parser.add_argument('--dataset', default="dtd", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'tiny_imagenet', 'imagenet'])
     parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
     parser.add_argument('--epochs', default=120, type=int, help='number of total eopchs to run')
@@ -85,9 +85,6 @@ def main():
     args = parser.parse_args()
     args.prompt_method=None if args.prompt_method=='None' else args.prompt_method
     args.density_list=[float(i) for i in args.density_list.split(',')]
-    # if args.prune_method != 'hydra':
-    #     args.ff_optimizer = 'sgd'
-    #     args.ff_lr = 0.01
     print(json.dumps(vars(args), indent=4))
     # Device
     device = torch.device(f"cuda:{args.gpu}")

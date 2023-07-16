@@ -315,7 +315,7 @@ def SynFlow(masks, net, keep_ratio, train_dataloader, device, visual_prompt, lab
         # input_dim = list(inputs[0, :].shape)
         # input = torch.ones([1] + input_dim).to(device)
         # Use visual prompt
-        input = inputs[epoch:]
+        input = inputs
         output = net(visual_prompt(input)) if visual_prompt else net(input)
         torch.sum(output).backward()
         # calculate scores
