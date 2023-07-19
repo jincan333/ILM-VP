@@ -239,9 +239,8 @@ def main():
                     args.ff_lr = 0.001
                 set_hydra_prune_rate(network, 1)
         label_mapping = obtain_label_mapping(mapping_sequence_init)
-        if args.prune_mode in ('vp', 'vp_ff'):
-            args.dataset='imagenet'
-            train_loader, val_loader, test_loader = choose_dataloader(args, phase)
+        args.dataset='imagenet'
+        train_loader, val_loader, test_loader = choose_dataloader(args, phase)
         visual_prompt, hydra_optimizer, hydra_scheduler, vp_optimizer, vp_scheduler, ff_optimizer, ff_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(
             network, visual_prompt_init, mapping_sequence, None, args)
         test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
@@ -328,33 +327,40 @@ def main():
         # finetune
         if args.prune_mode in ('normal', 'vp_ff'):
             print('*********************set phase as finetune**********************')
-            phase = 'finetune'
             print('******************************************')
             print(f'pruning state {state} finetune')
             print('******************************************')
             for dataset in args.dataset_list:
                 print('Downstream dataset: ', dataset)
                 args.dataset=dataset
-                if args.prune_mode in ('vp', 'vp_ff'):
-                    # init
-                    best_ckpt = torch.load(os.path.join(save_path, str(state)+'after_prune.pth'))
-                    network.load_state_dict(best_ckpt['state_dict'])
-                    visual_prompt.load_state_dict(best_ckpt['visual_prompt']) if visual_prompt else None
-                    visual_prompt, hydra_optimizer, hydra_scheduler, vp_optimizer, vp_scheduler, ff_optimizer, ff_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(
-                        network, visual_prompt_init, mapping_sequence, None, args)
-                    # aternative
+                # init
+                best_ckpt = torch.load(os.path.join(save_path, str(state)+'after_prune.pth'))
+                network.load_state_dict(best_ckpt['state_dict'])
+                if args.prune_mode == 'vp_ff':
+                    phase = 'subnetwork'
+                    # visual_prompt = None
+                else:
+                    phase = 'finetune'
                     visual_prompt = None
-                    train_loader, val_loader, test_loader = choose_dataloader(args, phase)
-                    label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
-                    print('mapping_sequence: ', mapping_sequence)
+                visual_prompt, hydra_optimizer, hydra_scheduler, vp_optimizer, vp_scheduler, ff_optimizer, ff_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(
+                    network, visual_prompt_init, mapping_sequence, None, args)
+
+                train_loader, val_loader, test_loader = choose_dataloader(args, phase)
+                label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
+                print('mapping_sequence: ', mapping_sequence)
                 print('Accuracy before finetune: ', evaluate(test_loader, network, label_mapping, visual_prompt))
                 for epoch in range(args.epochs):
-                    train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
-                                    ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
-                                    ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)
-                    train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
-                                    ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
-                                    ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=None)
+                    if visual_prompt:
+                        train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                                        ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
+                                        ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)
+                        train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                                        ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
+                                        ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=None)
+                    else:
+                        train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                                        ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
+                                        ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)
                     val_acc = evaluate(val_loader, network, label_mapping, visual_prompt)
                     all_results['train_acc'].append(train_acc)
                     all_results['val_acc'].append(val_acc)
