@@ -116,9 +116,9 @@ class SubnetConv(nn.Conv2d):
             self.popup_scores = Parameter(torch.randn(self.weight.shape))
         self.popup_scores.is_score=True
         nn.init.kaiming_uniform_(self.popup_scores, a=math.sqrt(5))
-        self.weight.requires_grad = False
-        if self.bias is not None:
-            self.bias.requires_grad = False
+        # self.weight.requires_grad = False
+        # if self.bias is not None:
+        #     self.bias.requires_grad = False
         self.w = 0
         self.k=False
     def set_prune_rate(self, k):
@@ -153,8 +153,8 @@ class SubnetLinear(nn.Linear):
             self.popup_scores = Parameter(torch.randn(self.weight.shape))
         self.popup_scores.is_score=True
         nn.init.kaiming_uniform_(self.popup_scores, a=math.sqrt(5))
-        self.weight.requires_grad = False
-        self.bias.requires_grad = False
+        # self.weight.requires_grad = False
+        # self.bias.requires_grad = False
         self.w = 0
         self.k=False
 

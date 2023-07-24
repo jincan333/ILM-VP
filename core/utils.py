@@ -54,6 +54,7 @@ def setup_optimizer_and_prompt(network, args):
     hydra_optimizer, hydra_scheduler = None, None
     vp_optimizer, vp_scheduler = None, None
     ff_optimizer, ff_scheduler = None, None
+    ff_params = network.parameters()
 
     if args.prune_mode in ('vp', 'vp_ff'):
         if args.prompt_method == 'pad':
@@ -67,10 +68,11 @@ def setup_optimizer_and_prompt(network, args):
         vp_optimizer, vp_scheduler = get_optimizer(visual_prompt.parameters(), args.vp_optimizer, args.vp_scheduler, args.vp_lr, args.vp_weight_decay, args)
 
     if args.prune_method == 'hydra':
-        score_params= [param for param in network.parameters() if hasattr(param, 'is_score') and param.is_score]
+        score_params = [param for param in network.parameters() if hasattr(param, 'is_score') and param.is_score]
         hydra_optimizer, hydra_scheduler = get_optimizer(score_params, args.hydra_optimizer, args.hydra_scheduler, args.hydra_lr, args.hydra_weight_decay, args)
-        
-    ff_optimizer, ff_scheduler = get_optimizer(network.parameters(), args.ff_optimizer, args.ff_scheduler, args.ff_lr, args.ff_weight_decay, args)
+        ff_params = [param for param in network.parameters() if not hasattr(param, 'is_score')]
+    
+    ff_optimizer, ff_scheduler = get_optimizer(ff_params, args.ff_optimizer, args.ff_scheduler, args.ff_lr, args.ff_weight_decay, args)
     
     return visual_prompt, hydra_optimizer, hydra_scheduler, vp_optimizer, vp_scheduler, ff_optimizer, ff_scheduler
 

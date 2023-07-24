@@ -68,9 +68,21 @@ class Masking(object):
         # if fix, then we do not explore the sparse connectivity
         if self.args.fix: self.prune_every_k_steps = None
         else: self.prune_every_k_steps = self.args.update_frequency
+    
+        if args.prune_method == 'gmp':
+            self.total_step = self.args.epochs * len(train_loader)
+            self.final_prune_time = int(self.total_step * args.gmp_end_epoch_rate)
+            self.initial_prune_time = int(self.total_step * args.gmp_start_epoch_rate)
 
     def init(self, mode='ERK', density=0.05, erk_power_scale=1.0):
         self.density = density
+        if mode == 'gmp':
+            print('initialize by GMP')
+            for module in self.modules:
+                for name, weight in module.named_parameters():
+                    if name not in self.masks: continue
+                    self.masks[name] = torch.ones_like(weight, dtype=torch.float32, requires_grad=False).cuda()
+
         if mode == 'omp':
             print('initialize by OMP')
             weight_abs = []
@@ -268,19 +280,73 @@ class Masking(object):
         # self.fired_masks = copy.deepcopy(self.masks) # used to calculate ITOP reta (https://github.com/Shiweiliuiiiiiii/In-Time-Over-Parameterization)
         # self.print_nonzero_counts()
 
+    def gradual_pruning_rate(self,
+            step: int,
+            initial_threshold: float,
+            final_threshold: float,
+            initial_time: int,
+            final_time: int,
+    ):
+        if step <= initial_time:
+            threshold = initial_threshold
+        elif step > final_time:
+            threshold = final_threshold
+        else:
+            mul_coeff = 1 - (step - initial_time) / (final_time - initial_time)
+            threshold = final_threshold + (initial_threshold - final_threshold) * (mul_coeff ** 3)
+
+        return threshold
+
+    def gradual_magnitude_pruning(self, current_pruning_rate, cpu=False):
+        weight_abs = []
+        for module in self.modules:
+            for name, weight in module.named_parameters():
+                if name not in self.masks: continue
+                if cpu: 
+                    weight_abs.append(torch.abs(weight.cpu()))
+                else:
+                    weight_abs.append(torch.abs(weight))
+
+        # Gather all scores in a single vector and normalise
+        all_scores = torch.cat([torch.flatten(x) for x in weight_abs])
+        num_params_to_keep = int(len(all_scores) * (1 - current_pruning_rate))
+
+        threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
+        acceptable_score = threshold[-1]
+
+        for module in self.modules:
+            for name, weight in module.named_parameters():
+                if name not in self.masks: continue
+                self.masks[name] = ((torch.abs(weight)) > acceptable_score).float().data.to(self.device)
+        self.apply_mask()
+
 
     def step(self):
-        self.optimizer.step()
+        # self.optimizer.step()
         self.apply_mask()
-        self.death_rate_decay.step()
-        self.death_rate = self.death_rate_decay.get_dr()
+        if self.args.prune_method == 'gmp':
+            if (self.steps >= self.initial_prune_time and self.steps < self.final_prune_time and self.steps % self.args.gmp_T == 0) or self.steps == self.final_prune_time:
+                print('gmp prune')
+                current_prune_rate = self.gradual_pruning_rate(self.steps, self.args.gmp_init_sparsity, self.args.gmp_final_sparsity, self.initial_prune_time, self.final_prune_time)
+                self.gradual_magnitude_pruning(current_prune_rate)
+                total_size = 0
+                sparse_size = 0
+                for module in self.modules:
+                    for name, weight in module.named_parameters():
+                        if name in self.masks:
+                            total_size += weight.numel()
+                            sparse_size += (weight != 0).sum().int().item()
+                print('Total parameters under sparsity level of {0}: {1}'.format(self.density, sparse_size / total_size))
         self.steps += 1
+        # print('steps', self.steps)
+        # self.death_rate_decay.step()
+        # self.death_rate = self.death_rate_decay.get_dr()
 
-        if self.prune_every_k_steps is not None:
-            if self.steps % self.prune_every_k_steps == 0:
-                self.truncate_weights()
-                _, _ = self.fired_masks_update()
-                self.print_nonzero_counts()
+        # if self.prune_every_k_steps is not None:
+        #     if self.steps % self.prune_every_k_steps == 0:
+        #         self.truncate_weights()
+        #         _, _ = self.fired_masks_update()
+        #         self.print_nonzero_counts()
 
 
     def add_module(self, module, density, sparse_init='ER'):
