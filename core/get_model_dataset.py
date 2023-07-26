@@ -282,9 +282,9 @@ def get_torch_dataset(args, transform_type):
         raise NotImplementedError(f"{dataset} not supported")
     
     if dataset == 'imagenet':
-        train_loader = DataLoader(train_set, batch_size=1024, shuffle=True, num_workers=16, pin_memory=True)
-        val_loader = DataLoader(val_set, batch_size=1024, shuffle=False, num_workers=16, pin_memory=True)
-        test_loader = DataLoader(test_set, batch_size=1024, shuffle=False, num_workers=16, pin_memory=True)
+        train_loader = DataLoader(train_set, batch_size=1024, shuffle=True, num_workers=10, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=1024, shuffle=False, num_workers=10, pin_memory=True)
+        test_loader = DataLoader(test_set, batch_size=1024, shuffle=False, num_workers=10, pin_memory=True)
     elif dataset in ['dtd', 'oxfordpets']:
         train_loader = DataLoader(train_set, batch_size=64, shuffle=True, num_workers=args.workers, pin_memory=True)
         val_loader = DataLoader(val_set, batch_size=64, shuffle=False, num_workers=args.workers, pin_memory=True)

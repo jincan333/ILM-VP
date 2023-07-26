@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='ablation_flowers102_vpns'
+experiment_name='ablation_oxfordpets_vpns'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -9,21 +9,21 @@ fi
 # dataset=('ucf101' 'cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102')
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
-datasets=('flowers102')
+datasets=('oxfordpets')
 epochs=120
 prune_modes=('vp_ff')
 prune_methods=('hydra')
-density_list='1,0.01'
+density_list='1,0.1'
 second_phases=('vp+ff_cotrain')
 
 seeds=(7 9 17)
-ff_optimizer='adam'
-ff_lr=0.0015
+ff_optimizer='sgd'
+ff_lr=0.015
 ff_weight_decay=0.0001
 vp_lr=0.0001
-hydra_lr=0.0002
+hydra_lr=0.0001
 hydra_weight_decay=0.0001
-gpus=(3 3 3)
+gpus=(2 1 0)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for l in ${!prune_methods[@]};do

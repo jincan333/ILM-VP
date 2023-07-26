@@ -18,13 +18,15 @@ imagenet_path='/data/imagenet'
 
 prune_modes=('vp_ff')
 prune_methods=('hydra')
+ff_optimizer='sgd'
+ff_lr=0.01
 gpus=(0)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
             for l in ${!prune_methods[@]};do
                 for m in ${!seed[@]};do
-                    log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seed[m]}.log
+                    log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${ff_optimizer}_${ff_lr}_${seed[m]}.log
                         python ./core/dataset_transfer.py \
                             --experiment_name ${experiment_name} \
                             --dataset ${datasets[i]} \
@@ -32,6 +34,8 @@ for j in ${!networks[@]};do
                             --prune_method ${prune_methods[l]} \
                             --prune_mode ${prune_modes[k]} \
                             --density_list ${density_list} \
+                            --ff_optimizer ${ff_optimizer} \
+                            --ff_lr ${ff_lr} \
                             --gpu ${gpus[m]} \
                             --epochs ${epochs} \
                             --imagenet_path ${imagenet_path} \

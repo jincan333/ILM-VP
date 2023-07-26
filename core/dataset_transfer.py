@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2,3"
+os.environ["CUDA_VISIBLE_DEVICES"]="5,4"
 
 import torch
 import torch.nn as nn
@@ -229,14 +229,14 @@ def main():
         else:
             network.load_state_dict(state_init)
             if args.prune_method == 'hydra':
-                if args.density_list[state] >= 0.1:
-                    print('change ff optimizer to sgd')
-                    args.ff_optimizer = 'sgd'
-                    args.ff_lr = 0.01
-                else:
-                    print('change ff optimizer to adam')
-                    args.ff_optimizer = 'adam'
-                    args.ff_lr = 0.001
+                # if args.density_list[state] >= 0.1:
+                #     print('change ff optimizer to sgd')
+                #     args.ff_optimizer = 'sgd'
+                #     args.ff_lr = 0.01
+                # else:
+                #     print('change ff optimizer to adam')
+                #     args.ff_optimizer = 'adam'
+                #     args.ff_lr = 0.001
                 set_hydra_prune_rate(network, 1)
         label_mapping = obtain_label_mapping(mapping_sequence_init)
         args.dataset='imagenet'
