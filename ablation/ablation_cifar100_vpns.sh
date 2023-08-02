@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='ablation_tiny_imagenet_vpns_60epochs'
+experiment_name='ablation_cifar100_vpns_60epochs'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -9,14 +9,14 @@ fi
 # dataset=('ucf101' 'cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102')
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
-datasets=('tiny_imagenet')
+datasets=('cifar100')
 epochs=60
 prune_modes=('vp_ff')
 prune_methods=('hydra')
 density_list='1,0.1,0.01,0.001'
 second_phases=('vp+ff_cotrain')
 
-seeds=(7)
+seeds=(17)
 ff_optimizer='sgd'
 ff_lr=0.01
 ff_weight_decay=0.0001
@@ -24,7 +24,7 @@ vp_lr=0.001
 hydra_optimizer='adam'
 hydra_lr=0.0001
 hydra_weight_decay=0.0001
-gpus=(6)
+gpus=(7)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for l in ${!prune_methods[@]};do

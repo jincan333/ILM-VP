@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="5,4"
+os.environ["CUDA_VISIBLE_DEVICES"]="7,6"
 
 import torch
 import torch.nn as nn
@@ -240,6 +240,7 @@ def main():
                 set_hydra_prune_rate(network, 1)
         label_mapping = obtain_label_mapping(mapping_sequence_init)
         args.dataset='imagenet'
+        args.epochs=60
         train_loader, val_loader, test_loader = choose_dataloader(args, phase)
         visual_prompt, hydra_optimizer, hydra_scheduler, vp_optimizer, vp_scheduler, ff_optimizer, ff_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(
             network, visual_prompt_init, mapping_sequence, None, args)
@@ -333,6 +334,7 @@ def main():
             for dataset in args.dataset_list:
                 print('Downstream dataset: ', dataset)
                 args.dataset=dataset
+                args.epochs=120
                 # init
                 best_ckpt = torch.load(os.path.join(save_path, str(state)+'after_prune.pth'))
                 network.load_state_dict(best_ckpt['state_dict'])

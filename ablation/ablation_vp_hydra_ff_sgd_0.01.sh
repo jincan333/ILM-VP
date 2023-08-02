@@ -13,7 +13,7 @@ epochs=50
 seed=7
 prune_modes=('vp_ff')
 prune_methods=('hydra')
-density_list='1,0.1'
+density_list='1,0.01,0.001'
 second_phases=('vp+ff_cotrain')
 
 # input_sizes=(224 192 160 128 96 64 32)

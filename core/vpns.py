@@ -20,7 +20,7 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch Visual Prompt + Prune Experiments')
     global args
     parser.add_argument('--prune_mode', type=str, default='normal', choices=['normal', 'vp_ff', 'no_tune', 'vp'], help='prune method implement ways')
-    parser.add_argument('--prune_method', type=str, default='gmp', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra','gmp'])
+    parser.add_argument('--prune_method', type=str, default='omp', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra','gmp'])
     parser.add_argument('--ckpt_directory', type=str, default='', help='sub-network ckpt directory')
     parser.add_argument('--ff_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--ff_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
@@ -151,7 +151,8 @@ def main():
     print(f'#######################Train init dense network for {args.prune_method}######################')
     for epoch in range(args.epochs):
         if args.prune_mode in ('no_tune', 'normal'):
-            if args.prune_method in ('imp', 'random', 'omp'):
+            # if args.prune_method in ('imp', 'random', 'omp'):
+            if args.prune_method in ('imp', 'random'):
                 train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
                                 ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
                                 ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)

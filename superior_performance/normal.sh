@@ -11,7 +11,7 @@ fi
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
-datasets=('tiny_imagenet' 'cifar100')
+datasets=('tiny_imagenet')
 epochs=120
 # seed 7 9 17
 density_list='1,0.1,0.01,0.001'
@@ -22,9 +22,9 @@ ff_optimizer='sgd'
 ff_lr=0.01
 hydra_lr=0.0001
 seeds=(7 9 17)
-prune_methods=('gmp')
+prune_methods=('hydra')
 gmp_T=1000
-gpus=(0 1 2)
+gpus=(5 4 3)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

@@ -1,5 +1,5 @@
 #!/bin/sh
-experiment_name='vpns_dataset_transfer'
+experiment_name='vpns_dataset_transfer_512_4'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}

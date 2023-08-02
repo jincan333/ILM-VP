@@ -17,13 +17,13 @@ density_list='1,0.1'
 second_phases=('vp+ff_cotrain')
 
 seeds=(7)
-ff_optimizer='sgd'
-ff_lr=0.01
+ff_optimizer='adam'
+ff_lr=0.001
 ff_weight_decay=0.0001
 vp_lr=0.0001
 hydra_lr=0.0001
-hydra_weight_decay=0.0005
-gpus=(4)
+hydra_weight_decay=0.001
+gpus=(2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for l in ${!prune_methods[@]};do

@@ -1,44 +1,48 @@
 #!/bin/sh
 
-experiment_name='main_vpns_gradual'
+experiment_name='vpns_dataset_transfer'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
 fi
+# datasets=("cifar100" "dtd" "flowers102" "ucf101" "food101" "gtsrb" "svhn" "eurosat" "oxfordpets" "stanfordcars" "sun397", "tiny_imagenet")
+# datasets=("ucf101" "eurosat" "oxfordpets" "stanfordcars" "sun397") 
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra']
-# dataset=('ucf101' 'cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102')
+# datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
-datasets=('cifar100')
+datasets=('tiny_imagenet' 'cifar100')
 epochs=120
-prune_modes=('vp_ff')
-prune_methods=('hydra')
+# seed 7 9 17
 density_list='1,0.1,0.01,0.001'
-second_phases=('vp+ff_cotrain')
+prune_modes=('normal')
 
-seeds=(7)
+
 ff_optimizer='sgd'
 ff_lr=0.01
 hydra_lr=0.0001
-gpus=(5)
+seeds=(7)
+prune_methods=('omp')
+gmp_T=1000
+gpus=(5 4)
 for j in ${!networks[@]};do
-    for i in ${!datasets[@]};do
+    for k in ${!prune_modes[@]};do
         for l in ${!prune_methods[@]};do
-            for k in ${!second_phases[@]};do
-                for m in ${!seeds[@]};do
-                    log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${second_phases[k]}_${prune_methods[l]}_${seeds[m]}_${ff_optimizer}_${ff_lr}_${hydra_lr}.log
-                        python ./core/vpns_gradual.py \
+            for m in ${!seeds[@]};do
+                for i in ${!datasets[@]};do
+                    log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seeds[m]}_${ff_optimizer}_${ff_lr}_${hydra_lr}.log
+                        python ./core/vpns.py \
                             --experiment_name ${experiment_name} \
                             --dataset ${datasets[i]} \
                             --network ${networks[j]} \
-                            --second_phase ${second_phases[k]} \
-                            --prune_mode ${prune_modes[0]} \
                             --prune_method ${prune_methods[l]} \
+                            --gmp_T ${gmp_T} \
+                            --prune_mode ${prune_modes[k]} \
                             --density_list ${density_list} \
                             --ff_optimizer ${ff_optimizer} \
                             --ff_lr ${ff_lr} \
                             --hydra_lr ${hydra_lr} \
-                            --gpu ${gpus[m]} \
+                            --gpu ${gpus[i]} \
                             --epochs ${epochs} \
                             --seed ${seeds[m]} \
                             > $log_filename 2>&1 &

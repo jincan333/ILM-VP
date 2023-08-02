@@ -1,24 +1,24 @@
 #!/bin/sh
 
-experiment_name='main_vpns'
+experiment_name='main_vpns_8month'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
 fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra']
 # dataset=('ucf101' 'cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102')
-networks=('resnet50')
+networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
-datasets=('tiny_imagenet')
-epochs=120
+datasets=('cifar10')
+epochs=60
 prune_modes=('vp_ff')
 prune_methods=('hydra')
-density_list='1,0.001'
+density_list='1,0.1,0.01,0.001'
 second_phases=('vp+ff_cotrain')
 
-seeds=(7)
-ff_optimizer='adam'
-ff_lr=0.001
+seeds=(7 9 17)
+ff_optimizer='sgd'
+ff_lr=0.01
 hydra_lr=0.0001
 gpus=(3)
 for j in ${!networks[@]};do
