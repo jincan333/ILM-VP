@@ -33,7 +33,7 @@ def SNIP(masks, net, keep_ratio, train_dataloader, device, visual_prompt, label_
     for layer in net.modules():
         if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
             layer.weight_mask = nn.Parameter(torch.ones_like(layer.weight))
-            nn.init.xavier_normal_(layer.weight)
+            # nn.init.xavier_normal_(layer.weight)
             layer.weight.requires_grad = False
         # Override the forward methods:
         if isinstance(layer, nn.Conv2d):
