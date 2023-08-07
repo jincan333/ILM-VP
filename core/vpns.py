@@ -151,8 +151,8 @@ def main():
     print(f'#######################Train init dense network for {args.prune_method}######################')
     for epoch in range(args.epochs):
         if args.prune_mode in ('no_tune', 'normal'):
-            # if args.prune_method in ('imp', 'random', 'omp'):
-            if args.prune_method in ('imp', 'random'):
+            if args.prune_method in ('imp', 'random', 'omp'):
+            # if args.prune_method in ('imp', 'random'):
                 train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
                                 ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
                                 ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)

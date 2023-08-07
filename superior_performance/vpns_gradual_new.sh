@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_gradual_new'
+experiment_name='vpns_gradual_new_0.05'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -9,11 +9,11 @@ fi
 # dataset=('ucf101' 'cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102')
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
-datasets=('tiny_imagenet')
+datasets=('cifar100' 'cifar10' 'tiny_imagenet')
 epochs=60
 prune_modes=('vp_ff')
 prune_methods=('hydra')
-density_list='1,0.1,0.01,0.001'
+density_list='1,0.05'
 second_phases=('vp+ff_cotrain')
 
 seeds=(7 9 17)
@@ -22,7 +22,7 @@ ff_lr=0.01
 vp_optimizer='adam'
 vp_lr=0.001
 hydra_lr=0.0001
-gpus=(4 3 2)
+gpus=(7 6 5)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for l in ${!prune_methods[@]};do

@@ -68,8 +68,12 @@ def setup_optimizer_and_prompt(network, args):
         vp_optimizer, vp_scheduler = get_optimizer(visual_prompt.parameters(), args.vp_optimizer, args.vp_scheduler, args.vp_lr, args.vp_weight_decay, args)
 
     if args.prune_method == 'hydra':
-        # score_params = [param for param in network.parameters() if hasattr(param, 'is_score') and param.is_score]
-        score_params = network.parameters()
+        if args.prune_mode == 'vp_ff':
+            score_params = network.parameters()
+        elif args.prune_mode == 'normal':
+            score_params = [param for param in network.parameters() if hasattr(param, 'is_score') and param.is_score]
+        else:
+            raise ValueError("Prune Mode should be one of normal vp_ff")
         hydra_optimizer, hydra_scheduler = get_optimizer(score_params, args.hydra_optimizer, args.hydra_scheduler, args.hydra_lr, args.hydra_weight_decay, args)
         ff_params = [param for param in network.parameters() if not hasattr(param, 'is_score')]
     
