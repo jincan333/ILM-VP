@@ -70,7 +70,9 @@ def setup_optimizer_and_prompt(network, args):
     if args.prune_method == 'hydra':
         if args.prune_mode == 'vp_ff':
             score_params = network.parameters()
+            # score_params = [param for param in network.parameters() if hasattr(param, 'is_score') and param.is_score]
         elif args.prune_mode == 'normal':
+            # score_params = network.parameters()
             score_params = [param for param in network.parameters() if hasattr(param, 'is_score') and param.is_score]
         else:
             raise ValueError("Prune Mode should be one of normal vp_ff")

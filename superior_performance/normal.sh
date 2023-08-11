@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='main_normal'
+experiment_name='main_normal_0.05'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -11,20 +11,20 @@ fi
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
-datasets=('tiny_imagenet')
+datasets=('cifar100')
 epochs=120
 # seed 7 9 17
-density_list='1,0.1,0.01,0.001'
+density_list='1,0.05,0.01'
 prune_modes=('normal')
 
 
-ff_optimizer='sgd'
-ff_lr=0.01
+ff_optimizer='adam'
+ff_lr=0.001
 hydra_lr=0.0001
 seeds=(7 9 17)
-prune_methods=('hydra')
+prune_methods=('omp' 'random' 'synflow')
 gmp_T=1000
-gpus=(5 4 3)
+gpus=(7 2 0)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

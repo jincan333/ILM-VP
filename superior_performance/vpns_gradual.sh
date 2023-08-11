@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='main_vpns_gradual'
+experiment_name='ablation_method_gradual_0.01'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -10,17 +10,17 @@ fi
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 datasets=('cifar100')
-epochs=120
+epochs=60
 prune_modes=('vp_ff')
 prune_methods=('hydra')
-density_list='1,0.1,0.01,0.001'
+density_list='1,0.01'
 second_phases=('vp+ff_cotrain')
 
 seeds=(7)
 ff_optimizer='sgd'
-ff_lr=0.01
+ff_lr=0.05
 hydra_lr=0.0001
-gpus=(5)
+gpus=(7)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for l in ${!prune_methods[@]};do
