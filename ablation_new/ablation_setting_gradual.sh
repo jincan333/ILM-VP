@@ -1,51 +1,47 @@
 #!/bin/sh
 
-experiment_name='ablation_method_score_weights'
+experiment_name='ablation_setting_gradual_score_weights'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
 fi
+# datasets=("cifar100" "dtd" "flowers102" "ucf101" "food101" "gtsrb" "svhn" "eurosat" "oxfordpets" "stanfordcars" "sun397", "tiny_imagenet")
+# datasets=("ucf101" "eurosat" "oxfordpets" "stanfordcars" "sun397") 
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra']
-# dataset=('ucf101' 'cifar10' 'cifar100' 'svhn' 'mnist' 'flowers102')
+# datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 datasets=('cifar100')
-epochs=60
-prune_modes=('vp_ff')
-prune_methods=('hydra')
-density_list='1,0.10,0.05,0.01'
-second_phases=('vp+ff_cotrain')
+epochs=120
+# seed 7 9 17
+density_list='1,0.1,0.05,0.01'
+prune_modes=('normal')
 
-seeds=(7)
+
 ff_optimizer='sgd'
 ff_lr=0.05
-ff_weight_decay=0.0001
-vp_lr=0.001
-hydra_optimizer='adam'
 hydra_lr=0.0001
-hydra_weight_decay=0.0001
-gpus=(5)
+seeds=(7)
+prune_methods=('hydra')
+gmp_T=1000
+gpus=(7)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
-        for l in ${!prune_methods[@]};do
-            for k in ${!second_phases[@]};do
+        for k in ${!prune_modes[@]};do
+            for l in ${!prune_methods[@]};do
                 for m in ${!seeds[@]};do
-                    log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${second_phases[k]}_${prune_methods[l]}_${seeds[m]}_${ff_optimizer}_${ff_lr}_${ff_weight_decay}_${vp_lr}_${hydra_optimizer}_${hydra_lr}_${hydra_weight_decay}.log
-                        python ./core/vpns_new.py \
+                    log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seeds[m]}_${ff_optimizer}_${ff_lr}_${hydra_lr}.log
+                        python ./core/normal_gradual.py \
                             --experiment_name ${experiment_name} \
                             --dataset ${datasets[i]} \
                             --network ${networks[j]} \
-                            --second_phase ${second_phases[k]} \
-                            --prune_mode ${prune_modes[0]} \
                             --prune_method ${prune_methods[l]} \
+                            --gmp_T ${gmp_T} \
+                            --prune_mode ${prune_modes[k]} \
                             --density_list ${density_list} \
                             --ff_optimizer ${ff_optimizer} \
                             --ff_lr ${ff_lr} \
-                            --ff_weight_decay ${ff_weight_decay} \
-                            --vp_lr ${vp_lr} \
-                            --hydra_optimizer ${hydra_optimizer} \
                             --hydra_lr ${hydra_lr} \
-                            --hydra_weight_decay ${hydra_weight_decay} \
                             --gpu ${gpus[m]} \
                             --epochs ${epochs} \
                             --seed ${seeds[m]} \

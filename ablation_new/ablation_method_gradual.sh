@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_final'
+experiment_name='ablation_method_gradual_score_weights'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -11,7 +11,7 @@ fi
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
-datasets=('stanfordcars')
+datasets=('tiny_imagenet')
 epochs=120
 # seed 7 9 17
 prune_modes=('vp_ff')
@@ -20,8 +20,8 @@ density_list='1,0.1,0.05,0.01'
 second_phases=('vp+ff_cotrain')
 
 
-ff_optimizer='adam'
-ff_lr=0.001
+ff_optimizer='sgd'
+ff_lr=0.0001
 vp_optimizer='adam'
 vp_lr=0.001
 hydra_optimizer='adam'
@@ -29,9 +29,9 @@ hydra_lr=0.0001
 prune_methods=('hydra')
 # gmp_T=1000
 
-score_vp_ratios=(5)
+score_vp_ratios=(6)
 seeds=(7 9 17)
-gpus=(7 6 2)
+gpus=(4 3 2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

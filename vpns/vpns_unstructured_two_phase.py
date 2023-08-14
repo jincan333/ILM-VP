@@ -19,8 +19,8 @@ from unstructured_network_with_score import set_prune_threshold, set_scored_netw
 def main():    
     parser = argparse.ArgumentParser(description='PyTorch Visual Prompt + Prune Experiments')
     global args
-    parser.add_argument('--prune_mode', type=str, default='score+vp_weight', choices=['score+vp_weight', 'score+weight_vp', 'weight+vp_score', 'score+vp_weight+vp', 'score_weight'], help='prune method implement ways')
-    parser.add_argument('--prune_method', type=str, default='vpns', choices=['vpns', 'bip'])
+    parser.add_argument('--prune_mode', type=str, default='score+vp_weight', choices=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp', 'score_weight'], help='prune method implement ways')
+    parser.add_argument('--prune_method', type=str, default='vpns', choices=['vpns', 'hydra'])
     parser.add_argument('--ckpt_directory', type=str, default='', help='sub-network ckpt directory')
     parser.add_argument('--weight_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--weight_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
@@ -43,7 +43,6 @@ def main():
     parser.add_argument('--density_list', default='1,0.50,0.20,0.10', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
     parser.add_argument('--score_vp_ratio', type=float, default=5, choices=[20,10,9,8,7,6,5,4,3,2,1])
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
-    parser.add_argument('--bil_lr', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--global_vp_data', default=1, type=int, choices=[0,1], required=True, help='while using visual prompt, whether use vp_data in all training phase')
 
     ##################################### General setting ############################################
@@ -133,56 +132,96 @@ def main():
         # prune
         network, mask = prune_network(network, weight_optimizer, visual_prompt, label_mapping, train_loader, state, args)
         masks = get_masks(mask) if mask else None
-        # Acc after prune
         label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
         print('mapping_sequence: ', mapping_sequence)
-        test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
-        print(f'Accuracy after prune: {test_acc:.4f}')
-        all_results['no_train_acc'] = test_acc
-        # train
-        if args.prune_method in ('vpns', 'bip'):
-            for epoch in range(args.epochs):
-                train_acc = train(train_loader, val_loader, network, epoch, label_mapping, visual_prompt, mask, args=args,
-                                weight_optimizer=weight_optimizer, vp_optimizer=vp_optimizer, score_optimizer=score_optimizer, 
-                                weight_scheduler=weight_scheduler, vp_scheduler=vp_scheduler, score_scheduler=score_scheduler)
-                val_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
-                all_results['train_acc'].append(train_acc)
-                all_results['val_acc'].append(val_acc)
-                # Save CKPT
-                checkpoint = {
-                    'state_dict': network.state_dict()
-                    ,'init_weight': pre_state_init
-                    ,'mask': masks
-                    ,"weight_optimizer": weight_optimizer.state_dict() if weight_optimizer else None
-                    ,'weight_scheduler': weight_scheduler.state_dict() if weight_scheduler else None
-                    ,"vp_optimizer": vp_optimizer.state_dict() if vp_optimizer else None
-                    ,'vp_scheduler': vp_scheduler.state_dict() if vp_scheduler else None
-                    ,"score_optimizer": score_optimizer.state_dict() if score_optimizer else None
-                    ,'score_scheduler': score_scheduler.state_dict() if score_scheduler else None
-                    ,'visual_prompt': visual_prompt.state_dict() if visual_prompt else None
-                    ,'mapping_sequence': mapping_sequence
-                    ,"val_best_acc": best_acc
-                    ,'ckpt_test_acc': 0
-                    ,'all_results': all_results
-                    ,"epoch": epoch
-                    ,'state': 0
-                }
-                if val_acc > best_acc:
-                    best_acc = val_acc
-                    checkpoint['val_best_acc'] = best_acc
-                torch.save(checkpoint, os.path.join(save_path, str(state)+'best.pth'))
-                # Plot training curve
-                plot_train(all_results, save_path, state)
-            best_ckpt = torch.load(os.path.join(save_path, str(state)+'best.pth'))
-            network.load_state_dict(best_ckpt['state_dict'])
-            visual_prompt.load_state_dict(best_ckpt['visual_prompt']) if visual_prompt else None
-            test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
-            best_ckpt['ckpt_test_acc'] = test_acc
-            torch.save(best_ckpt, os.path.join(save_path, str(state)+'best.pth'))
-            print(f'Best CKPT Accuracy: {test_acc:.4f}')
-            all_results['ckpt_test_acc'] = test_acc
-            all_results['ckpt_epoch'] = best_ckpt['epoch']
+        for epoch in range(args.epochs):
+            train_acc = train(train_loader, 'prune', network, epoch, label_mapping, visual_prompt, mask, args=args,
+                            weight_optimizer=None, vp_optimizer=vp_optimizer, score_optimizer=score_optimizer, 
+                            weight_scheduler=None, vp_scheduler=vp_scheduler, score_scheduler=score_scheduler)
+            val_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
+            all_results['train_acc'].append(train_acc)
+            all_results['val_acc'].append(val_acc)
+            # Save CKPT
+            checkpoint = {
+                'state_dict': network.state_dict()
+                ,'init_weight': pre_state_init
+                ,'mask': masks
+                ,"weight_optimizer": weight_optimizer.state_dict() if weight_optimizer else None
+                ,'weight_scheduler': weight_scheduler.state_dict() if weight_scheduler else None
+                ,"vp_optimizer": vp_optimizer.state_dict() if vp_optimizer else None
+                ,'vp_scheduler': vp_scheduler.state_dict() if vp_scheduler else None
+                ,"score_optimizer": score_optimizer.state_dict() if score_optimizer else None
+                ,'score_scheduler': score_scheduler.state_dict() if score_scheduler else None
+                ,'visual_prompt': visual_prompt.state_dict() if visual_prompt else None
+                ,'mapping_sequence': mapping_sequence
+                ,"val_best_acc": best_acc
+                ,'ckpt_test_acc': 0
+                ,'all_results': all_results
+                ,"epoch": epoch
+                ,'state': 0
+            }
+            if val_acc > best_acc:
+                best_acc = val_acc
+                checkpoint['val_best_acc'] = best_acc
+            torch.save(checkpoint, os.path.join(save_path, str(state)+'prune.pth'))
+            # Plot training curve
             plot_train(all_results, save_path, state)
+        # Acc after prune
+        test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
+        all_results['ckpt_test_acc'] = test_acc
+        all_results['ckpt_epoch'] = epoch
+        checkpoint['ckpt_test_acc'] = test_acc
+        print(f'Accuracy after prune: {test_acc:.4f}')
+        torch.save(checkpoint, os.path.join(save_path, str(state)+'prune.pth'))
+        # Plot training curve
+        plot_train(all_results, save_path, state)
+        # train
+        visual_prompt_state = copy.deepcopy(visual_prompt.state_dict()) if visual_prompt else None
+        visual_prompt, score_optimizer, score_scheduler, vp_optimizer, vp_scheduler, weight_optimizer, weight_scheduler, checkpoint, \
+            best_acc, all_results = init_ckpt_vp_optimizer(network, visual_prompt_state, mapping_sequence, None, args)
+        all_results['no_train_acc'] = test_acc
+        for epoch in range(args.epochs):
+            train_acc = train(train_loader, 'finetune', network, epoch, label_mapping, visual_prompt, mask, args=args,
+                            weight_optimizer=weight_optimizer, vp_optimizer=vp_optimizer, score_optimizer=None, 
+                            weight_scheduler=weight_scheduler, vp_scheduler=vp_scheduler, score_scheduler=None)
+            val_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
+            all_results['train_acc'].append(train_acc)
+            all_results['val_acc'].append(val_acc)
+            # Save CKPT
+            checkpoint = {
+                'state_dict': network.state_dict()
+                ,'init_weight': pre_state_init
+                ,'mask': masks
+                ,"weight_optimizer": weight_optimizer.state_dict() if weight_optimizer else None
+                ,'weight_scheduler': weight_scheduler.state_dict() if weight_scheduler else None
+                ,"vp_optimizer": vp_optimizer.state_dict() if vp_optimizer else None
+                ,'vp_scheduler': vp_scheduler.state_dict() if vp_scheduler else None
+                ,"score_optimizer": score_optimizer.state_dict() if score_optimizer else None
+                ,'score_scheduler': score_scheduler.state_dict() if score_scheduler else None
+                ,'visual_prompt': visual_prompt.state_dict() if visual_prompt else None
+                ,'mapping_sequence': mapping_sequence
+                ,"val_best_acc": best_acc
+                ,'ckpt_test_acc': 0
+                ,'all_results': all_results
+                ,"epoch": epoch
+                ,'state': 0
+            }
+            if val_acc > best_acc:
+                best_acc = val_acc
+                checkpoint['val_best_acc'] = best_acc
+            torch.save(checkpoint, os.path.join(save_path, str(state)+'best.pth'))
+            # Plot training curve
+            plot_train(all_results, save_path, state)
+        best_ckpt = torch.load(os.path.join(save_path, str(state)+'best.pth'))
+        network.load_state_dict(best_ckpt['state_dict'])
+        visual_prompt.load_state_dict(best_ckpt['visual_prompt']) if visual_prompt else None
+        test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
+        best_ckpt['ckpt_test_acc'] = test_acc
+        torch.save(best_ckpt, os.path.join(save_path, str(state)+'best.pth'))
+        print(f'Best CKPT Accuracy: {test_acc:.4f}')
+        all_results['ckpt_test_acc'] = test_acc
+        all_results['ckpt_epoch'] = best_ckpt['epoch']
+        plot_train(all_results, save_path, state)
 
 
 def init_gradients(weight_optimizer, vp_optimizer, score_optimizer):
@@ -194,7 +233,7 @@ def init_gradients(weight_optimizer, vp_optimizer, score_optimizer):
         score_optimizer.zero_grad()
 
 
-def train(train_loader, val_loader, network, epoch, label_mapping, visual_prompt, mask, args, weight_optimizer, vp_optimizer, score_optimizer, weight_scheduler, vp_scheduler, score_scheduler):
+def train(train_loader, stage, network, epoch, label_mapping, visual_prompt, mask, args, weight_optimizer, vp_optimizer, score_optimizer, weight_scheduler, vp_scheduler, score_scheduler):
     
     def update_visual_prompt(visual_prompt, x, y):
         if args.current_steps % args.step_division==0:
@@ -223,84 +262,41 @@ def train(train_loader, val_loader, network, epoch, label_mapping, visual_prompt
     true_num = 0
     loss_sum = 0
 
-    for i, (train_batch, val_batch) in enumerate(zip(train_loader, val_loader)):
+    for i, (x, y) in enumerate(train_loader):
         args.current_steps+=1
-        train_x, train_y = train_batch[0].cuda(), train_batch[1].cuda()
-        val_x, val_y = val_batch[0].cuda(), val_batch[1].cuda()
-        
-        # finetune
-        switch_to_finetune(network)
-        phase = ['weight+vp_score', 'score+vp_weight+vp']
-        fx = calculate_fx(phase, val_x)
-        loss = F.cross_entropy(fx, val_y, reduction='mean')
-        init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
-        loss.backward()
-        weight_optimizer.step()
-        if visual_prompt and args.prune_mode in phase:
-            if args.current_steps % args.step_division==0:
-                update_visual_prompt(visual_prompt, val_x, val_y)
+        x = x.cuda()
+        y = y.cuda()
+        if stage == 'finetune':
+            # finetune
+            switch_to_finetune(network)
+            phase = ['weight+vp_score', 'score+vp_weight+vp']
+            fx = calculate_fx(phase, x)
+            loss = F.cross_entropy(fx, y, reduction='mean')
+            init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
+            loss.backward()
+            weight_optimizer.step()
+            if visual_prompt and args.prune_mode in phase:
+                if args.current_steps % args.step_division==0:
+                    update_visual_prompt(visual_prompt, x, y)
 
-        # bilevel
-        switch_to_bilevel(network)
-        phase = ['score+weight_vp']
-        fx = calculate_fx(phase, train_x)
-        loss = F.cross_entropy(fx, train_y, reduction='mean')
-        init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
-        loss.backward()
+        if stage == 'prune':
+            # prune
+            switch_to_prune(network)
+            phase = ['score+vp_weight','score+vp_weight+vp']
+            fx = calculate_fx(phase, x)
+            loss = F.cross_entropy(fx, y, reduction='mean')
+            init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
+            loss.backward()
+            score_optimizer.step()
+            # reset threshold
+            set_prune_threshold(network, args.density)
 
-        def grad2vec(parameters):
-            grad_vec = []
-            for param in parameters:
-                if param.grad is not None:  # Check if gradient exists
-                    grad_vec.append(param.grad.view(-1).detach())
-                else:
-                    grad_vec.append(torch.zeros(param.data.numel()).to(param.device).detach())
-                # grad_vec.append(param.grad.view(-1).detach())
-            return torch.cat(grad_vec)
-        
-        param_grad_vec = grad2vec(network.parameters())
-        
-        if visual_prompt and args.prune_mode in phase:
-            if args.current_steps % args.step_division==0:
-                vp_optimizer.step()
+            if visual_prompt and args.prune_mode in phase:
+                if args.current_steps % args.step_division==0:
+                    update_visual_prompt(visual_prompt, x, y)
 
-        # prune
-        switch_to_prune(network)
-        phase = ['score+vp_weight','score+vp_weight+vp']
-        fx = calculate_fx(phase, train_x)
-        loss = F.cross_entropy(fx, train_y, reduction='mean')
-        init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
-        loss.backward()
-
-        mask_grad_vec = grad2vec(network.parameters())
-        implicit_gradient = -args.bil_lr * mask_grad_vec * param_grad_vec
-
-        def append_grad_to_vec(vec, parameters):
-            if not isinstance(vec, torch.Tensor):
-                raise TypeError('expected torch.Tensor, but got: {}'.format(torch.typename(vec)))
-            pointer = 0
-            for param in parameters:
-                num_param = param.numel()
-                if param.grad is not None:
-                    param.grad = param.grad + vec[pointer:pointer + num_param].view_as(param).data
-                else:
-                    param.grad = torch.zeros_like(param.data).to(param.device)
-                    param.grad = param.grad + vec[pointer:pointer + num_param].view_as(param).data
-                # param.grad.copy_(param.grad + vec[pointer:pointer + num_param].view_as(param).data)
-                pointer += num_param
-
-        append_grad_to_vec(implicit_gradient, network.parameters())
-        score_optimizer.step()
-
-        if visual_prompt and args.prune_mode in phase:
-            if args.current_steps % args.step_division==0:
-                update_visual_prompt(visual_prompt, train_x, train_y)
-
-        # reset threshold
-        set_prune_threshold(network, args.density)
-
-        total_num += train_y.size(0)
-        true_num += torch.argmax(fx, 1).eq(train_y).float().sum().item()
+        total_num += y.size(0)
+        true_num += torch.argmax(fx, 1).eq(y).float().sum().item()
         train_acc= true_num / total_num
         loss_sum += loss.item() * fx.size(0)
         # measure accuracy and record loss
