@@ -1,42 +1,184 @@
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 import pandas as pd
 import os
 import datetime
+import numpy as np
+
+# 0731
+# combine visual prompting with current methods
+snip = [72.80, 36.38, 8.29, 1.27]
+grasp = [72.80, 45.16, 33.28, 9.44]
+synflow = [72.80, 56.66, 34.82, 5.16]
+omp = [72.80, 62.81, 33.66, 1.31]
+vpns = [72.80, 66.75, 54.02, 11.50]
+
+save_dir = os.path.join('results/combine visual prompting with current methods', str(datetime.datetime.now().date()))
+image_name = 'Combine Visual Prompting'
+os.makedirs(save_dir, exist_ok=True)
+results = {
+    'Compression Ratio': [1, 10, 100, 1000]
+    ,'VP+SNIP': snip
+    ,'VP+GraSP': grasp
+    ,'VP+SynFlow': synflow
+    ,'VP+OMP': omp
+    ,'VP+VPNs': vpns
+}
+plt.plot(results['Compression Ratio'], results['VP+SNIP'], label='VP+SNIP', color=(0.902, 0.621, 0), linestyle='-', marker='o', linewidth=2, markersize=8)
+plt.plot(results['Compression Ratio'], results['VP+GraSP'], label='VP+GraSP', color=(0.357, 0.714, 0.914), linestyle='-', marker='o', linewidth=2, markersize=8)
+plt.plot(results['Compression Ratio'], results['VP+SynFlow'], label='VP+SynFlow', linestyle='-', marker='o', linewidth=2, markersize=8)
+plt.plot(results['Compression Ratio'], results['VP+OMP'], label='VP+OMP', linestyle='-', marker='o', linewidth=2, markersize=8)
+plt.plot(results['Compression Ratio'], results['VP+VPNs'], label='VP+VPNs', linestyle='-', marker='o', linewidth=2, markersize=8)
+# plt.title(image_name)
+plt.gca().set_xscale('log')
+plt.xlabel('Compression Ratio')
+plt.ylabel('Accuracy(%)')
+plt.grid()
+plt.legend(loc='lower left', prop={'size':8})
+plt.tight_layout()
+plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
+plt.close()
+
+
+# 0730
+# transferability over datasets
+# CIFAR100
+# save_dir = os.path.join('results/transferability over datasets', str(datetime.datetime.now().date()))
+# os.makedirs(save_dir, exist_ok=True)
+# image_name = 'Dataset Transfer CIFAR100'
+# models = ['VPNs', 'HYDRA', 'OMP']
+# compression_ratios = ['90%', '99%', '99.9%']
+# values = np.array([[100, 100, 100], [77.42, 65.30, 17.69], [75.06, 46.59, 6.15]])
+# x = np.arange(len(compression_ratios))
+# width = 0.2
+# fig, ax = plt.subplots(figsize=(10, 5))
+# for i in range(len(models)):
+#     ax.bar(x + i*width - width, values[i], width, label=models[i])
+# ax.axhline(y=81.64, color='black', linestyle='dotted')
+# ax.set_xlabel('Sparsity')
+# ax.set_ylabel('Accuracy(%)')
+# ax.set_xticks(x)
+# ax.set_xticklabels(compression_ratios)
+# leg1 = ax.legend(loc='upper right')
+# ax.add_artist(leg1)
+# dense_line = mlines.Line2D([], [], color='black', linestyle='dotted', markersize=7, label='Dense')
+# leg2 = ax.legend(handles=[dense_line], bbox_to_anchor=(1, 0.83), loc='upper right')
+# ax.add_artist(leg2)
+# plt.title('CIFAR100')
+# fig.tight_layout()
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
+# plt.close()
+
+
+# Tiny ImageNet
+# save_dir = os.path.join('results/transferability over datasets', str(datetime.datetime.now().date()))
+# os.makedirs(save_dir, exist_ok=True)
+# image_name = 'Dataset Transfer Tiny ImageNet'
+# models = ['VPNs', 'HYDRA', 'OMP']
+# compression_ratios = ['90%', '99%', '99.9%']
+# values = np.array([[100, 100, 100], [66.43, 46.73, 7.07], [62.41, 33.04, 2.19]])
+# x = np.arange(len(compression_ratios))
+# width = 0.2
+# fig, ax = plt.subplots(figsize=(10, 5))
+# for i in range(len(models)):
+#     ax.bar(x + i*width - width, values[i], width, label=models[i])
+# ax.axhline(y=72.08, color='black', linestyle='dotted')
+# ax.set_xlabel('Sparsity')
+# ax.set_ylabel('Accuracy(%)')
+# ax.set_xticks(x)
+# ax.set_xticklabels(compression_ratios)
+# leg1 = ax.legend(loc='upper right')
+# ax.add_artist(leg1)
+# dense_line = mlines.Line2D([], [], color='black', linestyle='dotted', markersize=7, label='Dense')
+# leg2 = ax.legend(handles=[dense_line], bbox_to_anchor=(1, 0.83), loc='upper right')
+# ax.add_artist(leg2)
+# plt.title('Tiny ImageNet')
+# fig.tight_layout()
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
+# plt.close()
+
+
+# transferability over architectures
+# resnet18_vpns = [72.80, 66.75, 54.02, 11.50]
+# resnet18_hydra = [72.80, 66.43, 46.73, 7.07]
+# resnet50_vpns = [83.40, 70.52, 59.80, 0]
+# resnet50_hydra = [83.40, 68.92, 55.86, 11.23]
+# vgg_vpns = [70.19, 50.50, 24.92, 0]
+# vgg_hydra = [70.19, 50.07, 0, 0]
+
+# save_dir = os.path.join('results/transferability over architectures', str(datetime.datetime.now().date()))
+# image_name = 'Architectures Transfer'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'Compression Ratio': [1, 10, 100, 1000]
+#     ,'ResNet18-VPNs': resnet18_vpns
+#     ,'ResNet18-HYDRA': resnet18_hydra
+#     ,'ResNet50-VPNs': resnet50_vpns
+#     ,'ResNet50-HYDRA': resnet50_hydra
+#     ,'VGG16-VPNs': vgg_vpns
+#     ,'VGG16-HYDRA': vgg_hydra
+# }
+# line_res18 = mlines.Line2D([], [], color=(0.902, 0.621, 0), linestyle='-', markersize=7, label="ResNet-18")
+# line_res50 = mlines.Line2D([], [], color=(0.357, 0.714, 0.914), linestyle='-', markersize=7, label="ResNet-50")
+# line_vgg    = mlines.Line2D([], [], color='red', linestyle='-', markersize=7, label="VGG-16")
+# line_vpns   = mlines.Line2D([], [], color='black', marker='x', linestyle='-', markersize=7, label='VPNs')
+# line_hydra  = mlines.Line2D([], [], color='black', marker='*', linestyle=':', markersize=7, label='HYDRA')
+# plt.figure(figsize=(10, 5))
+# plt.plot(results['Compression Ratio'], results['ResNet18-VPNs'], color=(0.902, 0.621, 0), linestyle='-', marker='x', linewidth=2, markersize=8)
+# plt.plot(results['Compression Ratio'], results['ResNet18-HYDRA'], color=(0.902, 0.621, 0), linestyle=':', marker='*', linewidth=2, markersize=8)
+# plt.plot(results['Compression Ratio'], results['ResNet50-VPNs'], color=(0.357, 0.714, 0.914), linestyle='-', marker='x', linewidth=2, markersize=8)
+# plt.plot(results['Compression Ratio'], results['ResNet50-HYDRA'], color=(0.357, 0.714, 0.914), linestyle=':', marker='*', linewidth=2, markersize=8)
+# plt.plot(results['Compression Ratio'], results['VGG16-VPNs'], color='r', linestyle='-', marker='x', linewidth=2, markersize=8)
+# plt.plot(results['Compression Ratio'], results['VGG16-HYDRA'], color='r', linestyle=':', marker='*', linewidth=2, markersize=8)
+# # plt.title(image_name)
+# plt.gca().set_xscale('log')
+# plt.xlabel('Compression Ratio')
+# plt.ylabel('Accuracy(%)')
+# legend_arch = plt.legend(handles=[line_res18, line_res50, line_vgg], loc='upper right', bbox_to_anchor=(1, 1), prop={'size':8})
+# legend_style =  plt.legend(handles=[line_vpns, line_hydra], loc='upper right', bbox_to_anchor=(1, 0.85), prop={'size':8})
+# plt.gca().add_artist(legend_arch)
+# plt.grid()
+# plt.tight_layout()
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
+# plt.close()
+# result_df = pd.DataFrame(results)
+# result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+
 
 # 0614
 # ablation lm_interval
-interval_1 = [0.8353, 0.8111, 0.826, 0.7954, 0.7397, 0.6795, 0.6741, 0.6481, 0.6619, 0.6377]
-interval_5 = [0.7668, 0.8191, 0.8234, 0.7646, 0.7447, 0.7305, 0.6974, 0.6646, 0.6512, 0.6449]
-interval_10 = [0.7779, 0.8205, 0.7903, 0.7408, 0.7363, 0.7028, 0.6532, 0.6344, 0.6429, 0.6205]
-interval_15 = [0.7737, 0.8289, 0.7532, 0.7599, 0.7362, 0.6862, 0.683, 0.6598, 0.6308, 0.6278]
-interval_20 = [0.7503, 0.7127, 0.7377, 0.7127, 0.667, 0.6458, 0.6462, 0.6547, 0.6393, 0.6136]
-flm = [0.7425, 0.7348, 0.7421, 0.7325, 0.728, 0.7253, 0.718, 0.6968, 0.694, 0.666]
+# interval_1 = [0.8353, 0.8111, 0.826, 0.7954, 0.7397, 0.6795, 0.6741, 0.6481, 0.6619, 0.6377]
+# interval_5 = [0.7668, 0.8191, 0.8234, 0.7646, 0.7447, 0.7305, 0.6974, 0.6646, 0.6512, 0.6449]
+# interval_10 = [0.7779, 0.8205, 0.7903, 0.7408, 0.7363, 0.7028, 0.6532, 0.6344, 0.6429, 0.6205]
+# interval_15 = [0.7737, 0.8289, 0.7532, 0.7599, 0.7362, 0.6862, 0.683, 0.6598, 0.6308, 0.6278]
+# interval_20 = [0.7503, 0.7127, 0.7377, 0.7127, 0.667, 0.6458, 0.6462, 0.6547, 0.6393, 0.6136]
+# flm = [0.7425, 0.7348, 0.7421, 0.7325, 0.728, 0.7253, 0.718, 0.6968, 0.694, 0.666]
 
-save_dir = os.path.join('results/ablation_plot', str(datetime.datetime.now().date()))
-image_name = 'Label Mapping Interval'
-os.makedirs(save_dir, exist_ok=True)
-results = {
-    'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728]]
-    ,'interval_1': [_*100 for _ in interval_1]
-    ,'interval_5': [_*100 for _ in interval_5]
-    ,'interval_10': [_*100 for _ in interval_10]
-    ,'interval_15': [_*100 for _ in interval_15]
-    ,'interval_20': [_*100 for _ in interval_20]
-    ,'flm': [_*100 for _ in flm]
-}
-for k in results.keys():
-    if k != 'density':
-        plt.plot(results['density'][:len(results[k])], results[k], marker='o', markersize=4, label=k)
+# save_dir = os.path.join('results/ablation_plot', str(datetime.datetime.now().date()))
+# image_name = 'Label Mapping Interval'
+# os.makedirs(save_dir, exist_ok=True)
+# results = {
+#     'density': [round(100*_,2) for _ in [1, 0.8, 0.64, 0.512, 0.4096, 0.32768, 0.262144, 0.2097152, 0.16777216, 0.134217728]]
+#     ,'interval_1': [_*100 for _ in interval_1]
+#     ,'interval_5': [_*100 for _ in interval_5]
+#     ,'interval_10': [_*100 for _ in interval_10]
+#     ,'interval_15': [_*100 for _ in interval_15]
+#     ,'interval_20': [_*100 for _ in interval_20]
+#     ,'flm': [_*100 for _ in flm]
+# }
+# for k in results.keys():
+#     if k != 'density':
+#         plt.plot(results['density'][:len(results[k])], results[k], marker='o', markersize=4, label=k)
 
-plt.title(image_name)
-plt.xlabel('Weight Density(%)')
-plt.ylabel('Accuracy(%)')
-plt.legend(loc=4, prop={'size':8})
-plt.grid()
-plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
-plt.close()
-result_df = pd.DataFrame(results)
-result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
+# plt.title(image_name)
+# plt.xlabel('Weight Density(%)')
+# plt.ylabel('Accuracy(%)')
+# plt.legend(loc=4, prop={'size':8})
+# plt.grid()
+# plt.savefig(os.path.join(save_dir, image_name+'.pdf'), format='pdf')
+# plt.close()
+# result_df = pd.DataFrame(results)
+# result_df.to_csv(os.path.join(save_dir, image_name+'.csv'))
 
 
 

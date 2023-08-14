@@ -13,14 +13,15 @@ from utils import set_seed, setup_optimizer_and_prompt, calculate_label_mapping,
 from get_model_dataset import choose_dataloader, get_model
 from pruner import extract_mask, prune_model_custom, check_sparsity, remove_prune, pruning_model
 from core import Masking, CosineDecay
-from hydra import set_hydra_prune_rate, set_hydra_network
+from vpns.network_with_score import set_hydra_prune_rate, set_hydra_network
 
 
 def main():    
     parser = argparse.ArgumentParser(description='PyTorch Visual Prompt + Prune Experiments')
     global args
-    parser.add_argument('--prune_mode', type=str, default='normal', choices=['normal', 'vp_ff', 'no_tune', 'vp'], help='prune method implement ways')
-    parser.add_argument('--prune_method', type=str, default='omp', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra','gmp'])
+    parser.add_argument('--prune_mode', type=str, default='vp_ff', choices=['vp_ff'], help='prune method implement ways')
+    parser.add_argument('--second_phase', type=str, default='vp+ff_cotrain', choices=['freeze_vp+ff', 'vp+ff_cotrain', 'ff_then_vp'], help='actions after finding sub-network')
+    parser.add_argument('--prune_method', type=str, default='hydra', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra'])
     parser.add_argument('--ckpt_directory', type=str, default='', help='sub-network ckpt directory')
     parser.add_argument('--ff_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--ff_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
@@ -35,12 +36,12 @@ def main():
     parser.add_argument('--hydra_lr', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--hydra_weight_decay', default=1e-4, type=float, help='hydra weight decay')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg"])
-    parser.add_argument('--dataset', default="dtd", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'tiny_imagenet', 'imagenet'])
-    parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
+    parser.add_argument('--dataset', default="cifar10", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'sun397', 'tiny_imagenet', 'imagenet'])
+    parser.add_argument('--experiment_name', default='exp_new', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
     parser.add_argument('--epochs', default=120, type=int, help='number of total eopchs to run')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
-    parser.add_argument('--density_list', default='1,0.10,0.01,0.001', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
+    parser.add_argument('--density_list', default='1,0.10,0.05,0.01', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
 
     ##################################### General setting ############################################
@@ -81,16 +82,17 @@ def main():
     parser.add_argument('--scaled', action='store_true', help='scale the initialization by 1/density')
     parser.add_argument('--density', type=float, default=0.80, help='The density of the overall sparse network.')
     parser.add_argument('--hydra_scaled_init', type=int, default=1, help='whether use scaled initialization for hydra or not.', choices=[0, 1])
-    parser.add_argument('--gmp_init_sparsity', type=float, default=0)
-    parser.add_argument('--gmp_final_sparsity', type=float, default=0.9)
-    parser.add_argument('--gmp_start_epoch_rate', type=float, default=0)
-    parser.add_argument('--gmp_end_epoch_rate', type=float, default=0.6875)
-    parser.add_argument('--gmp_T', type=int, default=100)
-
+    parser.add_argument('--vpns_T', type=int, default=2, help='vpns gradual magnitude prune interval')
+    parser.add_argument('--vpns_start_epoch', type=float, default=0)
+    parser.add_argument('--vpns_end_epoch', type=float, default=0.8)
+    parser.add_argument('--init_sparsity', type=float, default=0)
+    parser.add_argument('--final_sparsity', type=float, default=0.9)
 
     args = parser.parse_args()
-    args.prompt_method=None if args.prompt_method=='None' else args.prompt_method
+    args.prompt_method=None if args.prompt_method=='None' else args.prompt_method        
     args.density_list=[float(i) for i in args.density_list.split(',')]
+    args.vpns_start_epoch = int(args.epochs * args.vpns_start_epoch)
+    args.vpns_end_epoch = int(args.epochs * args.vpns_end_epoch)
     print(json.dumps(vars(args), indent=4))
     # Device
     device = torch.device(f"cuda:{args.gpu}")
@@ -98,7 +100,7 @@ def main():
     set_seed(args.seed)
     # Save Path
     save_path = os.path.join(args.save_dir, args.experiment_name, args.network, args.dataset, 
-                'PRUNE_MODE'+args.prune_mode, 'PRUNE'+str(args.prune_method), 'VP'+str(args.prompt_method), 'LM'+str(args.label_mapping_mode),
+                'SECOND_PHASE'+args.second_phase, 'PRUNE_MODE'+args.prune_mode, 'PRUNE'+str(args.prune_method), 'VP'+str(args.prompt_method), 'LM'+str(args.label_mapping_mode),
                 'SIZE'+str(args.output_size)+'_'+str(args.input_size)+'_'+str(args.pad_size)+'_'+str(args.mask_size),
                 args.ff_optimizer+'_'+args.vp_optimizer+'_'+args.hydra_optimizer, 
                 args.ff_scheduler+'_'+args.vp_scheduler+'_'+args.hydra_scheduler, 
@@ -152,7 +154,6 @@ def main():
     for epoch in range(args.epochs):
         if args.prune_mode in ('no_tune', 'normal'):
             if args.prune_method in ('imp', 'random', 'omp'):
-            # if args.prune_method in ('imp', 'random'):
                 train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
                                 ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
                                 ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)
@@ -163,8 +164,11 @@ def main():
         elif args.prune_mode in ('vp', 'vp_ff'):
             if args.prune_method in ('imp', 'random', 'omp'):
                 train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
-                                ff_optimizer=ff_optimizer, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
-                                ff_scheduler=ff_scheduler, vp_scheduler=vp_scheduler, hydra_scheduler=None)
+                                ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
+                                ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)
+                train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                                ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
+                                ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=None)
             elif args.prune_method in ('grasp', 'synflow', 'snip'):
                 label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
                 print('mapping_sequence: ', mapping_sequence)
@@ -233,8 +237,6 @@ def main():
             if args.prune_method == 'hydra':
                 set_hydra_prune_rate(network, 1)
         label_mapping = obtain_label_mapping(mapping_sequence_init)
-        if args.prune_mode in ('vp', 'vp_ff'):
-            train_loader, val_loader, test_loader = choose_dataloader(args, phase)
         visual_prompt, hydra_optimizer, hydra_scheduler, vp_optimizer, vp_scheduler, ff_optimizer, ff_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(
             network, visual_prompt_init, mapping_sequence, None, args)
         test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
@@ -250,14 +252,13 @@ def main():
             if args.prune_method in ('omp', 'random'):
                 network.load_state_dict(pre_state_init)
                 mask.apply_mask()
-            if args.prune_method == 'gmp':
-                args.gmp_final_sparsity = 1 - args.density_list[state]
         masks = get_masks(mask) if mask else None
         if args.prune_method != 'hydra':
             label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
             print('mapping_sequence: ', mapping_sequence)
             test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
         elif args.prune_method == 'hydra':
+            args.final_sparsity = 1 - args.density_list[state]
             for epoch in range(args.epochs):
                 if args.prune_mode in ('no_tune', 'normal'):
                     if args.label_mapping_mode == 'ilm':
@@ -273,13 +274,17 @@ def main():
                     # train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
                     #                 ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=hydra_optimizer, 
                     #                 ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=hydra_scheduler)
+                    if (epoch>=args.vpns_start_epoch and epoch<=args.vpns_end_epoch and epoch % args.vpns_T == 0) or epoch==args.vpns_end_epoch:
+                        mul_coeff = 1 - (epoch - args.vpns_start_epoch) / (args.vpns_end_epoch - args.vpns_start_epoch)
+                        threshold = args.final_sparsity - (args.final_sparsity - args.init_sparsity) * (mul_coeff ** 3)
+                        print('Hydra sparsity Setting:', threshold)
+                        set_hydra_prune_rate(network, 1 - threshold)
                     train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
                                     ff_optimizer=None, vp_optimizer=None, hydra_optimizer=hydra_optimizer, 
                                     ff_scheduler=None, vp_scheduler=None, hydra_scheduler=hydra_scheduler)
                     train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
                                     ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
                                     ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=None)
-
                 val_acc = evaluate(val_loader, network, label_mapping, visual_prompt)
                 all_results['train_acc'].append(train_acc)
                 all_results['val_acc'].append(val_acc)
@@ -302,7 +307,7 @@ def main():
                     ,"epoch": epoch
                     ,'state': 0
                 }
-                if val_acc > best_acc:
+                if epoch > args.vpns_end_epoch and val_acc > best_acc:
                     best_acc = val_acc
                     checkpoint['val_best_acc'] = best_acc
                     torch.save(checkpoint, os.path.join(save_path, str(state)+'after_prune.pth'))
@@ -319,29 +324,35 @@ def main():
             all_results['ckpt_epoch'] = best_ckpt['epoch']
             plot_train(all_results, save_path, str(state)+'prune')
             # init
-            vp_init = visual_prompt.state_dict() if visual_prompt else None
             visual_prompt, hydra_optimizer, hydra_scheduler, vp_optimizer, vp_scheduler, ff_optimizer, ff_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(
-                network, vp_init, mapping_sequence, None, args)
+                network, visual_prompt.state_dict(), mapping_sequence, None, args)
         print(f'Accuracy after prune: {test_acc:.4f}')
         all_results['no_train_acc'] = test_acc
         torch.save(checkpoint, os.path.join(save_path, str(state)+'after_prune.pth'))
-        # finetune
+        # Second phase
         if args.prune_mode in ('normal', 'vp_ff'):
             print('*********************set phase as finetune**********************')
             phase = 'finetune'
             print('******************************************')
             print(f'pruning state {state} finetune')
             print('******************************************')
-            visual_prompt = None
-            if args.prune_mode in ('vp', 'vp_ff'):
-                train_loader, val_loader, test_loader = choose_dataloader(args, phase)
-                label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
-                print('mapping_sequence: ', mapping_sequence)
-            print('Accuracy before finetune: ', evaluate(test_loader, network, label_mapping, visual_prompt))
             for epoch in range(args.epochs):
-                train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
-                                ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
-                                ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)
+                # 'freeze_vp+ff', 'vp+ff_cotrain', 'ff_then_vp'
+                if args.second_phase in ('freeze_vp+ff', 'ff_then_vp'):
+                    train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                                    ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
+                                    ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)
+                elif args.second_phase == 'vp+ff_cotrain':
+                    # train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                    #                 ff_optimizer=ff_optimizer, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
+                    #                 ff_scheduler=ff_scheduler, vp_scheduler=vp_scheduler, hydra_scheduler=None)
+                    train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                                    ff_optimizer=ff_optimizer, vp_optimizer=None, hydra_optimizer=None, 
+                                    ff_scheduler=ff_scheduler, vp_scheduler=None, hydra_scheduler=None)
+                    train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                                    ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
+                                    ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=None)
+
                 val_acc = evaluate(val_loader, network, label_mapping, visual_prompt)
                 all_results['train_acc'].append(train_acc)
                 all_results['val_acc'].append(val_acc)
@@ -364,9 +375,7 @@ def main():
                     ,"epoch": epoch
                     ,'state': 0
                 }
-                if args.prune_method == 'gmp' and mask.steps < int(args.epochs * len(train_loader) * args.gmp_end_epoch_rate):
-                    pass
-                elif val_acc > best_acc:
+                if val_acc > best_acc:
                     best_acc = val_acc
                     checkpoint['val_best_acc'] = best_acc
                     torch.save(checkpoint, os.path.join(save_path, str(state)+'best.pth'))
@@ -383,14 +392,60 @@ def main():
             all_results['ckpt_epoch'] = best_ckpt['epoch']
             plot_train(all_results, save_path, state)
 
+            if args.second_phase == 'ff_then_vp':
+                print('*********************start vp after finetune**********************')
+                visual_prompt, hydra_optimizer, hydra_scheduler, vp_optimizer, vp_scheduler, ff_optimizer, ff_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(
+                    network, visual_prompt.state_dict(), mapping_sequence, masks, args)
+                for epoch in range(args.epochs):
+                    label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
+                    print('mapping_sequence: ', mapping_sequence)
+                    train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+                                    ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
+                                    ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=None)
+                    val_acc = evaluate(val_loader, network, label_mapping, visual_prompt)
+                    all_results['train_acc'].append(train_acc)
+                    all_results['val_acc'].append(val_acc)
+                    # Save CKPT
+                    checkpoint = {
+                        'state_dict': network.state_dict()
+                        ,'init_weight': state_init
+                        ,'mask': masks
+                        ,"ff_optimizer": ff_optimizer.state_dict() if ff_optimizer else None
+                        ,'ff_scheduler': ff_scheduler.state_dict() if ff_scheduler else None
+                        ,"vp_optimizer": vp_optimizer.state_dict() if vp_optimizer else None
+                        ,'vp_scheduler': vp_scheduler.state_dict() if vp_scheduler else None
+                        ,"hydra_optimizer": hydra_optimizer.state_dict() if hydra_optimizer else None
+                        ,'hydra_scheduler': hydra_scheduler.state_dict() if hydra_scheduler else None
+                        ,'visual_prompt': visual_prompt.state_dict() if visual_prompt else None
+                        ,'mapping_sequence': mapping_sequence
+                        ,"val_best_acc": best_acc
+                        ,'ckpt_test_acc': 0
+                        ,'all_results': all_results
+                        ,"epoch": epoch
+                        ,'state': 0
+                    }
+                    if val_acc > best_acc:
+                        best_acc = val_acc
+                        checkpoint['val_best_acc'] = best_acc
+                        torch.save(checkpoint, os.path.join(save_path, str(state)+'best_vp.pth'))
+                    # Plot training curve
+                    plot_train(all_results, save_path, str(state)+'best_vp')
+                best_ckpt = torch.load(os.path.join(save_path, str(state)+'best_vp.pth'))
+                network.load_state_dict(best_ckpt['state_dict'])
+                visual_prompt.load_state_dict(best_ckpt['visual_prompt']) if visual_prompt else None
+                test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
+                best_ckpt['ckpt_test_acc'] = test_acc
+                torch.save(best_ckpt, os.path.join(save_path, str(state)+'best_vp.pth'))
+                print(f'Best CKPT Accuracy: {test_acc:.4f}')
+                all_results['ckpt_test_acc'] = test_acc
+                all_results['ckpt_epoch'] = best_ckpt['epoch']
+                plot_train(all_results, save_path, str(state)+'best_vp')
 
 
 def train(train_loader, network, epoch, label_mapping, visual_prompt, mask, ff_optimizer, vp_optimizer, hydra_optimizer, ff_scheduler, vp_scheduler, hydra_scheduler):
     # switch to train mode
     if visual_prompt:
         visual_prompt.train()
-    # if ff_optimizer:
-    #     network.train()
     network.train()
     start = time.time()
     total_num = 0
@@ -418,7 +473,15 @@ def train(train_loader, network, epoch, label_mapping, visual_prompt, mask, ff_o
         if hydra_optimizer:
             hydra_optimizer.step()
         if mask:
-            mask.step()
+            mask.apply_mask()
+            mask.death_rate_decay.step()
+            mask.death_rate = mask.death_rate_decay.get_dr()
+            mask.steps += 1
+            if mask.prune_every_k_steps is not None:
+                if mask.steps % mask.prune_every_k_steps == 0:
+                    mask.truncate_weights()
+                    _, _ = mask.fired_masks_update()
+                    mask.print_nonzero_counts()
 
     # scaler = GradScaler()
     # for i, (x, y) in enumerate(train_loader):
@@ -526,15 +589,15 @@ def evaluate(val_loader, network, label_mapping, visual_prompt):
 
 def prune_network(network, ff_optimizer, visual_prompt, label_mapping, train_loader, state, args):
     mask = None
-    if args.prune_method in ('random', 'omp', 'grasp','snip','synflow','gmp'):
+    if args.prune_method in ('random', 'omp', 'grasp','snip','synflow'):
         print(f'{(args.prune_method).upper()} pruning')
         decay = CosineDecay(args.death_rate, len(train_loader)*args.epochs)
         mask = Masking(ff_optimizer, death_rate=args.death_rate, death_mode=args.death, death_rate_decay=decay, growth_mode=args.growth,
                     redistribution_mode=args.redistribution, args=args, train_loader=train_loader, visual_prompt=visual_prompt, label_mapping=label_mapping)
         mask.add_module(network, density=args.density_list[state], sparse_init=args.prune_method)
-    elif args.prune_method in ('hydra') and state > 0:
-        print('Hydra Density Setting:', args.density_list[state])
-        set_hydra_prune_rate(network, args.density_list[state])
+    # elif args.prune_method in ('hydra') and state > 0:
+    #     print('Hydra Density Setting:', args.density_list[state])
+    #     set_hydra_prune_rate(network, args.density_list[state])
 
     return network, mask
 

@@ -84,13 +84,20 @@ def main():
     parser.add_argument('--gmp_init_sparsity', type=float, default=0)
     parser.add_argument('--gmp_final_sparsity', type=float, default=0.9)
     parser.add_argument('--gmp_start_epoch_rate', type=float, default=0)
-    parser.add_argument('--gmp_end_epoch_rate', type=float, default=0.6875)
+    parser.add_argument('--gmp_end_epoch_rate', type=float, default=0.5)
     parser.add_argument('--gmp_T', type=int, default=100)
+    parser.add_argument('--gradual_T', type=int, default=2, help='gradual magnitude prune interval')
+    parser.add_argument('--gradual_start_epoch', type=float, default=0)
+    parser.add_argument('--gradual_end_epoch', type=float, default=0.8)
+    parser.add_argument('--init_sparsity', type=float, default=0)
+    parser.add_argument('--final_sparsity', type=float, default=0.9)
 
 
     args = parser.parse_args()
     args.prompt_method=None if args.prompt_method=='None' else args.prompt_method
     args.density_list=[float(i) for i in args.density_list.split(',')]
+    args.gradual_start_epoch = int(args.epochs * args.gradual_start_epoch)
+    args.gradual_end_epoch = int(args.epochs * args.gradual_end_epoch)
     print(json.dumps(vars(args), indent=4))
     # Device
     device = torch.device(f"cuda:{args.gpu}")
@@ -258,11 +265,17 @@ def main():
             print('mapping_sequence: ', mapping_sequence)
             test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
         elif args.prune_method == 'hydra':
+            args.final_sparsity = 1 - args.density_list[state]
             for epoch in range(args.epochs):
                 if args.prune_mode in ('no_tune', 'normal'):
                     if args.label_mapping_mode == 'ilm':
                         label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
                         print('mapping_sequence: ', mapping_sequence)
+                    if (epoch>=args.gradual_start_epoch and epoch<=args.gradual_end_epoch and epoch % args.gradual_T == 0) or epoch==args.gradual_end_epoch:
+                        mul_coeff = 1 - (epoch - args.gradual_start_epoch) / (args.gradual_end_epoch - args.gradual_start_epoch)
+                        threshold = args.final_sparsity - (args.final_sparsity - args.init_sparsity) * (mul_coeff ** 3)
+                        print('Hydra sparsity Setting:', threshold)
+                        set_hydra_prune_rate(network, 1 - threshold)
                     train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
                                     ff_optimizer=None, vp_optimizer=None, hydra_optimizer=hydra_optimizer, 
                                     ff_scheduler=None, vp_scheduler=None, hydra_scheduler=hydra_scheduler)
@@ -302,7 +315,7 @@ def main():
                     ,"epoch": epoch
                     ,'state': 0
                 }
-                if val_acc > best_acc:
+                if epoch > args.gradual_end_epoch and val_acc > best_acc:
                     best_acc = val_acc
                     checkpoint['val_best_acc'] = best_acc
                     torch.save(checkpoint, os.path.join(save_path, str(state)+'after_prune.pth'))
@@ -532,9 +545,9 @@ def prune_network(network, ff_optimizer, visual_prompt, label_mapping, train_loa
         mask = Masking(ff_optimizer, death_rate=args.death_rate, death_mode=args.death, death_rate_decay=decay, growth_mode=args.growth,
                     redistribution_mode=args.redistribution, args=args, train_loader=train_loader, visual_prompt=visual_prompt, label_mapping=label_mapping)
         mask.add_module(network, density=args.density_list[state], sparse_init=args.prune_method)
-    elif args.prune_method in ('hydra') and state > 0:
-        print('Hydra Density Setting:', args.density_list[state])
-        set_hydra_prune_rate(network, args.density_list[state])
+    # elif args.prune_method in ('hydra') and state > 0:
+    #     print('Hydra Density Setting:', args.density_list[state])
+    #     set_hydra_prune_rate(network, args.density_list[state])
 
     return network, mask
 

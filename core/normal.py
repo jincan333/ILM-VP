@@ -13,18 +13,18 @@ from utils import set_seed, setup_optimizer_and_prompt, calculate_label_mapping,
 from get_model_dataset import choose_dataloader, get_model
 from pruner import extract_mask, prune_model_custom, check_sparsity, remove_prune, pruning_model
 from core import Masking, CosineDecay
-from hydra import set_hydra_prune_rate, set_hydra_network
+from unstructured_network_with_score import set_prune_threshold, set_scored_network
 
 
 def main():    
     parser = argparse.ArgumentParser(description='PyTorch Visual Prompt + Prune Experiments')
     global args
     parser.add_argument('--prune_mode', type=str, default='normal', choices=['normal', 'vp_ff', 'no_tune', 'vp'], help='prune method implement ways')
-    parser.add_argument('--prune_method', type=str, default='omp', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra','gmp'])
+    parser.add_argument('--prune_method', type=str, default='hydra', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra','gmp'])
     parser.add_argument('--ckpt_directory', type=str, default='', help='sub-network ckpt directory')
-    parser.add_argument('--ff_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
+    parser.add_argument('--ff_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--ff_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
-    parser.add_argument('--ff_lr', default=0.001, type=float, help='initial learning rate')
+    parser.add_argument('--ff_lr', default=0.05, type=float, help='initial learning rate')
     parser.add_argument('--ff_weight_decay', default=1e-4, type=float, help='finetune weight decay')
     parser.add_argument('--vp_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--vp_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
@@ -35,12 +35,12 @@ def main():
     parser.add_argument('--hydra_lr', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--hydra_weight_decay', default=1e-4, type=float, help='hydra weight decay')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg"])
-    parser.add_argument('--dataset', default="dtd", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'tiny_imagenet', 'imagenet'])
+    parser.add_argument('--dataset', default="cifar100", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'tiny_imagenet', 'imagenet'])
     parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
     parser.add_argument('--epochs', default=120, type=int, help='number of total eopchs to run')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
-    parser.add_argument('--density_list', default='1,0.10,0.01,0.001', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
+    parser.add_argument('--density_list', default='1,0.80,0.50,0.10', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
 
     ##################################### General setting ############################################
@@ -112,7 +112,7 @@ def main():
     network = get_model(args)
     if args.prune_method == 'hydra':
         print('\nset hydra network.\n')
-        network = set_hydra_network(network, args)
+        network = set_scored_network(network, args)
     print(network)
     # set phase
     print('*********************set phase as subnetwork**********************')
@@ -231,7 +231,7 @@ def main():
         else:
             network.load_state_dict(state_init)
             if args.prune_method == 'hydra':
-                set_hydra_prune_rate(network, 1)
+                set_prune_threshold(network, 1)
         label_mapping = obtain_label_mapping(mapping_sequence_init)
         if args.prune_mode in ('vp', 'vp_ff'):
             train_loader, val_loader, test_loader = choose_dataloader(args, phase)
@@ -266,6 +266,7 @@ def main():
                     train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
                                     ff_optimizer=None, vp_optimizer=None, hydra_optimizer=hydra_optimizer, 
                                     ff_scheduler=None, vp_scheduler=None, hydra_scheduler=hydra_scheduler)
+                    set_prune_threshold(network, args.density_list[state])
                 elif args.prune_mode in ('vp', 'vp_ff'):
                     if args.label_mapping_mode == 'ilm':
                         label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
@@ -279,7 +280,7 @@ def main():
                     train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
                                     ff_optimizer=None, vp_optimizer=vp_optimizer, hydra_optimizer=None, 
                                     ff_scheduler=None, vp_scheduler=vp_scheduler, hydra_scheduler=None)
-
+                    set_prune_threshold(network, args.density_list[state])
                 val_acc = evaluate(val_loader, network, label_mapping, visual_prompt)
                 all_results['train_acc'].append(train_acc)
                 all_results['val_acc'].append(val_acc)
@@ -534,7 +535,7 @@ def prune_network(network, ff_optimizer, visual_prompt, label_mapping, train_loa
         mask.add_module(network, density=args.density_list[state], sparse_init=args.prune_method)
     elif args.prune_method in ('hydra') and state > 0:
         print('Hydra Density Setting:', args.density_list[state])
-        set_hydra_prune_rate(network, args.density_list[state])
+        set_prune_threshold(network, args.density_list[state])
 
     return network, mask
 

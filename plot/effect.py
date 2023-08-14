@@ -4,13 +4,13 @@ import pickle
 
 
 if __name__ == '__main__':
-    dir_path = '/data4/hop20001/can/ILM-VP/result/normal/resnet18/cifar10/PRUNE_MODEnormal/PRUNEsynflow/VPpad/LMilm/SIZE224_128_48_183/sgd_adam_adam/cosine_multistep_multistep/LR0.01_0.01_0.01/DENSITY[1, 0.2, 0.1, 0.05]/EPOCHS100/SEED7/GPU2'
+    dir_path = '/data4/hop20001/can/ILM-VP/result/debug/resnet18/flowers102/PRUNE_MODEnormal/PRUNEimp/VPpad/LMflm/SIZE224_224_16_183/adam_adam_adam/cosine_multistep_cosine/LR0.001_0.001_0.0001/DENSITY[1.0]/EPOCHS50/SEED7/GPU0/'
     # with open(dir_path, 'rb') as file:
     #     data = pickle.load(file)
     # print(file)
     ckpt_path = []
     acc = []
-    for i in range(0,4):
+    for i in range(0,1):
         ckpt_path.append(os.path.join(dir_path, str(i) + 'best.pth'))
     for path in ckpt_path:
         acc.append(torch.load(path)['ckpt_test_acc'])

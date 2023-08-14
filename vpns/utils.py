@@ -51,12 +51,12 @@ def setup_optimizer_and_prompt(network, args):
     device = args.device
     normalize = args.normalize
     visual_prompt = None
-    hydra_optimizer, hydra_scheduler = None, None
+    score_optimizer, score_scheduler = None, None
     vp_optimizer, vp_scheduler = None, None
-    ff_optimizer, ff_scheduler = None, None
-    ff_params = network.parameters()
+    weight_params = [param for param in network.parameters() if not hasattr(param, 'is_score')]
+    weight_optimizer, weight_scheduler = get_optimizer(weight_params, args.weight_optimizer, args.weight_scheduler, args.weight_lr, args.weight_weight_decay, args)
 
-    if args.prune_mode in ('vp', 'vp_ff'):
+    if args.prune_method == 'vpns':
         if args.prompt_method == 'pad':
             visual_prompt = PadVisualPrompt(args, normalize=normalize).to(device)
         elif args.prompt_method == 'fix':
@@ -66,22 +66,11 @@ def setup_optimizer_and_prompt(network, args):
         else:
             raise ValueError("Prompt method should be one of [pad, fix, random]")
         vp_optimizer, vp_scheduler = get_optimizer(visual_prompt.parameters(), args.vp_optimizer, args.vp_scheduler, args.vp_lr, args.vp_weight_decay, args)
-
-    if args.prune_method == 'hydra':
-        if args.prune_mode == 'vp_ff':
-            # score_params = network.parameters()
-            score_params = [param for param in network.parameters() if hasattr(param, 'is_score') and param.is_score]
-        elif args.prune_mode == 'normal':
-            # score_params = network.parameters()
-            score_params = [param for param in network.parameters() if hasattr(param, 'is_score') and param.is_score]
-        else:
-            raise ValueError("Prune Mode should be one of normal vp_ff")
-        hydra_optimizer, hydra_scheduler = get_optimizer(score_params, args.hydra_optimizer, args.hydra_scheduler, args.hydra_lr, args.hydra_weight_decay, args)
-        ff_params = [param for param in network.parameters() if not hasattr(param, 'is_score')]
+    if args.prune_method in ('vpns', 'bip', 'hydra'):
+        score_params = [param for param in network.parameters() if hasattr(param, 'is_score') and param.is_score]
+        score_optimizer, score_scheduler = get_optimizer(score_params, args.score_optimizer, args.score_scheduler, args.score_lr, args.score_weight_decay, args)
     
-    ff_optimizer, ff_scheduler = get_optimizer(ff_params, args.ff_optimizer, args.ff_scheduler, args.ff_lr, args.ff_weight_decay, args)
-    
-    return visual_prompt, hydra_optimizer, hydra_scheduler, vp_optimizer, vp_scheduler, ff_optimizer, ff_scheduler
+    return visual_prompt, score_optimizer, score_scheduler, vp_optimizer, vp_scheduler, weight_optimizer, weight_scheduler
 
 
 def calculate_label_mapping(visual_prompt, network, train_loader, args):
