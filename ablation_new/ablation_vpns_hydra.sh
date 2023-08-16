@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='ablation_vpns_hydra'
+experiment_name='ablation_vpns_hydra_0.05'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -12,15 +12,15 @@ fi
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 datasets=('cifar100')
-epochs=1
+epochs=80
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.80,0.50,0.10'
+density_list='1,0.05'
 
 score_vp_ratios=(5)
 weight_optimizer='sgd'
-weight_lr=0.05
+weight_lr=0.01
 vp_optimizer='adam'
 vp_lr=0.001
 score_optimizer='adam'
@@ -30,8 +30,8 @@ seeds=(7)
 
 prune_modes=('score+vp_weight')
 prune_methods=('vpns')
-global_vp_data=1
-gpus=(0)
+global_vp_data=0
+gpus=(1)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

@@ -19,7 +19,7 @@ from unstructured_network_with_score import set_prune_threshold, set_scored_netw
 def main():    
     parser = argparse.ArgumentParser(description='PyTorch Visual Prompt + Prune Experiments')
     global args
-    parser.add_argument('--prune_mode', type=str, default='score+vp_weight', choices=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp', 'score_weight'], help='prune method implement ways')
+    parser.add_argument('--prune_mode', type=str, default='weight+vp_score', choices=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp', 'score_weight'], help='prune method implement ways')
     parser.add_argument('--prune_method', type=str, default='vpns', choices=['vpns', 'hydra'])
     parser.add_argument('--ckpt_directory', type=str, default='', help='sub-network ckpt directory')
     parser.add_argument('--weight_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
@@ -43,7 +43,7 @@ def main():
     parser.add_argument('--density_list', default='1,0.50,0.20,0.10', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
     parser.add_argument('--score_vp_ratio', type=float, default=5, choices=[20,10,9,8,7,6,5,4,3,2,1])
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
-    parser.add_argument('--global_vp_data', default=1, type=int, choices=[0,1], required=True, help='while using visual prompt, whether use vp_data in all training phase')
+    parser.add_argument('--global_vp_data', default=0, type=int, choices=[0,1], help='while using visual prompt, whether use vp_data in all training phase')
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='result', type=str)
