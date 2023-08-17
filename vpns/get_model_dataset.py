@@ -130,10 +130,10 @@ def get_torch_dataset(args, transform_type):
         class_cnt = 100
 
     elif dataset == "svhn":
-        full_data = SVHN(root = data_path, split = 'train', download = True)
-        train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(SVHN(data_path, split = 'train', transform=train_transform, download=True), train_indices)
-        val_set = Subset(SVHN(data_path, split = 'train', transform=test_transform, download=True), val_indices)
+        train_set = SVHN(data_path, split = 'train', transform=train_transform, download=True)
+        val_set = SVHN(data_path, split = 'train', transform=train_transform, download=True)
+        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
+        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
         test_set = SVHN(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 10
 
@@ -146,10 +146,10 @@ def get_torch_dataset(args, transform_type):
         class_cnt = 43
 
     elif dataset == 'food101':
-        full_data = Food101(root = data_path, split = 'train', download = True)
-        train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(Food101(data_path, split = 'train', transform=train_transform, download=True), train_indices)
-        val_set = Subset(Food101(data_path, split = 'train', transform=test_transform, download=True), val_indices)
+        train_set = Food101(data_path, split = 'train', transform=train_transform, download=True)
+        val_set = Food101(data_path, split = 'train', transform=train_transform, download=True)
+        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
+        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
         test_set = Food101(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 101
 
@@ -211,10 +211,10 @@ def get_torch_dataset(args, transform_type):
     
     elif dataset == 'stanfordcars':
         data_path = os.path.join(data_path, 'car_data/car_data')
-        full_data = ImageFolder(root = data_path+'/train/')
-        train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(ImageFolder(data_path+'/train/', transform=train_transform), train_indices)
-        val_set = Subset(ImageFolder(data_path+'/train/', transform=test_transform), val_indices)
+        train_set = ImageFolder(data_path+'/train/', transform=train_transform)
+        val_set = ImageFolder(data_path+'/train/', transform=train_transform)
+        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
+        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
         test_set = ImageFolder(data_path+'/test/', transform=test_transform)
         # train_set = deeplake.load("hub://activeloop/stanford-cars-train")
         # test_set = deeplake.load("hub://activeloop/stanford-cars-test")
@@ -228,51 +228,53 @@ def get_torch_dataset(args, transform_type):
         # train_set = Flowers102(data_path, split = 'test', transform=train_transform, download=True)
         # val_set = Flowers102(data_path, split = 'val', transform=test_transform, download=True)
         # test_set = Flowers102(data_path, split = 'train', transform=test_transform, download=True)
-        train_set = COOPLMDBDataset(root = data_path, split="train", transform = train_transform)
-        val_set = COOPLMDBDataset(root = data_path, split="val", transform = test_transform)
+        train_set = ConcatDataset([COOPLMDBDataset(root = data_path, split="train", transform = train_transform), \
+                                   COOPLMDBDataset(root = data_path, split="val", transform = test_transform)])
+        val_set = ConcatDataset([COOPLMDBDataset(root = data_path, split="train", transform = train_transform), \
+                            COOPLMDBDataset(root = data_path, split="val", transform = test_transform)])
+        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
+        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
         test_set = COOPLMDBDataset(root = data_path, split="test", transform = test_transform)
         class_cnt = 102
     
     elif dataset == 'dtd':
-        train1 = DTD(root = data_path, split = 'train', download = True)
-        train2 = DTD(root = data_path, split = 'val', download = True)
-        full_data = ConcatDataset([train1, train2])
-        train_indices, val_indices = get_indices(full_data)
-        train_set = SubsetWithTransform(full_data, train_indices, transform=train_transform)
-        val_set = SubsetWithTransform(full_data, val_indices, transform=test_transform)
+        train_set = ConcatDataset([DTD(root = data_path, split = 'train', transform=train_transform, download = True), \
+                                DTD(root = data_path, split = 'val', transform=train_transform, download = True)])
+        val_set = ConcatDataset([DTD(root = data_path, split = 'train', transform=train_transform, download = True), \
+                                DTD(root = data_path, split = 'val', transform=train_transform, download = True)])
+        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
+        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
         test_set = DTD(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 47
 
     elif dataset == 'oxfordpets':
-        full_data = OxfordIIITPet(root = data_path, split = 'trainval', download = True)
-        train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(OxfordIIITPet(data_path, split = 'trainval', transform=train_transform, download=True), train_indices)
-        val_set = Subset(OxfordIIITPet(data_path, split = 'trainval', transform=test_transform, download=True), val_indices)
+        train_set = OxfordIIITPet(data_path, split = 'trainval', transform=train_transform, download=True)
+        val_set = OxfordIIITPet(data_path, split = 'trainval', transform=train_transform, download=True)
+        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
+        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
         test_set = OxfordIIITPet(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 37
     
     elif dataset == 'mnist':
-        full_data = MNIST(root = data_path, train = True, download = True)
-        train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(MNIST(data_path, train = True, transform=train_transform, download=True), train_indices)
-        val_set = Subset(MNIST(data_path, train = True, transform=test_transform, download=True), val_indices)
+        train_set = MNIST(data_path, train = True, transform=train_transform, download=True)
+        val_set = MNIST(data_path, train = True, transform=train_transform, download=True)
+        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
+        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
         test_set = MNIST(data_path, train = False, transform=test_transform, download=True)
         class_cnt = 10
 
     elif dataset == 'imagenet':
         imagenet_path = args.imagenet_path
-        full_data = ImageFolder(os.path.join(imagenet_path, 'train'))
-        train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(ImageFolder(os.path.join(imagenet_path, 'train'), transform=train_transform), train_indices)
-        val_set = Subset(ImageFolder(os.path.join(imagenet_path, 'train'), transform=test_transform), val_indices)
+        train_set = ImageFolder(os.path.join(imagenet_path, 'train'), transform=train_transform)
+        val_set=train_set
         test_set = ImageFolder(os.path.join(imagenet_path, 'val'), transform=test_transform)
         class_cnt = 1000
     
     elif dataset == 'tiny_imagenet':
-        full_data = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'))
-        train_indices, val_indices = get_indices(full_data)
-        train_set = Subset(ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=train_transform), train_indices)
-        val_set = Subset(ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=test_transform), val_indices)
+        train_set = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=train_transform)
+        val_set = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=train_transform)
+        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
+        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
         test_set = TinyImageNet(os.path.join(data_path, 'tiny-imagenet-200/val/images'), os.path.join(data_path, 'tiny-imagenet-200/val/val_annotations.txt'), 
                                 os.path.join(data_path, 'tiny-imagenet-200/wnids.txt'), transform=test_transform)
         class_cnt = 200
@@ -281,9 +283,9 @@ def get_torch_dataset(args, transform_type):
         raise NotImplementedError(f"{dataset} not supported")
     
     if dataset == 'imagenet':
-        train_loader = DataLoader(train_set, batch_size=512, shuffle=True, num_workers=6, pin_memory=True)
-        val_loader = DataLoader(val_set, batch_size=512, shuffle=False, num_workers=6, pin_memory=True)
-        test_loader = DataLoader(test_set, batch_size=512, shuffle=False, num_workers=6, pin_memory=True)
+        train_loader = DataLoader(train_set, batch_size=1024, shuffle=True, num_workers=8, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=1024, shuffle=False, num_workers=8, pin_memory=True)
+        test_loader = DataLoader(test_set, batch_size=1024, shuffle=False, num_workers=8, pin_memory=True)
     elif dataset in ['dtd', 'oxfordpets']:
         train_loader = DataLoader(train_set, batch_size=64, shuffle=True, num_workers=args.workers, pin_memory=True)
         val_loader = DataLoader(val_set, batch_size=64, shuffle=False, num_workers=args.workers, pin_memory=True)
@@ -319,7 +321,7 @@ def get_indices(full_data):
 
 
 def choose_dataloader(args):
-    if args.prune_method=='vpns':
+    if args.prune_method=='vpns' or 'vp' in args.prune_mode:
         print('choose visual prompt dataset')
         train_loader, val_loader, test_loader = get_torch_dataset(args, 'vp')       
     else:

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='ablation_vpns_hydra_0.05'
+experiment_name='ablation_vpns_hydra'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -12,33 +12,35 @@ fi
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 datasets=('cifar100')
-epochs=80
+epochs=60
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.05'
+density_list='1,0.5,0.1,0.05,0.01'
 
 score_vp_ratios=(5)
 weight_optimizer='sgd'
 weight_lr=0.01
-vp_optimizer='adam'
-vp_lr=0.001
+weight_vp_optimizer='sgd'
+weight_vp_lr=0.01
+score_vp_optimizer='sgd'
+score_vp_lr=0.001
 score_optimizer='adam'
 score_lr=0.0001
-seeds=(7)
+seeds=(7 9 17)
 # gmp_T=1000
 
-prune_modes=('score+vp_weight')
-prune_methods=('vpns')
+prune_modes=('score_weight')
+prune_methods=('hydra')
 global_vp_data=0
-gpus=(1)
+gpus=(1 2 3)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
             for l in ${!prune_methods[@]};do
-                for m in ${!seeds[@]};do
-                    for n in ${!score_vp_ratios[@]};do
-                        log_filename=${foler_name}/${global_vp_data}_${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seeds[m]}_ratio${score_vp_ratios[n]}_${weight_optimizer}_${weight_lr}_${vp_optimizer}_${vp_lr}_${score_optimizer}_${score_lr}.log
+                for n in ${!score_vp_ratios[@]};do
+                    for m in ${!seeds[@]};do            
+                        log_filename=${foler_name}/${global_vp_data}_${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seeds[m]}_ratio${score_vp_ratios[n]}_${weight_optimizer}_${weight_lr}_${weight_vp_optimizer}_${weight_vp_lr}_${score_optimizer}_${score_lr}_${score_vp_optimizer}_${score_vp_lr}.log
                             python ./vpns/vpns_unstructured_two_phase.py \
                                 --experiment_name ${experiment_name} \
                                 --dataset ${datasets[i]} \
@@ -49,12 +51,14 @@ for j in ${!networks[@]};do
                                 --density_list ${density_list} \
                                 --weight_optimizer ${weight_optimizer} \
                                 --weight_lr ${weight_lr} \
-                                --vp_optimizer ${vp_optimizer} \
-                                --vp_lr ${vp_lr} \
+                                --weight_vp_optimizer ${weight_vp_optimizer} \
+                                --weight_vp_lr ${weight_vp_lr} \
                                 --score_optimizer ${score_optimizer} \
                                 --score_lr ${score_lr} \
+                                --score_vp_optimizer ${score_vp_optimizer} \
+                                --score_vp_lr ${score_vp_lr} \
                                 --score_vp_ratio ${score_vp_ratios[n]} \
-                                --gpu ${gpus[n]} \
+                                --gpu ${gpus[m]} \
                                 --epochs ${epochs} \
                                 --seed ${seeds[m]} \
                                 > $log_filename 2>&1 &
