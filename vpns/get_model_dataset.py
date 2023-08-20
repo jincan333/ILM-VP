@@ -115,25 +115,19 @@ def get_torch_dataset(args, transform_type):
 
     if dataset == "cifar10":
         train_set = CIFAR10(data_path, train=True, transform=train_transform, download=True)
-        val_set = CIFAR10(data_path, train=True, transform=train_transform, download=True)
-        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
-        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
+        val_set = CIFAR10(data_path, train=True, transform=test_transform, download=True)
         test_set = CIFAR10(data_path, train=False, transform=test_transform, download=True)
         class_cnt = 10
 
     elif dataset == "cifar100":
         train_set = CIFAR100(data_path, train=True, transform=train_transform, download=True)
-        val_set = CIFAR100(data_path, train=True, transform=train_transform, download=True)
-        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
-        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
+        val_set = CIFAR100(data_path, train=True, transform=test_transform, download=True)
         test_set = CIFAR100(data_path, train=False, transform=test_transform, download=True)
         class_cnt = 100
 
     elif dataset == "svhn":
         train_set = SVHN(data_path, split = 'train', transform=train_transform, download=True)
-        val_set = SVHN(data_path, split = 'train', transform=train_transform, download=True)
-        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
-        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
+        val_set = SVHN(data_path, split = 'train', transform=test_transform, download=True)
         test_set = SVHN(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 10
 
@@ -147,9 +141,7 @@ def get_torch_dataset(args, transform_type):
 
     elif dataset == 'food101':
         train_set = Food101(data_path, split = 'train', transform=train_transform, download=True)
-        val_set = Food101(data_path, split = 'train', transform=train_transform, download=True)
-        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
-        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
+        val_set = Food101(data_path, split = 'train', transform=test_transform, download=True)
         test_set = Food101(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 101
 
@@ -212,9 +204,7 @@ def get_torch_dataset(args, transform_type):
     elif dataset == 'stanfordcars':
         data_path = os.path.join(data_path, 'car_data/car_data')
         train_set = ImageFolder(data_path+'/train/', transform=train_transform)
-        val_set = ImageFolder(data_path+'/train/', transform=train_transform)
-        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
-        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
+        val_set = ImageFolder(data_path+'/train/', transform=test_transform)
         test_set = ImageFolder(data_path+'/test/', transform=test_transform)
         # train_set = deeplake.load("hub://activeloop/stanford-cars-train")
         # test_set = deeplake.load("hub://activeloop/stanford-cars-test")
@@ -229,52 +219,42 @@ def get_torch_dataset(args, transform_type):
         # val_set = Flowers102(data_path, split = 'val', transform=test_transform, download=True)
         # test_set = Flowers102(data_path, split = 'train', transform=test_transform, download=True)
         train_set = ConcatDataset([COOPLMDBDataset(root = data_path, split="train", transform = train_transform), \
-                                   COOPLMDBDataset(root = data_path, split="val", transform = test_transform)])
-        val_set = ConcatDataset([COOPLMDBDataset(root = data_path, split="train", transform = train_transform), \
-                            COOPLMDBDataset(root = data_path, split="val", transform = test_transform)])
-        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
-        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
+                                   COOPLMDBDataset(root = data_path, split="val", transform = train_transform)])
+        val_set = ConcatDataset([COOPLMDBDataset(root = data_path, split="val", transform = test_transform), \
+                                 COOPLMDBDataset(root = data_path, split="train", transform = test_transform)])
         test_set = COOPLMDBDataset(root = data_path, split="test", transform = test_transform)
         class_cnt = 102
     
     elif dataset == 'dtd':
         train_set = ConcatDataset([DTD(root = data_path, split = 'train', transform=train_transform, download = True), \
                                 DTD(root = data_path, split = 'val', transform=train_transform, download = True)])
-        val_set = ConcatDataset([DTD(root = data_path, split = 'train', transform=train_transform, download = True), \
-                                DTD(root = data_path, split = 'val', transform=train_transform, download = True)])
-        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
-        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
+        val_set = ConcatDataset([DTD(root = data_path, split = 'val', transform=test_transform, download = True), \
+                                 DTD(root = data_path, split = 'train', transform=test_transform, download = True)])
         test_set = DTD(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 47
 
     elif dataset == 'oxfordpets':
         train_set = OxfordIIITPet(data_path, split = 'trainval', transform=train_transform, download=True)
-        val_set = OxfordIIITPet(data_path, split = 'trainval', transform=train_transform, download=True)
-        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
-        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
+        val_set = OxfordIIITPet(data_path, split = 'trainval', transform=test_transform, download=True)
         test_set = OxfordIIITPet(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 37
     
     elif dataset == 'mnist':
         train_set = MNIST(data_path, train = True, transform=train_transform, download=True)
-        val_set = MNIST(data_path, train = True, transform=train_transform, download=True)
-        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
-        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
+        val_set = MNIST(data_path, train = True, transform=test_transform, download=True)
         test_set = MNIST(data_path, train = False, transform=test_transform, download=True)
         class_cnt = 10
 
     elif dataset == 'imagenet':
         imagenet_path = args.imagenet_path
         train_set = ImageFolder(os.path.join(imagenet_path, 'train'), transform=train_transform)
-        val_set=train_set
+        val_set = ImageFolder(os.path.join(imagenet_path, 'train'), transform=test_transform)
         test_set = ImageFolder(os.path.join(imagenet_path, 'val'), transform=test_transform)
         class_cnt = 1000
     
     elif dataset == 'tiny_imagenet':
         train_set = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=train_transform)
-        val_set = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=train_transform)
-        val_set.data = torch.flip(torch.tensor(val_set.data), dims=[0]).numpy()
-        val_set.targets = torch.flip(torch.tensor(val_set.targets), dims=[0]).numpy()
+        val_set = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=test_transform)
         test_set = TinyImageNet(os.path.join(data_path, 'tiny-imagenet-200/val/images'), os.path.join(data_path, 'tiny-imagenet-200/val/val_annotations.txt'), 
                                 os.path.join(data_path, 'tiny-imagenet-200/wnids.txt'), transform=test_transform)
         class_cnt = 200
@@ -284,15 +264,15 @@ def get_torch_dataset(args, transform_type):
     
     if dataset == 'imagenet':
         train_loader = DataLoader(train_set, batch_size=1024, shuffle=True, num_workers=8, pin_memory=True)
-        val_loader = DataLoader(val_set, batch_size=1024, shuffle=False, num_workers=8, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=1024, shuffle=True, num_workers=8, pin_memory=True)
         test_loader = DataLoader(test_set, batch_size=1024, shuffle=False, num_workers=8, pin_memory=True)
     elif dataset in ['dtd', 'oxfordpets']:
         train_loader = DataLoader(train_set, batch_size=64, shuffle=True, num_workers=args.workers, pin_memory=True)
-        val_loader = DataLoader(val_set, batch_size=64, shuffle=False, num_workers=args.workers, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=64, shuffle=True, num_workers=args.workers, pin_memory=True)
         test_loader = DataLoader(test_set, batch_size=64, shuffle=False, num_workers=args.workers, pin_memory=True)
     elif dataset in ['flowers102', 'stanfordcars']:
         train_loader = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=args.workers, pin_memory=True)
-        val_loader = DataLoader(val_set, batch_size=128, shuffle=False, num_workers=args.workers, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=128, shuffle=True, num_workers=args.workers, pin_memory=True)
         test_loader = DataLoader(test_set, batch_size=128, shuffle=False, num_workers=args.workers, pin_memory=True)
     # elif dataset == 'tiny_imagenet':
     #     train_loader = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=args.workers, pin_memory=True)
@@ -300,7 +280,7 @@ def get_torch_dataset(args, transform_type):
     #     test_loader = DataLoader(test_set, batch_size=128, shuffle=False, num_workers=args.workers, pin_memory=True)
     else:
         train_loader = DataLoader(train_set, batch_size=256, shuffle=True, num_workers=args.workers, pin_memory=True)
-        val_loader = DataLoader(val_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=256, shuffle=True, num_workers=args.workers, pin_memory=True)
         test_loader = DataLoader(test_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)
     args.class_cnt = class_cnt
     args.normalize = normalize
@@ -454,3 +434,11 @@ class COOPLMDBDataset(LMDBDataset):
             split_file = json.load(f)
         idx_to_class = OrderedDict(sorted({s[-2]: s[-1] for s in split_file["test"]}.items()))
         self.classes = list(idx_to_class.values())
+
+
+class ReverseImageFolder(ImageFolder):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+    def __getitem__(self, index):
+        return super().__getitem__(len(self) - 1 - index)  # This reverses the order of items

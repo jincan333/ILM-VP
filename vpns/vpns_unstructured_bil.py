@@ -291,13 +291,14 @@ def train(train_loader, val_loader, network, epoch, label_mapping, visual_prompt
 
         append_grad_to_vec(implicit_gradient, network.parameters())
         score_optimizer.step()
+        # reset threshold   
+        set_prune_threshold(network, args.density)
 
         if visual_prompt and args.prune_mode in phase:
             if args.current_steps % args.step_division==0:
                 update_visual_prompt(visual_prompt, train_x, train_y)
 
-        # reset threshold
-        set_prune_threshold(network, args.density)
+
 
         total_num += train_y.size(0)
         true_num += torch.argmax(fx, 1).eq(train_y).float().sum().item()
