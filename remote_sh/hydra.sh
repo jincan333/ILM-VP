@@ -11,7 +11,7 @@ fi
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
-datasets=('dtd')
+datasets=('tiny_imagenet')
 epochs=60
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
@@ -27,7 +27,7 @@ seeds=(9 17)
 
 prune_modes=('score_weight')
 prune_methods=('hydra')
-gpus=(7 6)
+gpus=(0 1)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
