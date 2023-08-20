@@ -18,7 +18,7 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch Visual Prompt + Prune Experiments')
     global args
     parser.add_argument('--prune_mode', type=str, default='weight', choices=['weight', 'weight+vp'], help='prune method implement ways')
-    parser.add_argument('--prune_method', type=str, default='omp', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow','gmp'])
+    parser.add_argument('--prune_method', type=str, default='random', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow','gmp'])
     parser.add_argument('--ckpt_directory', type=str, default='', help='sub-network ckpt directory')
     parser.add_argument('--weight_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--weight_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
@@ -31,7 +31,7 @@ def main():
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg"])
     parser.add_argument('--dataset', default="cifar100", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'tiny_imagenet', 'imagenet'])
     parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
-    parser.add_argument('--gpu', type=int, default=4, help='gpu device id')
+    parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
     parser.add_argument('--epochs', default=120, type=int, help='number of total eopchs to run')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
     parser.add_argument('--density_list', default='1,0.10,0.05,0.01', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
@@ -127,6 +127,7 @@ def main():
     all_results['no_train_acc'] = test_acc
     print(f'#######################Train init dense network for {args.prune_method}######################')
     for epoch in range(args.epochs):
+        train_acc = 0
         if args.prune_method in ('imp', 'omp'):
             train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
                             weight_optimizer=weight_optimizer, vp_optimizer=weight_vp_optimizer,
