@@ -10,18 +10,10 @@ fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'gmp']
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
-<<<<<<< HEAD
 datasets=('cifar100')
 epochs=120
 # seed 7 9 17
 density_list='1,0.40,0.60,0.70'
-=======
-datasets=('cifar10')
-epochs=120
-# seed 7 9 17
-density_list='1,0.40,0.60,0.70'
-# 'weight', 'weight+vp'
->>>>>>> 0e6525ec3b3e984635a2f9f84b6b5efc777671a8
 prune_modes=('weight')
 
 weight_optimizer='sgd'
