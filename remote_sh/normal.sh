@@ -10,7 +10,7 @@ fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'gmp']
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
-datasets=('cifar100' 'cifar10' 'tiny_imagenet' 'flowers102' 'dtd')
+datasets=('cifar100')
 epochs=120
 # seed 7 9 17
 density_list='1,0.50,0.20,0.10'
@@ -20,7 +20,7 @@ prune_modes=('weight')
 weight_optimizer='sgd'
 weight_lr=0.01
 seeds=(7 9 17)
-prune_methods=('random' 'snip' 'synflow')
+prune_methods=('synflow')
 gpus=(0 1 2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
