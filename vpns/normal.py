@@ -18,7 +18,7 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch Visual Prompt + Prune Experiments')
     global args
     parser.add_argument('--prune_mode', type=str, default='weight', choices=['weight', 'weight+vp'], help='prune method implement ways')
-    parser.add_argument('--prune_method', type=str, default='random', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow','gmp'])
+    parser.add_argument('--prune_method', type=str, default='synflow', choices=['random', 'imp', 'omp', 'grasp', 'snip', 'synflow','gmp'])
     parser.add_argument('--ckpt_directory', type=str, default='', help='sub-network ckpt directory')
     parser.add_argument('--weight_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--weight_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])

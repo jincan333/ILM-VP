@@ -26,10 +26,14 @@ def main():
     parser.add_argument('--weight_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--weight_lr', default=0.001, type=float, help='initial learning rate')
     parser.add_argument('--weight_weight_decay', default=1e-4, type=float, help='finetune weight decay')
-    parser.add_argument('--vp_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
-    parser.add_argument('--vp_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
-    parser.add_argument('--vp_lr', default=0.001, type=float, help='initial learning rate')
-    parser.add_argument('--vp_weight_decay', default=1e-4, type=float, help='visual prompt weight decay')
+    parser.add_argument('--weight_vp_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
+    parser.add_argument('--weight_vp_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
+    parser.add_argument('--weight_vp_lr', default=0.01, type=float, help='initial learning rate')
+    parser.add_argument('--weight_vp_weight_decay', default=1e-4, type=float, help='visual prompt weight decay')
+    parser.add_argument('--score_vp_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
+    parser.add_argument('--score_vp_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
+    parser.add_argument('--score_vp_lr', default=0.001, type=float, help='initial learning rate')
+    parser.add_argument('--score_vp_weight_decay', default=1e-4, type=float, help='visual prompt weight decay')
     parser.add_argument('--score_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--score_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--score_lr', default=0.0001, type=float, help='initial learning rate')
@@ -44,7 +48,7 @@ def main():
     parser.add_argument('--score_vp_ratio', type=float, default=5, choices=[20,10,9,8,7,6,5,4,3,2,1])
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
     parser.add_argument('--bil_lr', default=0.0001, type=float, help='initial learning rate')
-    parser.add_argument('--global_vp_data', default=1, type=int, choices=[0,1], required=True, help='while using visual prompt, whether use vp_data in all training phase')
+    parser.add_argument('--global_vp_data', default=0, type=int, choices=[0,1], help='while using visual prompt, whether use vp_data in all training phase')
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='result', type=str)
@@ -88,10 +92,10 @@ def main():
     save_path = os.path.join(args.save_dir, args.experiment_name, args.network, args.dataset, 
                 'PRUNE_MODE'+args.prune_mode, 'PRUNE'+str(args.prune_method), 'VP'+str(args.prompt_method),
                 'SIZE'+str(args.output_size)+'_'+str(args.input_size)+'_'+str(args.pad_size)+'_'+str(args.mask_size),
-                args.weight_optimizer+'_'+args.vp_optimizer+'_'+args.score_optimizer, 
-                args.weight_scheduler+'_'+args.vp_scheduler+'_'+args.score_scheduler, 
-                'LR'+str(args.weight_lr)+'_'+str(args.vp_lr)+'_'+str(args.score_lr),  
-                'GLOBAL_DATA'+str(args.global_vp_data)+'DENSITY'+str(args.density_list), 'EPOCHS'+str(args.epochs), 'SEED'+str(args.seed),'GPU'+str(args.gpu))
+                args.weight_optimizer+'_'+args.score_vp_optimizer+'_'+args.score_optimizer, 
+                args.weight_scheduler+'_'+args.score_vp_scheduler+'_'+args.score_scheduler, 
+                'LR'+str(args.weight_lr)+'_'+str(args.score_vp_lr)+'_'+str(args.score_lr),  
+                'DENSITY'+str(args.density_list), 'EPOCHS'+str(args.epochs), 'SEED'+str(args.seed),'GPU'+str(args.gpu))
     os.makedirs(save_path, exist_ok=True)
     save_args(args, save_path+'/args.json')
     args.device=device
@@ -103,7 +107,7 @@ def main():
     # DataLoader
     train_loader, val_loader, test_loader = choose_dataloader(args)
     # Visual Prompt, Optimizer, and Scheduler
-    visual_prompt, score_optimizer, score_scheduler, vp_optimizer, vp_scheduler, weight_optimizer, weight_scheduler = setup_optimizer_and_prompt(network, args)
+    visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler = setup_optimizer_and_prompt(network, args)
     # Label Mapping
     label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
     print('mapping_sequence: ', mapping_sequence)
@@ -112,8 +116,7 @@ def main():
     pre_state_init = copy.deepcopy(network.state_dict())
     visual_prompt_init = copy.deepcopy(visual_prompt.state_dict()) if visual_prompt else None
     mapping_sequence_init = mapping_sequence
-    visual_prompt, score_optimizer, score_scheduler, vp_optimizer, vp_scheduler, weight_optimizer, weight_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(
-        network, visual_prompt_init, mapping_sequence, None, args)
+    visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(network, visual_prompt_init, mapping_sequence, None, args)
     
     print(f'####################### Prune and Train network for {args.prune_method} ######################') 
     for state in range(1, len(args.density_list)):
@@ -126,8 +129,7 @@ def main():
         if args.prune_method in ('vpns', 'hydra', 'bip'):
             set_prune_threshold(network, 1)
         label_mapping = obtain_label_mapping(mapping_sequence_init)
-        visual_prompt, score_optimizer, score_scheduler, vp_optimizer, vp_scheduler, weight_optimizer, weight_scheduler, checkpoint, \
-            best_acc, all_results = init_ckpt_vp_optimizer(network, visual_prompt_init, mapping_sequence, None, args)
+        visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(network, visual_prompt_init, mapping_sequence, None, args)
         test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
         print(f'Accuracy before prune: {test_acc:.4f}')
         # prune
@@ -143,8 +145,8 @@ def main():
         if args.prune_method in ('vpns', 'bip'):
             for epoch in range(args.epochs):
                 train_acc = train(train_loader, val_loader, network, epoch, label_mapping, visual_prompt, mask, args=args,
-                                weight_optimizer=weight_optimizer, vp_optimizer=vp_optimizer, score_optimizer=score_optimizer, 
-                                weight_scheduler=weight_scheduler, vp_scheduler=vp_scheduler, score_scheduler=score_scheduler)
+                                weight_optimizer=weight_optimizer, vp_optimizer=score_vp_optimizer, score_optimizer=score_optimizer, 
+                                weight_scheduler=weight_scheduler, vp_scheduler=score_vp_scheduler, score_scheduler=score_scheduler)
                 val_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
                 all_results['train_acc'].append(train_acc)
                 all_results['val_acc'].append(val_acc)
@@ -155,8 +157,8 @@ def main():
                     ,'mask': masks
                     ,"weight_optimizer": weight_optimizer.state_dict() if weight_optimizer else None
                     ,'weight_scheduler': weight_scheduler.state_dict() if weight_scheduler else None
-                    ,"vp_optimizer": vp_optimizer.state_dict() if vp_optimizer else None
-                    ,'vp_scheduler': vp_scheduler.state_dict() if vp_scheduler else None
+                    ,"vp_optimizer": score_vp_optimizer.state_dict() if score_vp_optimizer else None
+                    ,'vp_scheduler': score_vp_scheduler.state_dict() if score_vp_scheduler else None
                     ,"score_optimizer": score_optimizer.state_dict() if score_optimizer else None
                     ,'score_scheduler': score_scheduler.state_dict() if score_scheduler else None
                     ,'visual_prompt': visual_prompt.state_dict() if visual_prompt else None
@@ -398,7 +400,7 @@ def init_ckpt_vp_optimizer(network, visual_prompt_init, mapping_sequence, masks,
     all_results={}
     all_results['train_acc'] = []
     all_results['val_acc'] = []
-    visual_prompt, score_optimizer, score_scheduler, vp_optimizer, vp_scheduler, weight_optimizer, weight_scheduler = setup_optimizer_and_prompt(network, args)
+    visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler = setup_optimizer_and_prompt(network, args)
     visual_prompt.load_state_dict(visual_prompt_init) if visual_prompt_init else None
     checkpoint = {
             'state_dict': network.state_dict()
@@ -406,8 +408,8 @@ def init_ckpt_vp_optimizer(network, visual_prompt_init, mapping_sequence, masks,
             ,'mask': masks
             ,"weight_optimizer": weight_optimizer.state_dict() if weight_optimizer else None
             ,'weight_scheduler': weight_scheduler.state_dict() if weight_scheduler else None
-            ,"vp_optimizer": vp_optimizer.state_dict() if vp_optimizer else None
-            ,'vp_scheduler': vp_scheduler.state_dict() if vp_scheduler else None
+            ,"vp_optimizer": score_vp_optimizer.state_dict() if score_vp_optimizer else None
+            ,'vp_scheduler': score_vp_scheduler.state_dict() if score_vp_scheduler else None
             ,"score_optimizer": score_optimizer.state_dict() if score_optimizer else None
             ,'score_scheduler': score_scheduler.state_dict() if score_scheduler else None
             ,'visual_prompt': visual_prompt.state_dict() if visual_prompt else None
@@ -419,7 +421,7 @@ def init_ckpt_vp_optimizer(network, visual_prompt_init, mapping_sequence, masks,
             ,'state': 0
         }
 
-    return visual_prompt, score_optimizer, score_scheduler, vp_optimizer, vp_scheduler, weight_optimizer, weight_scheduler, checkpoint, best_acc, all_results
+    return visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler, checkpoint, best_acc, all_results
 
 
 def plot_train(all_results, save_path, state):

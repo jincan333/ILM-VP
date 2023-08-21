@@ -115,13 +115,13 @@ def get_torch_dataset(args, transform_type):
 
     if dataset == "cifar10":
         train_set = CIFAR10(data_path, train=True, transform=train_transform, download=True)
-        val_set = CIFAR10(data_path, train=True, transform=test_transform, download=True)
+        val_set = CIFAR10(data_path, train=True, transform=train_transform, download=True)
         test_set = CIFAR10(data_path, train=False, transform=test_transform, download=True)
         class_cnt = 10
 
     elif dataset == "cifar100":
         train_set = CIFAR100(data_path, train=True, transform=train_transform, download=True)
-        val_set = CIFAR100(data_path, train=True, transform=test_transform, download=True)
+        val_set = CIFAR100(data_path, train=True, transform=train_transform, download=True)
         test_set = CIFAR100(data_path, train=False, transform=test_transform, download=True)
         class_cnt = 100
 
@@ -254,7 +254,7 @@ def get_torch_dataset(args, transform_type):
     
     elif dataset == 'tiny_imagenet':
         train_set = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=train_transform)
-        val_set = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=test_transform)
+        val_set = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=train_transform)
         test_set = TinyImageNet(os.path.join(data_path, 'tiny-imagenet-200/val/images'), os.path.join(data_path, 'tiny-imagenet-200/val/val_annotations.txt'), 
                                 os.path.join(data_path, 'tiny-imagenet-200/wnids.txt'), transform=test_transform)
         class_cnt = 200
