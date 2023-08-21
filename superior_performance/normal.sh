@@ -10,7 +10,7 @@ fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'gmp']
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
-datasets=('dtd')
+datasets=('food101')
 epochs=120
 # seed 7 9 17
 density_list='1,0.50,0.20,0.10'
@@ -19,9 +19,9 @@ prune_modes=('weight')
 
 weight_optimizer='sgd'
 weight_lr=0.01
-seeds=(9 17)
+seeds=(7)
 prune_methods=('omp')
-gpus=(7 6)
+gpus=(5)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
