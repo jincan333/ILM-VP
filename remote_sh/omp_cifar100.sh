@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='imp'
+experiment_name='omp_cifar100'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -10,19 +10,18 @@ fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'gmp']
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
-datasets=('tiny_imagenet')
+datasets=('cifar10')
 epochs=120
 # seed 7 9 17
-# density_list='1,0.8000,0.6400,0.5120,0.4100,0.3280,0.2620,0.2097,0.1678,0.1342,0.1074,0.0859,0.0687,0.0550'
-density_list='1,0.8000,0.6400,0.5120,0.4100,0.3280,0.2620,0.2097,0.1678,0.1342,0.1074'
+density_list='1,0.40,0.60,0.70'
 # 'weight', 'weight+vp'
 prune_modes=('weight')
 
 weight_optimizer='sgd'
 weight_lr=0.01
 seeds=(7 9 17)
-prune_methods=('imp')
-gpus=(0 1 2)
+prune_methods=('omp')
+gpus=(0 1 1)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

@@ -2,4 +2,3 @@ torch
 torchvision
 lmdb
 matplotlib
-git+https://github.com/openai/CLIP.git
