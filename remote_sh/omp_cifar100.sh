@@ -14,7 +14,6 @@ datasets=('cifar100')
 epochs=120
 # seed 7 9 17
 density_list='1,0.40,0.60,0.70'
-# 'weight', 'weight+vp'
 prune_modes=('weight')
 
 weight_optimizer='sgd'
