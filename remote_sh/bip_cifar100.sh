@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='bip_cifar100'
+experiment_name='bip_cifar100_more'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -16,18 +16,18 @@ epochs=60
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'score+weight_vp', 'weight+vp_score', 'score+vp_weight+vp', 'score_weight']
 
-density_list='1,0.50,0.20,0.10'
+density_list='1,0.6,0.4,0.3'
 
 weight_optimizer='sgd'
 weight_lr=0.01
 score_optimizer='adam'
 score_lr=0.0001
-seeds=(9 17)
+seeds=(7 9 17)
 # gmp_T=1000
 
 prune_modes=('score_weight')
 prune_methods=('bip')
-gpus=(7 6)
+gpus=(5 4 1)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
