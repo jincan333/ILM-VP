@@ -34,7 +34,7 @@ for j in ${!networks[@]};do
             for l in ${!prune_methods[@]};do
                 for m in ${!seeds[@]};do
                     log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seeds[m]}_${weight_optimizer}_${weight_lr}_${score_optimizer}_${score_lr}.log
-                        python ./vpns/vpns_unstructured_bil.py \
+                        nohup python ./vpns/vpns_unstructured_bil.py \
                             --experiment_name ${experiment_name} \
                             --dataset ${datasets[i]} \
                             --network ${networks[j]} \
