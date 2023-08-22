@@ -27,7 +27,7 @@ seeds=(7 9 17)
 
 prune_modes=('score_weight')
 prune_methods=('hydra')
-gpus=(0 0 0)
+gpus=(2 2 2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
