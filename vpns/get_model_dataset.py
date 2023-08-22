@@ -112,22 +112,26 @@ def get_torch_dataset(args, transform_type):
     data_path = os.path.join(args.data, args.dataset)
     dataset = args.dataset
     train_transform, test_transform, normalize = image_transform(args, transform_type)
+    if args.prune_method=='vpns' or 'vp' in args.prune_mode:
+        val_transform = test_transform
+    else:
+        val_transform = train_transform
 
     if dataset == "cifar10":
         train_set = CIFAR10(data_path, train=True, transform=train_transform, download=True)
-        val_set = CIFAR10(data_path, train=True, transform=train_transform, download=True)
+        val_set = CIFAR10(data_path, train=True, transform=val_transform, download=True)
         test_set = CIFAR10(data_path, train=False, transform=test_transform, download=True)
         class_cnt = 10
 
     elif dataset == "cifar100":
         train_set = CIFAR100(data_path, train=True, transform=train_transform, download=True)
-        val_set = CIFAR100(data_path, train=True, transform=train_transform, download=True)
+        val_set = CIFAR100(data_path, train=True, transform=val_transform, download=True)
         test_set = CIFAR100(data_path, train=False, transform=test_transform, download=True)
         class_cnt = 100
 
     elif dataset == "svhn":
         train_set = SVHN(data_path, split = 'train', transform=train_transform, download=True)
-        val_set = SVHN(data_path, split = 'train', transform=test_transform, download=True)
+        val_set = SVHN(data_path, split = 'train', transform=val_transform, download=True)
         test_set = SVHN(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 10
 
@@ -135,13 +139,13 @@ def get_torch_dataset(args, transform_type):
         full_data = GTSRB(root = data_path, split = 'train', download = True)
         train_indices, val_indices = get_indices(full_data)
         train_set = Subset(GTSRB(data_path, split = 'train', transform=train_transform, download=True), train_indices)
-        val_set = Subset(GTSRB(data_path, split = 'train', transform=test_transform, download=True), val_indices)
+        val_set = Subset(GTSRB(data_path, split = 'train', transform=val_transform, download=True), val_indices)
         test_set = GTSRB(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 43
 
     elif dataset == 'food101':
         train_set = Food101(data_path, split = 'train', transform=train_transform, download=True)
-        val_set = Food101(data_path, split = 'train', transform=test_transform, download=True)
+        val_set = Food101(data_path, split = 'train', transform=val_transform, download=True)
         test_set = Food101(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 101
 
@@ -178,7 +182,7 @@ def get_torch_dataset(args, transform_type):
         full_data = SUN397Dataset(img_dir = img_dir, partition_file = train_partition_file,  target_file=target_file)
         train_indices, val_indices = get_indices(full_data)
         train_set = Subset(SUN397Dataset(img_dir = img_dir, partition_file = train_partition_file, target_file=target_file, transform=train_transform), train_indices)
-        val_set = Subset(SUN397Dataset(img_dir = img_dir, partition_file = train_partition_file, target_file=target_file, transform=test_transform), val_indices)
+        val_set = Subset(SUN397Dataset(img_dir = img_dir, partition_file = train_partition_file, target_file=target_file, transform=val_transform), val_indices)
         test_set = SUN397Dataset(img_dir = img_dir, partition_file = test_partition_file, target_file=target_file, transform=test_transform)
         class_cnt = 397
 
@@ -186,7 +190,7 @@ def get_torch_dataset(args, transform_type):
         full_data = EuroSAT(root = data_path, split = 'train', download = True)
         train_indices, val_indices = get_indices(full_data)
         train_set = Subset(EuroSAT(data_path, split = 'train', transform=train_transform, download=True), train_indices)
-        val_set = Subset(EuroSAT(data_path, split = 'train', transform=test_transform, download=True), val_indices)
+        val_set = Subset(EuroSAT(data_path, split = 'train', transform=val_transform, download=True), val_indices)
         test_set = EuroSAT(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 10
 
@@ -197,14 +201,14 @@ def get_torch_dataset(args, transform_type):
         # frames_per_clip=16, step_between_clips=1, 
         train_indices, val_indices = get_indices(full_data)
         train_set = Subset(UCF101(data_path, train = True, annotation_path=annotation_path, frames_per_clip=1, fold=1, transform=train_transform), train_indices)
-        val_set = Subset(UCF101(data_path, train = True, annotation_path=annotation_path, frames_per_clip=1, fold=1, transform=test_transform), val_indices)
+        val_set = Subset(UCF101(data_path, train = True, annotation_path=annotation_path, frames_per_clip=1, fold=1, transform=val_transform), val_indices)
         test_set = UCF101(data_path, train = False, annotation_path=annotation_path, frames_per_clip=1, fold=1, transform=test_transform)
         class_cnt = 101
     
     elif dataset == 'stanfordcars':
         data_path = os.path.join(data_path, 'car_data/car_data')
         train_set = ImageFolder(data_path+'/train/', transform=train_transform)
-        val_set = ImageFolder(data_path+'/train/', transform=test_transform)
+        val_set = ImageFolder(data_path+'/train/', transform=val_transform)
         test_set = ImageFolder(data_path+'/test/', transform=test_transform)
         # train_set = deeplake.load("hub://activeloop/stanford-cars-train")
         # test_set = deeplake.load("hub://activeloop/stanford-cars-test")
@@ -220,41 +224,41 @@ def get_torch_dataset(args, transform_type):
         # test_set = Flowers102(data_path, split = 'train', transform=test_transform, download=True)
         train_set = ConcatDataset([COOPLMDBDataset(root = data_path, split="train", transform = train_transform), \
                                    COOPLMDBDataset(root = data_path, split="val", transform = train_transform)])
-        val_set = ConcatDataset([COOPLMDBDataset(root = data_path, split="val", transform = test_transform), \
-                                 COOPLMDBDataset(root = data_path, split="train", transform = test_transform)])
+        val_set = ConcatDataset([COOPLMDBDataset(root = data_path, split="val", transform = val_transform), \
+                                 COOPLMDBDataset(root = data_path, split="train", transform = val_transform)])
         test_set = COOPLMDBDataset(root = data_path, split="test", transform = test_transform)
         class_cnt = 102
     
     elif dataset == 'dtd':
         train_set = ConcatDataset([DTD(root = data_path, split = 'train', transform=train_transform, download = True), \
                                 DTD(root = data_path, split = 'val', transform=train_transform, download = True)])
-        val_set = ConcatDataset([DTD(root = data_path, split = 'val', transform=test_transform, download = True), \
-                                 DTD(root = data_path, split = 'train', transform=test_transform, download = True)])
+        val_set = ConcatDataset([DTD(root = data_path, split = 'val', transform=val_transform, download = True), \
+                                 DTD(root = data_path, split = 'train', transform=val_transform, download = True)])
         test_set = DTD(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 47
 
     elif dataset == 'oxfordpets':
         train_set = OxfordIIITPet(data_path, split = 'trainval', transform=train_transform, download=True)
-        val_set = OxfordIIITPet(data_path, split = 'trainval', transform=test_transform, download=True)
+        val_set = OxfordIIITPet(data_path, split = 'trainval', transform=val_transform, download=True)
         test_set = OxfordIIITPet(data_path, split = 'test', transform=test_transform, download=True)
         class_cnt = 37
     
     elif dataset == 'mnist':
         train_set = MNIST(data_path, train = True, transform=train_transform, download=True)
-        val_set = MNIST(data_path, train = True, transform=test_transform, download=True)
+        val_set = MNIST(data_path, train = True, transform=val_transform, download=True)
         test_set = MNIST(data_path, train = False, transform=test_transform, download=True)
         class_cnt = 10
 
     elif dataset == 'imagenet':
         imagenet_path = args.imagenet_path
         train_set = ImageFolder(os.path.join(imagenet_path, 'train'), transform=train_transform)
-        val_set = ImageFolder(os.path.join(imagenet_path, 'train'), transform=test_transform)
+        val_set = ImageFolder(os.path.join(imagenet_path, 'train'), transform=val_transform)
         test_set = ImageFolder(os.path.join(imagenet_path, 'val'), transform=test_transform)
         class_cnt = 1000
     
     elif dataset == 'tiny_imagenet':
         train_set = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=train_transform)
-        val_set = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=train_transform)
+        val_set = ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=val_transform)
         test_set = TinyImageNet(os.path.join(data_path, 'tiny-imagenet-200/val/images'), os.path.join(data_path, 'tiny-imagenet-200/val/val_annotations.txt'), 
                                 os.path.join(data_path, 'tiny-imagenet-200/wnids.txt'), transform=test_transform)
         class_cnt = 200

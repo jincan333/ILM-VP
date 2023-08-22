@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='random_cifar100'
+experiment_name='snip_cifar100'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -19,8 +19,8 @@ prune_modes=('weight')
 weight_optimizer='sgd'
 weight_lr=0.01
 seeds=(7 9 17)
-prune_methods=('random')
-gpus=(2 2 2)
+prune_methods=('snip')
+gpus=(0 0 3)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

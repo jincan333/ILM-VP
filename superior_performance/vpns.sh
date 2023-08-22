@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns'
+experiment_name='vpns_food101'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -9,19 +9,19 @@ fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'hydra']
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
-datasets=('oxfordpets')
+datasets=('food101')
 epochs=30
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.50,0.20,0.10'
+density_list='1,0.05'
 
-weight_optimizer='adam'
+weight_optimizer='sgd'
 weight_lr=0.01
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
-score_optimizer='sgd'
-score_lr=0.05
+score_optimizer='adam'
+score_lr=0.0001
 score_vp_optimizer=${score_optimizer}
 score_vp_lr=${score_lr}
 prune_modes=('score+vp_weight+vp')
@@ -30,7 +30,7 @@ global_vp_data=0
 # gmp_T=1000
 
 seeds=(7)
-gpus=(3)
+gpus=(5)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

@@ -45,7 +45,7 @@ for j in ${!networks[@]};do
                             --weight_lr ${weight_lr} \
                             --score_optimizer ${score_optimizer} \
                             --score_lr ${score_lr} \
-                            --gpu ${gpus[n]} \
+                            --gpu ${gpus[m]} \
                             --epochs ${epochs} \
                             --seed ${seeds[m]} \
                             > $log_filename 2>&1 &
