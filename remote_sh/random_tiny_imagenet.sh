@@ -20,7 +20,7 @@ weight_optimizer='sgd'
 weight_lr=0.01
 seeds=(7 9 17)
 prune_methods=('random')
-gpus=(2 2 2)
+gpus=(1 1 1)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

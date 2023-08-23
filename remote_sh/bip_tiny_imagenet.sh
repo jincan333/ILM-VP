@@ -27,7 +27,7 @@ seeds=(7 9 17)
 
 prune_modes=('score_weight')
 prune_methods=('bip')
-gpus=(1 1 1)
+gpus=(7 6 5)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

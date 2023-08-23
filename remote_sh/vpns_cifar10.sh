@@ -29,7 +29,7 @@ global_vp_data=0
 # gmp_T=1000
 
 seeds=(7 9 17)
-gpus=(2 2 2)
+gpus=(7 6 5)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
