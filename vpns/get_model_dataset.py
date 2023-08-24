@@ -35,6 +35,7 @@ import os
 
 
 def get_model(args):
+    torch.hub.set_dir('./cache')
     # network
     if args.network == "resnet18":
         from torchvision.models import resnet18, ResNet18_Weights

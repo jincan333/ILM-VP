@@ -6,3 +6,4 @@ logs/
 ablation_vp_search_exp/
 result/
 ckpts/
+cache/
