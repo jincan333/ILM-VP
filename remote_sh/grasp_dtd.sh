@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='snip_cifar10'
+experiment_name='grasp_dtd'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -10,17 +10,17 @@ fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'gmp']
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
-datasets=('cifar10')
-epochs=30
+datasets=('dtd')
+epochs=120
 # seed 7 9 17
-density_list='1,0.60,0.50,0.40,0.30,0.20,0.10,0.05,0.01'
+density_list='1,0.60,0.50,0.40,0.30,0.20,0.10'
 prune_modes=('weight')
 
 weight_optimizer='sgd'
 weight_lr=0.01
 seeds=(7 9 17)
-prune_methods=('snip')
-gpus=(0 0 0)
+prune_methods=('grasp')
+gpus=(4 3 2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

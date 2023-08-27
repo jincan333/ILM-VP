@@ -2,7 +2,6 @@ import torch
 import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
-
 import math
 import copy
 import types
@@ -17,7 +16,7 @@ def snip_forward_linear(self, x):
         return F.linear(x, self.weight * self.weight_mask, self.bias)
 
 
-def SNIP(masks, net, keep_ratio, train_dataloader, device, visual_prompt, label_mapping):
+def SNIP(net, keep_ratio, train_dataloader, device):
 
     # Grab a single batch from the training dataset
     inputs, targets = next(iter(train_dataloader))
@@ -33,28 +32,29 @@ def SNIP(masks, net, keep_ratio, train_dataloader, device, visual_prompt, label_
     for layer in net.modules():
         if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
             layer.weight_mask = nn.Parameter(torch.ones_like(layer.weight))
-            # nn.init.xavier_normal_(layer.weight)
+            nn.init.xavier_normal_(layer.weight)
             layer.weight.requires_grad = False
+
         # Override the forward methods:
         if isinstance(layer, nn.Conv2d):
             layer.forward = types.MethodType(snip_forward_conv2d, layer)
+
         if isinstance(layer, nn.Linear):
             layer.forward = types.MethodType(snip_forward_linear, layer)
 
     # Compute gradients (but don't apply them)
     net.zero_grad()
-    # outputs = label_mapping(net.forward(visual_prompt(inputs))) if visual_prompt else label_mapping(net.forward(inputs))
-    outputs = net.forward(visual_prompt(inputs)) if visual_prompt else net.forward(inputs)
-    loss = F.cross_entropy(outputs, targets)
+    outputs = net.forward(inputs)
+    loss = F.nll_loss(outputs, targets)
     loss.backward()
 
-    grads_abs={}
-    for name, weight in net.named_parameters():
-        if name[:-5] not in masks: continue
-        grads_abs[name[:-5]] = torch.abs(weight.grad)
+    grads_abs = []
+    for layer in net.modules():
+        if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
+            grads_abs.append(torch.abs(layer.weight_mask.grad))
 
     # Gather all scores in a single vector and normalise
-    all_scores = torch.cat([torch.flatten(x) for x in grads_abs.values()])
+    all_scores = torch.cat([torch.flatten(x) for x in grads_abs])
     norm_factor = torch.sum(all_scores)
     all_scores.div_(norm_factor)
 
@@ -62,28 +62,14 @@ def SNIP(masks, net, keep_ratio, train_dataloader, device, visual_prompt, label_
     threshold, _ = torch.topk(all_scores, num_params_to_keep, sorted=True)
     acceptable_score = threshold[-1]
 
-    # calculate mask
-    for name in grads_abs.keys():
-        def unravel_index(index, shape):
-            out = []
-            for dim in reversed(shape):
-                out.append(index % dim)
-                index = index // dim
-            return tuple(reversed(out))
+    layer_wise_sparsities = []
+    for g in grads_abs:
+        mask = ((g / norm_factor) >= acceptable_score).float()
+        sparsity = float((mask==0).sum().item() / mask.numel())
+        layer_wise_sparsities.append(sparsity)
+    print(f'layer-wise sparsity is {layer_wise_sparsities}')
 
-        for name in grads_abs.keys():
-            mask = ((grads_abs[name] / norm_factor) >= acceptable_score).float()
-            if torch.sum(mask) == 0:  # If all values are 0...
-                flat_idx = torch.argmax(grads_abs[name])
-                unflat_idx = unravel_index(flat_idx, grads_abs[name].size())
-                mask[unflat_idx] = 1  # set the maximum argument to 1
-
-            masks[name] = mask
-
-
-    # for name in grads_abs.keys():
-        # masks[name] = ((grads_abs[name] / norm_factor) >= acceptable_score).float()
-
+    return layer_wise_sparsities
 
 def SNIP_training(net, keep_ratio, train_dataloader, device, masks, death_rate):
     # TODO: shuffle?
@@ -151,17 +137,12 @@ def SNIP_training(net, keep_ratio, train_dataloader, device, masks, death_rate):
 
 
 def GraSP_fetch_data(dataloader, num_classes, samples_per_class):
-    samples_per_class = min(int(512 // num_classes), samples_per_class)
     datas = [[] for _ in range(num_classes)]
     labels = [[] for _ in range(num_classes)]
     mark = dict()
     dataloader_iter = iter(dataloader)
     while True:
-        try:
-            inputs, targets = next(dataloader_iter)
-        except StopIteration:
-            print("The iterator has now run out of items.")
-            break
+        inputs, targets = next(dataloader_iter)
         for idx in range(inputs.shape[0]):
             x, y = inputs[idx:idx+1], targets[idx:idx+1]
             category = y.item()
@@ -193,7 +174,7 @@ def count_fc_parameters(net):
     return total
 
 
-def GraSP(masks, net, ratio, train_dataloader, device, visual_prompt, label_mapping, num_classes=10, samples_per_class=25, num_iters=1, T=200, reinit=True):
+def GraSP(net, ratio, train_dataloader, device, num_classes=10, samples_per_class=25, num_iters=1, T=200, reinit=True):
     eps = 1e-10
     keep_ratio = ratio
     old_net = net
@@ -297,55 +278,38 @@ def GraSP(masks, net, ratio, train_dataloader, device, visual_prompt, label_mapp
         mask = ((g / norm_factor) <= acceptable_score).float()
         sparsity = float((mask == 0).sum().item() / mask.numel())
         layer_wise_sparsities.append(sparsity)
-    for sparsity_, name in zip(layer_wise_sparsities, masks):
-        masks[name][:] = (torch.rand(masks[name].shape) < (1-sparsity_)).float().data.cuda()
 
+    print(f'layer-wise sparsity is {layer_wise_sparsities}')
 
-def SynFlow(masks, net, keep_ratio, train_dataloader, device, visual_prompt, label_mapping):
+    return layer_wise_sparsities
 
-    inputs, targets = next(iter(train_dataloader))
-    inputs = inputs.to(device)
-    targets = targets.to(device)
-    inputs.requires_grad = True
+def synflow(net, keep_ratio, train_dataloader, device):
 
-    net = copy.deepcopy(net).to(device)
-    scores = {}
-    epochs=100
-    # mask iteratively
-    for epoch in range(epochs):
-        # linearize
+    @torch.no_grad()
+    def linearize(model):
+        # model.double()
         signs = {}
-        for name, param in net.state_dict().items():
+        for name, param in model.state_dict().items():
             signs[name] = torch.sign(param)
             param.abs_()
-        # input_dim = list(inputs[0, :].shape)
-        # input = torch.ones([1] + input_dim).to(device)
-        # Use visual prompt
-        input = inputs
-        output = net(visual_prompt(input)) if visual_prompt else net(input)
-        torch.sum(output).backward()
-        # calculate scores
-        for name, weight in net.named_parameters():
-            if name not in masks: continue
-            scores[name] = torch.clone(weight.grad * weight).detach().abs_()
-            weight.grad.data.zero_()
-        # unlinearize
-        for name, param in net.state_dict().items():
+        return signs
+
+    @torch.no_grad()
+    def nonlinearize(model, signs):
+        # model.float()
+        for name, param in model.state_dict().items():
             param.mul_(signs[name])
-        # calculate ratio to mask
-        ratio = keep_ratio**((epoch+1)/epochs)
-        # calculate mask
-        global_scores = torch.cat([torch.flatten(v) for v in scores.values()])
-        k = int((1 - ratio) * global_scores.numel())
-        if not k < 1:
-            threshold, _ = torch.kthvalue(global_scores, k)
-            for name, weight in net.named_parameters():
-                if name not in masks: continue
-                score = scores[name] 
-                zero = torch.tensor([0.]).to(device)
-                one = torch.tensor([1.]).to(device)
-                masks[name].copy_(torch.where(score <= threshold, zero, one))
-        # apply mask to net
-        for name, weight in net.named_parameters():
-            if name not in masks: continue
-            weight.data=weight.data.mul_(masks[name])
+
+    signs = linearize(net)
+
+    (data, _) = next(iter(train_dataloader))
+    input_dim = list(data[0, :].shape)
+    input = torch.ones([1] + input_dim).to(device)  # , dtype=torch.float64).to(device)
+    output = model(input)
+    torch.sum(output).backward()
+
+    for _, p in self.masked_parameters:
+        self.scores[id(p)] = torch.clone(p.grad * p).detach().abs_()
+        p.grad.data.zero_()
+
+    nonlinearize(model, signs)
