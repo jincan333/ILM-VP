@@ -16,7 +16,7 @@ epochs=60
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'score+weight_vp', 'weight+vp_score', 'score+vp_weight+vp', 'score_weight']
 
-density_list='1,0.6,0.5,0.4,0.3,0.2,0.1'
+density_list='1,0.6,0.5,0.4,0.3,0.2,0.1,0.05,0.01'
 
 weight_optimizer='sgd'
 weight_lr=0.01
@@ -27,7 +27,7 @@ seeds=(7 9 17)
 
 prune_modes=('score_weight')
 prune_methods=('bip')
-gpus=(0 0 0)
+gpus=(4 3 2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
