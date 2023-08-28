@@ -228,6 +228,7 @@ def GraSP(masks, net, ratio, train_dataloader, device, visual_prompt, label_mapp
         targets = targets.to(device)
 
         outputs = net.forward(inputs[:N//2])/T
+        # outputs = label_mapping(net.forward(visual_prompt(inputs[:N//2])))/T if visual_prompt else label_mapping(net.forward(inputs[:N//2]))/T
         if print_once:
             # import pdb; pdb.set_trace()
             x = F.softmax(outputs)
@@ -244,6 +245,7 @@ def GraSP(masks, net, ratio, train_dataloader, device, visual_prompt, label_mapp
                 grad_w[idx] += grad_w_p[idx]
 
         outputs = net.forward(inputs[N // 2:])/T
+        # outputs = label_mapping(net.forward(visual_prompt(inputs[N // 2:])))/T if visual_prompt else label_mapping(net.forward(inputs[N // 2:]))/T
         loss = F.cross_entropy(outputs, targets[N // 2:])
         grad_w_p = autograd.grad(loss, weights, create_graph=False)
         if grad_w is None:
@@ -262,6 +264,7 @@ def GraSP(masks, net, ratio, train_dataloader, device, visual_prompt, label_mapp
         ret_inputs.append(inputs)
         ret_targets.append(targets)
         outputs = net.forward(inputs)/T
+        # outputs = label_mapping(net.forward(visual_prompt(inputs)))/T  if visual_prompt else label_mapping(net.forward(inputs))/T
         loss = F.cross_entropy(outputs, targets)
         # ===== debug ==============
 

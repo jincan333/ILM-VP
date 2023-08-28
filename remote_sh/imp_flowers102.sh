@@ -10,7 +10,7 @@ fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'gmp']
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
-datasets=('cifar10')
+datasets=('flowers102')
 epochs=120
 # seed 7 9 17
 # density_list='1,0.8000,0.6400,0.5120,0.4100,0.3280,0.2620,0.2097,0.1678,0.1342,0.1074,0.0859,0.0687,0.0550'

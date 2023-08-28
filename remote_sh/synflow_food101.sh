@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='synflow_food101'
+experiment_name='synflow_food101_more'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -13,7 +13,7 @@ networks=('resnet18')
 datasets=('food101')
 epochs=120
 # seed 7 9 17
-density_list='1,0.60,0.50,0.40,0.30,0.20,0.10'
+density_list='1,0.40,0.30,0.20,0.10'
 prune_modes=('weight')
 
 weight_optimizer='sgd'

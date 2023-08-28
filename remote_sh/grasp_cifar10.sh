@@ -13,7 +13,7 @@ networks=('resnet18')
 datasets=('cifar10')
 epochs=120
 # seed 7 9 17
-density_list='1,0.60,0.50,0.40,0.30,0.20,0.10,0.05,0.01'
+density_list='1,0.40,0.30,0.20,0.10,0.05,0.01'
 # 'weight', 'weight+vp'
 prune_modes=('weight')
 
