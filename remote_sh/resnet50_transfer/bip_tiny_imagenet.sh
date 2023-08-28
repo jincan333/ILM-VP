@@ -19,7 +19,7 @@ epochs=60
 density_list='1,0.6,0.5,0.4,0.3,0.2,0.1'
 
 weight_optimizer='sgd'
-weight_lr=0.01
+weight_lr=0.0001
 score_optimizer='adam'
 score_lr=0.0001
 seeds=(7)

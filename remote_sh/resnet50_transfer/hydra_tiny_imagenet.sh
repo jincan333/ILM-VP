@@ -19,7 +19,7 @@ epochs=60
 density_list='1,0.60,0.50,0.40,0.30,0.20,0.10'
 
 weight_optimizer='sgd'
-weight_lr=0.01
+weight_lr=0.0001
 score_optimizer=${weight_optimizer}
 score_lr=${weight_lr}
 seeds=(7)
