@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='grasp_cifar100'
+experiment_name='omp_cifar100'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -9,7 +9,7 @@ fi
 # datasets=("ucf101" "eurosat" "oxfordpets" "stanfordcars" "sun397") 
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'gmp']
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
-networks=('resnet18')
+networks=('resnet50')
 datasets=('cifar100')
 epochs=120
 # seed 7 9 17
@@ -18,9 +18,9 @@ prune_modes=('weight')
 
 weight_optimizer='sgd'
 weight_lr=0.01
-seeds=(7 9 17)
-prune_methods=('grasp')
-gpus=(0 0 0)
+seeds=(7)
+prune_methods=('omp')
+gpus=(0)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
