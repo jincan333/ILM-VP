@@ -217,6 +217,7 @@ def GraSP(masks, net, ratio, train_dataloader, device, visual_prompt, label_mapp
     for it in range(num_iters):
         print("(1): Iterations %d/%d." % (it, num_iters))
         inputs, targets = GraSP_fetch_data(train_dataloader, num_classes, samples_per_class)
+        # inputs, targets = next(train_dataloader)
         N = inputs.shape[0]
         din = copy.deepcopy(inputs)
         dtarget = copy.deepcopy(targets)

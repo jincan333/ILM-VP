@@ -18,9 +18,9 @@ prune_modes=('weight')
 
 weight_optimizer='sgd'
 weight_lr=0.01
-seeds=(7 9 17)
+seeds=(7)
 prune_methods=('grasp')
-gpus=(0 1 2)
+gpus=(0)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
