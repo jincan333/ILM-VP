@@ -16,18 +16,18 @@ epochs=60
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'score+weight_vp', 'weight+vp_score', 'score+vp_weight+vp', 'score_weight']
 
-density_list='1,0.50,0.20,0.10'
+density_list='1,0.60,0.50,0.40,0.30,0.20,0.10,0.05,0.01'
 
 weight_optimizer='adam'
 weight_lr=0.001
 score_optimizer='adam'
-score_lr=0.0001
-seeds=(7)
+score_lr=0.001
+seeds=(7 9 17)
 # gmp_T=1000
 
 prune_modes=('score_weight')
 prune_methods=('bip')
-gpus=(0)
+gpus=(7 6 5)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

@@ -20,7 +20,7 @@ weight_optimizer='adam'
 weight_lr=0.001
 seeds=(7 9 17)
 prune_methods=('synflow')
-gpus=(7 6 5)
+gpus=(4 3 2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
