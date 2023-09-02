@@ -66,7 +66,8 @@ def setup_optimizer_and_prompt(network, args):
             visual_prompt = RandomVisualPrompt(args, normalize=normalize).to(device)
         else:
             raise ValueError("Prompt method should be one of [pad, fix, random]")
-        score_vp_optimizer, score_vp_scheduler = get_optimizer(visual_prompt.parameters(), args.score_vp_optimizer, args.score_vp_scheduler, args.score_vp_lr, args.score_vp_weight_decay, args)
+        if args.prune_method in ('vpns', 'bip', 'hydra'):
+            score_vp_optimizer, score_vp_scheduler = get_optimizer(visual_prompt.parameters(), args.score_vp_optimizer, args.score_vp_scheduler, args.score_vp_lr, args.score_vp_weight_decay, args)
         weight_vp_optimizer, weight_vp_scheduler = get_optimizer(visual_prompt.parameters(), args.weight_vp_optimizer, args.weight_vp_scheduler, args.weight_vp_lr, args.weight_vp_weight_decay, args)
     if args.prune_method in ('vpns', 'bip', 'hydra'):
         score_params = [param for param in network.parameters() if hasattr(param, 'is_score') and param.is_score]

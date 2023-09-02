@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='omp_tiny_imagenet'
+experiment_name='omp_vgg_transfer'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -20,7 +20,7 @@ weight_optimizer='sgd'
 weight_lr=0.01
 seeds=(7)
 prune_methods=('omp')
-gpus=(0)
+gpus=(2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

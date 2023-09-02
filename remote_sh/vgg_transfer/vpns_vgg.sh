@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_tiny_imagenet'
+experiment_name='vpns_vgg_transfer'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -21,7 +21,7 @@ weight_lr=0.01
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
 score_optimizer='adam'
-score_lr=0.0001
+score_lr=0.00001
 score_vp_optimizer=${score_optimizer}
 score_vp_lr=${score_lr}
 prune_modes=('score+vp_weight+vp')

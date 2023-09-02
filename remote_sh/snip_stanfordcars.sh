@@ -16,11 +16,11 @@ epochs=120
 density_list='1,0.60,0.50,0.40,0.30,0.20,0.10,0.05,0.01'
 prune_modes=('weight')
 
-weight_optimizer='adam'
-weight_lr=0.001
-seeds=(7 9 17)
+weight_optimizer='sgd'
+weight_lr=0.1
+seeds=(7)
 prune_methods=('snip')
-gpus=(4 3 2)
+gpus=(4)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
