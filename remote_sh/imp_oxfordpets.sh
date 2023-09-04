@@ -19,10 +19,10 @@ density_list='1,0.8000,0.6400,0.5120,0.4100,0.3280,0.2620,0.2097,0.1678,0.1342,0
 prune_modes=('weight')
 
 weight_optimizer='sgd'
-weight_lr=0.01
+weight_lr=0.001
 seeds=(7 9 17)
 prune_methods=('imp')
-gpus=(0 0 0)
+gpus=(4 3 2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

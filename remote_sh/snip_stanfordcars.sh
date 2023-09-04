@@ -16,8 +16,8 @@ epochs=120
 density_list='1,0.60,0.50,0.40,0.30,0.20,0.10,0.05,0.01'
 prune_modes=('weight')
 
-weight_optimizer='sgd'
-weight_lr=0.1
+weight_optimizer='adam'
+weight_lr=0.0001
 seeds=(7)
 prune_methods=('snip')
 gpus=(4)

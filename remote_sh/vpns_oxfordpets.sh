@@ -19,18 +19,18 @@ density_list='1,0.60,0.50,0.40,0.30,0.20,0.10'
 weight_optimizer='sgd'
 weight_lr=0.01
 weight_vp_optimizer=${weight_optimizer}
-weight_vp_lr=0.001
+weight_vp_lr=${weight_lr}
 score_optimizer='sgd'
-score_lr=0.01
+score_lr=0.05
 score_vp_optimizer=${score_optimizer}
-score_vp_lr=0.001
+score_vp_lr=${score_lr}
 prune_modes=('score+vp_weight+vp')
 prune_methods=('vpns')
 global_vp_data=0
 # gmp_T=1000
 
-seeds=(7)
-gpus=(1)
+seeds=(9 17)
+gpus=(3 2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
