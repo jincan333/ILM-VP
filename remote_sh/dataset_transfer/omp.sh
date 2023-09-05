@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='omp_dataset_transfer'
+experiment_name='omp_dataset_transfer_more'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -13,7 +13,7 @@ networks=('resnet18')
 datasets=('imagenet')
 epochs=120
 # seed 7 9 17
-density_list='1,0.50,0.20,0.10'
+density_list='1,0.60,0.40,0.30'
 prune_modes=('weight')
 
 weight_optimizer='sgd'

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_dataset_transfer'
+experiment_name='vpns_dataset_transfer_more'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -14,7 +14,7 @@ epochs=30
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.50,0.20,0.10'
+density_list='1,0.60,0.40,0.30'
 
 weight_optimizer='sgd'
 weight_lr=0.01
