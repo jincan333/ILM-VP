@@ -19,10 +19,14 @@ def last_winning_ticket_sparsity(unpruned_acc, avg_acc_list, num_sparsities, err
     return 0
 
 def extract_y_err(y_dense, performance_str):
-    y = re.findall('(\d+\.\d+)(?=\()', performance_str)
-    err = re.findall('(?<=\()(\d+\.\d+)', performance_str)
-    y = [float(num) for num in y]
-    err = [float(num) for num in err]
+    if '(' in performance_str or ')' in performance_str:
+        y = re.findall('(\d+\.\d+)(?=\()', performance_str)
+        err = re.findall('(?<=\()(\d+\.\d+)', performance_str)
+        y = [float(num) for num in y]
+        err = [float(num) for num in err]       
+    else:
+        y = [float(i) for i in performance_str.split()]
+        err = [0] * len(y)
 
     y.insert(0, y_dense)
     err.insert(0, 0)
@@ -55,10 +59,10 @@ if __name__ == "__main__":
     # y_Grasp_time = np.insert(np.array([120 for i in range(num - 1)]), 0, 0)
     
     # 7, 11; 9, 20
-    title = 'ResNet-18, OxfordPets'
+    title = 'ResNet-18, CIFAR100'
     num, imp_num = 7, 11
-    y_dense = 90.36
-    y_min, y_max = 82,91.2
+    y_dense = 83.59
+    y_min, y_max = 60,84.5
     
     # 10, 20
     x_sparsity_list = np.array([0, 40, 50, 60, 70, 80, 90, 95, 99][:num])
@@ -68,24 +72,14 @@ if __name__ == "__main__":
     # y_IMP = np.array([y_dense,73.01,72.72,72.36,71.97,71.18,70.49,69.52,68.43,67.17,65.89])
     # y_IMP_err = np.array([0,0.10,0.16,0.10,0.17,0.39,0.21,0.25,0.39,0.33,0.18])
 
-    IMP    ='89.93(0.13)	90.13(0.21)	90.11(0.09)	89.87(0.17)	89.51(0.22)	88.55(0.06)	87.72(0.96)	86.31(0.33)	84.87(0.60)	82.69(0.45)'
-    SNIP   ='88.54(0.23)	85.32(2.46)	79.49(1.11)	74.16(5.35)	71.36(6.45)	70.64(3.83)'
-    GraSP  ='74.38(2.20)	70.69(4.77)	67.23(3.64)	66.01(2.40)	62.39(0.51)	58.93(2.19)'
-    SynFlow='88.16(0.45)	87.91(0.39)	87.07(0.54)	85.17(0.49)	83.33(0.72)	80.20(0.37)'
-    Random ='77.36(2.75)	68.06(1.28)	58.98(0.92)	51.83(2.87)	46.22(0.41)	46.45(1.52)'
-    OMP    ='89.86(0.17)	89.94(0.11)	89.89(0.17)	89.09(0.46)	86.56(0.18)	81.95(0.46)'
-    BiP    ='88.52(0.45)	88.50(0.38)	88.06(0.21)	88.09(0.06)	86.34(0.36)	85.41(0.82)'
-    HYDRA  ='90.51(0.26)	90.23(0.11)	90.00(0.31)	89.53(0.36)	87.39(0.30)	84.67(0.25)'
-    VPNs   ='90.86(0.07)	90.60(0.16)	90.06(0.05)	89.78(0.10)	87.95(0.35)	85.41(0.41)'
+    Slim      ='83.05 	82.58 	81.08 	77.40 	66.69 	4.58'
+    DepGraph  ='80.02 	79.14 	75.62 	61.78 	6.36 	3.67'
+    ABCpruner ='80.02 	79.14 	75.62 	61.78 	6.36 	3.67'
+    VPNs      ='83.85 	82.86 	81.96 	80.47 	78.92 	74.10'
 
-    y_IMP, y_IMP_err = extract_y_err(y_dense, IMP)
-    y_SNIP, y_SNIP_err = extract_y_err(y_dense, SNIP)
-    y_GraSP, y_GraSP_err = extract_y_err(y_dense, GraSP)
-    y_SynFlow, y_SynFlow_err = extract_y_err(y_dense, SynFlow)
-    y_Random, y_Random_err = extract_y_err(y_dense, Random)
-    y_OMP, y_OMP_err = extract_y_err(y_dense, OMP)
-    y_BiP, y_BiP_err = extract_y_err(y_dense, BiP)
-    y_HYDRA, y_HYDRA_err = extract_y_err(y_dense, HYDRA)
+    y_Slim, y_Slim_err = extract_y_err(y_dense, Slim)
+    y_DepGraph, y_DepGraph_err = extract_y_err(y_dense, DepGraph)
+    y_ABCpruner, y_ABCpruner_err = extract_y_err(y_dense, ABCpruner)
     y_VPNs, y_VPNs_err = extract_y_err(y_dense, VPNs)
 
     y_best = np.max(y_VPNs)
@@ -138,26 +132,30 @@ if __name__ == "__main__":
     best_alpha = 1.0
     dense_color = 'black'
     dense_alpha = 1.0
-    SynFlow_color = 'red'
-    SynFlow_alpha = 0.9
     VPNs_color = 'green'
     VPNs_alpha = 0.9
-    BiP_color = 'hotpink'
-    BiP_alpha = alpha
-    HYDRA_color = 'blue'
-    HYDRA_alpha = alpha - 0.1
-    IMP_color = 'darkorange'
-    IMP_alpha = alpha
-    OMP_color = 'darkolivegreen'
-    OMP_alpha = alpha
-    Grasp_color = 'purple'
-    Grasp_alpha = alpha
-    SNIP_color = 'gold'
-    SNIP_alpha = alpha
-    Random_color = 'violet'
-    Random_alpha = alpha
-
-
+    # SynFlow_color = 'red'
+    # SynFlow_alpha = 0.9
+    # BiP_color = 'hotpink'
+    # BiP_alpha = alpha
+    # HYDRA_color = 'blue'
+    # HYDRA_alpha = alpha - 0.1
+    # IMP_color = 'darkorange'
+    # IMP_alpha = alpha
+    # OMP_color = 'darkolivegreen'
+    # OMP_alpha = alpha
+    # Grasp_color = 'purple'
+    # Grasp_alpha = alpha
+    # SNIP_color = 'gold'
+    # SNIP_alpha = alpha
+    # Random_color = 'violet'
+    # Random_alpha = alpha
+    Slim_color = 'violet'
+    Slim_alpha = alpha
+    DepGraph_color = 'darkolivegreen'
+    DepGraph_alpha = alpha
+    ABCpruner_color = 'blue'
+    ABCpruner_alpha = alpha - 0.1
     fill_in_alpha = 0.2
 
     # plt.rcParams['font.sans-serif'] = 'Times New Roman'
@@ -169,43 +167,18 @@ if __name__ == "__main__":
 
     l_dense = plt.axhline(y=y_dense, color=dense_color, linestyle='--', linewidth=3, label="Dense")
 
-    l_HYDRA = plt.plot(x_grid, y_HYDRA, color=HYDRA_color, marker='v', markevery=markevery, linestyle='-',
+    l_Slim = plt.plot(x_grid, y_Slim, color=Slim_color, marker='v', markevery=markevery, linestyle='-',
                       linewidth=linewidth,
-                      markersize=markersize, label="Hydra", alpha=HYDRA_alpha)
-    plt.fill_between(x_grid, y_HYDRA - y_HYDRA_err, y_HYDRA + y_HYDRA_err, color=HYDRA_color, alpha=fill_in_alpha)
+                      markersize=markersize, label="Slim", alpha=Slim_alpha)
+    plt.fill_between(x_grid, y_Slim - y_Slim_err, y_Slim + y_Slim_err, color=Slim_color, alpha=fill_in_alpha)
 
-    l_IMP = plt.plot(x_IMP_sparsity_list, y_IMP, color=IMP_color, marker='o', markevery=markevery, linestyle='-', linewidth=linewidth,
-                    markersize=markersize, label="IMP", alpha=IMP_alpha)
-    plt.fill_between(x_IMP_sparsity_list, y_IMP - y_IMP_err, y_IMP + y_IMP_err, color=IMP_color, alpha=fill_in_alpha)
+    l_DepGraph = plt.plot(x_grid, y_DepGraph, color=DepGraph_color, marker='s', markevery=markevery, linestyle='-', linewidth=linewidth,
+                    markersize=markersize, label="DepGraph", alpha=DepGraph_alpha)
+    plt.fill_between(x_grid, y_DepGraph - y_DepGraph_err, y_DepGraph + y_DepGraph_err, color=DepGraph_color, alpha=fill_in_alpha)
 
-    l_OMP = plt.plot(x_grid, y_OMP, color=OMP_color, marker='s', markevery=markevery, linestyle='-', linewidth=linewidth,
-                    markersize=markersize, label="OMP", alpha=OMP_alpha)
-    plt.fill_between(x_grid, y_OMP - y_OMP_err, y_OMP + y_OMP_err, color=OMP_color, alpha=fill_in_alpha)
-
-    l_GraSP = plt.plot(x_grid, y_GraSP, color=Grasp_color, marker='o', markevery=markevery, linestyle='-',
-                      linewidth=linewidth,
-                      markersize=markersize, label="Grasp", alpha=Grasp_alpha)
-    plt.fill_between(x_grid, y_GraSP - y_GraSP_err, y_GraSP + y_GraSP_err, color=Grasp_color, alpha=fill_in_alpha)
-
-    l_BiP = plt.plot(x_grid, y_BiP, color=BiP_color, marker='v', markevery=markevery, linestyle='-',
-                    linewidth=linewidth,
-                    markersize=markersize + 4, label="BiP", alpha=BiP_alpha)
-    plt.fill_between(x_grid, y_BiP - y_BiP_err, y_BiP + y_BiP_err, color=BiP_color, alpha=fill_in_alpha)
-
-    l_SynFlow = plt.plot(x_grid, y_SynFlow, color=SynFlow_color, marker='v', markevery=markevery, linestyle='-',
-                linewidth=linewidth,
-                markersize=markersize + 4, label="SynFlow", alpha=SynFlow_alpha)
-    plt.fill_between(x_grid, y_SynFlow - y_SynFlow_err, y_SynFlow + y_SynFlow_err, color=SynFlow_color, alpha=fill_in_alpha)
-
-    l_SNIP = plt.plot(x_grid, y_SNIP, color=SNIP_color, marker='o', markevery=markevery, linestyle='-',
-                linewidth=linewidth,
-                markersize=markersize + 4, label="SNIP", alpha=SNIP_alpha)
-    plt.fill_between(x_grid, y_SNIP - y_SNIP_err, y_SNIP + y_SNIP_err, color=SNIP_color, alpha=fill_in_alpha)
-
-    l_Random = plt.plot(x_grid, y_Random, color=Random_color, marker='o', markevery=markevery, linestyle='-',
-            linewidth=linewidth,
-            markersize=markersize + 4, label="Random", alpha=Random_alpha)
-    plt.fill_between(x_grid, y_Random - y_Random_err, y_Random + y_Random_err, color=Random_color, alpha=fill_in_alpha)
+    l_ABCpruner = plt.plot(x_grid, y_ABCpruner, color=ABCpruner_color, marker='s', markevery=markevery, linestyle='-', linewidth=linewidth,
+                    markersize=markersize, label="ABCpruner", alpha=ABCpruner_alpha)
+    plt.fill_between(x_grid, y_ABCpruner - y_ABCpruner_err, y_ABCpruner + y_ABCpruner_err, color=ABCpruner_color, alpha=fill_in_alpha)
 
     l_VPNs = plt.plot(x_grid, y_VPNs, color=VPNs_color, marker='*', markevery=markevery, linestyle='-',
         linewidth=linewidth,
@@ -222,7 +195,7 @@ if __name__ == "__main__":
     plt.ylim([y_min, y_max])
     plt.xlim(0, 100)
 
-    # plt.legend(fontsize=fontsize - 20, loc=3, fancybox=True, shadow=True, framealpha=1.0, borderpad=0.3)
+    plt.legend(fontsize=fontsize - 15, loc=3, fancybox=True, shadow=True, framealpha=1.0, borderpad=0.3)
     plt.xlabel(x_label, fontsize=fontsize)
     plt.ylabel(y_label, fontsize=fontsize)
     plt.xticks(x_grid, x_sparsity_list, rotation=0, fontsize=fontsize)
@@ -252,7 +225,7 @@ if __name__ == "__main__":
     # plt.ylabel(y_time_label, fontsize=fontsize)
     # plt.yticks(fontsize=fontsize)
     # plt.ylim(0, (int(max(y_IMP_time) / 100) + 1) * 100)
-    plt.savefig(f"pic/superior_performance/{title}.pdf")
+    plt.savefig(f"pic/structural/{title}.pdf")
     plt.show()
     plt.close()
 
