@@ -10,7 +10,7 @@ fi
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('vgg')
 datasets=('tiny_imagenet')
-epochs=10
+epochs=5
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
@@ -19,7 +19,7 @@ density_list='1,0.60'
 
 
 weight_optimizer='sgd'
-weight_lr=0.0001
+weight_lr=0.005
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
 score_optimizer='adam'
@@ -29,16 +29,17 @@ score_vp_lr=${score_lr}
 prune_modes=('score+vp_weight+vp')
 prune_methods=('vpns')
 global_vp_data=0
+batch_size=128
 # gmp_T=1000
 
 seeds=(7)
-gpus=(2)
+gpus=(4)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
             for l in ${!prune_methods[@]};do
                     for m in ${!seeds[@]};do            
-                        log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seeds[m]}_${weight_optimizer}_${weight_lr}_${weight_vp_optimizer}_${weight_vp_lr}_${score_optimizer}_${score_lr}_${score_vp_optimizer}_${score_vp_lr}.log
+                        log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seeds[m]}_${weight_optimizer}_${weight_lr}_${weight_vp_optimizer}_${weight_vp_lr}_${score_optimizer}_${score_lr}_${score_vp_optimizer}_${score_vp_lr}_${gpus[m]}.log
                             nohup python ./vpns/vpns_unstructured_explore.py \
                                 --experiment_name ${experiment_name} \
                                 --dataset ${datasets[i]} \
@@ -56,6 +57,7 @@ for j in ${!networks[@]};do
                                 --score_vp_lr ${score_vp_lr} \
                                 --gpu ${gpus[m]} \
                                 --epochs ${epochs} \
+                                --batch_size ${batch_size} \
                                 --seed ${seeds[m]} \
                                 > $log_filename 2>&1 &
                     done

@@ -32,7 +32,7 @@ global_vp_data=0
 seeds=(7)
 
 prompt_methods=('fix' 'random')
-gpus=(1 0)
+gpus=(7 6)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
