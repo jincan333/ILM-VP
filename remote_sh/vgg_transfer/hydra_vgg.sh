@@ -19,15 +19,15 @@ epochs=60
 density_list='1,0.60,0.50,0.40,0.30,0.20,0.10'
 
 weight_optimizer='sgd'
-weight_lr=0.01
-score_optimizer=${weight_optimizer}
-score_lr=${weight_lr}
+weight_lr=0.005
+score_optimizer='adam'
+score_lr=0.00005
 seeds=(7)
 # gmp_T=1000
 
 prune_modes=('score_weight')
 prune_methods=('hydra')
-gpus=(0)
+gpus=(3)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

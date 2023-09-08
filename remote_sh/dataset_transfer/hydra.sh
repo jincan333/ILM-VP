@@ -16,18 +16,18 @@ epochs=60
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.6,0.4,0.3,0.1'
+density_list='1,0.6,0.5,0.4,0.3,0.2,0.1'
 
 weight_optimizer='sgd'
 weight_lr=0.01
-score_optimizer=${weight_optimizer}
-score_lr=${weight_lr}
+score_optimizer='adam'
+score_lr=0.0001
 seeds=(7)
 # gmp_T=1000
 
 prune_modes=('score_weight')
 prune_methods=('hydra')
-gpus=(1)
+gpus=(3)
 imagenet_path='/home/xinyu/dataset/imagenet2012'
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do

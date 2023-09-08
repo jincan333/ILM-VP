@@ -284,9 +284,9 @@ def get_torch_dataset(args, transform_type):
     #     val_loader = DataLoader(val_set, batch_size=128, shuffle=False, num_workers=args.workers, pin_memory=True)
     #     test_loader = DataLoader(test_set, batch_size=128, shuffle=False, num_workers=args.workers, pin_memory=True)
     else:
-        train_loader = DataLoader(train_set, batch_size=256, shuffle=True, num_workers=args.workers, pin_memory=True)
-        val_loader = DataLoader(val_set, batch_size=256, shuffle=True, num_workers=args.workers, pin_memory=True)
-        test_loader = DataLoader(test_set, batch_size=256, shuffle=False, num_workers=args.workers, pin_memory=True)
+        train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=True)
+        val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=True)
+        test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=False, num_workers=args.workers, pin_memory=True)
     args.class_cnt = class_cnt
     args.normalize = normalize
     print(f'Dataset information: {dataset}\t {len(train_set)} images for training \t {len(val_set)} images for validation\t')
