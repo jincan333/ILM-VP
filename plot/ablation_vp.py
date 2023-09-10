@@ -59,10 +59,10 @@ if __name__ == "__main__":
     # y_Grasp_time = np.insert(np.array([120 for i in range(num - 1)]), 0, 0)
     
     # 7, 11; 9, 20
-    title = 'Prompt Method'
+    title = 'Prompt Size'
     num, imp_num = 7, 11
     y_dense = 82.10
-    y_min, y_max = 78,84
+    y_min, y_max = 80.5,83.5
     
     # 10, 20
     x_sparsity_list = np.array([0, 40, 50, 60, 70, 80, 90, 95, 99][:num])
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     # y_IMP = np.array([y_dense,73.01,72.72,72.36,71.97,71.18,70.49,69.52,68.43,67.17,65.89])
     # y_IMP_err = np.array([0,0.10,0.16,0.10,0.17,0.39,0.21,0.25,0.39,0.33,0.18])
 
-    prompt16   ='83.47 	83.29 	82.91 	82.64 	81.85 	80.17 '
+    prompt16   ='83.47 	83.29 	83.29 	82.98 	82.17 	80.87 '
     prompt32   ='83.22 	83.41 	83.26 	82.98 	81.79 	80.87 '
     prompt48   ='83.06 	83.17 	83.13 	83.08 	82.02 	80.39 '
     prompt64   ='83.00 	83.19 	83.20 	83.09 	82.09 	80.45 '
@@ -80,21 +80,21 @@ if __name__ == "__main__":
     input128   ='80.24 	80.41 	81.01 	80.27 	79.99 	78.48 '
     input160   ='81.87 	82.82 	82.22 	81.79 	80.80 	79.80 '
     input192   ='82.73 	83.13 	82.80 	82.61 	82.24 	80.57 '
-    input224   ='83.47 	83.29 	82.91 	82.64 	81.85 	80.17 '
+    input224   ='83.47 	83.29 	83.29 	82.98 	82.17 	80.87 '
 
-    pad    = '83.47 	83.29 	82.91 	82.64 	81.85 	80.17 '
-    fix    = '82.73 	83.13 	82.80 	82.61 	82.24 	80.57 '
-    random = '81.87 	82.82 	82.22 	81.79 	80.80 	79.80 '
+    pad    = '83.47 	83.29 	83.29 	82.98 	82.17 	80.87 '
+    fix    = '82.98 	83.08 	83.00 	82.93 	81.93 	80.55 '
+    random = '82.93 	83.13 	82.98 	83.30 	82.22 	81.07 '
 
-    # y_prompt16, y_prompt16_err = extract_y_err(y_dense, prompt16)
-    # y_prompt32, y_prompt32_err = extract_y_err(y_dense, prompt32)
-    # y_prompt48, y_prompt48_err = extract_y_err(y_dense, prompt48)
-    # y_prompt64, y_prompt64_err = extract_y_err(y_dense, prompt64)
+    y_prompt16, y_prompt16_err = extract_y_err(y_dense, prompt16)
+    y_prompt32, y_prompt32_err = extract_y_err(y_dense, prompt32)
+    y_prompt48, y_prompt48_err = extract_y_err(y_dense, prompt48)
+    y_prompt64, y_prompt64_err = extract_y_err(y_dense, prompt64)
 
-    # y_input128, y_input128_err = extract_y_err(y_dense, input128)
-    # y_input160, y_input160_err = extract_y_err(y_dense, input160)
-    # y_input192, y_input192_err = extract_y_err(y_dense, input192)
-    # y_input224, y_input224_err = extract_y_err(y_dense, input224)
+    y_input128, y_input128_err = extract_y_err(y_dense, input128)
+    y_input160, y_input160_err = extract_y_err(y_dense, input160)
+    y_input192, y_input192_err = extract_y_err(y_dense, input192)
+    y_input224, y_input224_err = extract_y_err(y_dense, input224)
 
     y_pad, y_pad_err = extract_y_err(y_dense, pad)
     y_fix, y_fix_err = extract_y_err(y_dense, fix)
@@ -197,25 +197,25 @@ if __name__ == "__main__":
 
     l_dense = plt.axhline(y=y_dense, color=dense_color, linestyle='--', linewidth=3, label="Dense")
 
-    # l_prompt16 = plt.plot(x_grid, y_prompt16, color=prompt16_color, marker='o', markevery=markevery, linestyle='-',
-    #                   linewidth=linewidth,
-    #                   markersize=markersize, label="Prompt Size 16", alpha=prompt16_alpha)
-    # plt.fill_between(x_grid, y_prompt16 - y_prompt16_err, y_prompt16 + y_prompt16_err, color=prompt16_color, alpha=fill_in_alpha)
+    l_prompt16 = plt.plot(x_grid, y_prompt16, color=prompt16_color, marker='o', markevery=markevery, linestyle='-',
+                      linewidth=linewidth,
+                      markersize=markersize, label="Prompt Size 16", alpha=prompt16_alpha)
+    plt.fill_between(x_grid, y_prompt16 - y_prompt16_err, y_prompt16 + y_prompt16_err, color=prompt16_color, alpha=fill_in_alpha)
 
-    # l_prompt32 = plt.plot(x_grid, y_prompt32, color=prompt32_color, marker='o', markevery=markevery, linestyle='-',
-    #                   linewidth=linewidth,
-    #                   markersize=markersize, label="Prompt Size 32", alpha=prompt32_alpha)
-    # plt.fill_between(x_grid, y_prompt32 - y_prompt32_err, y_prompt32 + y_prompt32_err, color=prompt32_color, alpha=fill_in_alpha)
+    l_prompt32 = plt.plot(x_grid, y_prompt32, color=prompt32_color, marker='o', markevery=markevery, linestyle='-',
+                      linewidth=linewidth,
+                      markersize=markersize, label="Prompt Size 32", alpha=prompt32_alpha)
+    plt.fill_between(x_grid, y_prompt32 - y_prompt32_err, y_prompt32 + y_prompt32_err, color=prompt32_color, alpha=fill_in_alpha)
 
-    # l_prompt48 = plt.plot(x_grid, y_prompt48, color=prompt48_color, marker='o', markevery=markevery, linestyle='-',
-    #                   linewidth=linewidth,
-    #                   markersize=markersize, label="Prompt Size 48", alpha=prompt48_alpha)
-    # plt.fill_between(x_grid, y_prompt48 - y_prompt48_err, y_prompt48 + y_prompt48_err, color=prompt48_color, alpha=fill_in_alpha)
+    l_prompt48 = plt.plot(x_grid, y_prompt48, color=prompt48_color, marker='o', markevery=markevery, linestyle='-',
+                      linewidth=linewidth,
+                      markersize=markersize, label="Prompt Size 48", alpha=prompt48_alpha)
+    plt.fill_between(x_grid, y_prompt48 - y_prompt48_err, y_prompt48 + y_prompt48_err, color=prompt48_color, alpha=fill_in_alpha)
 
-    # l_prompt64 = plt.plot(x_grid, y_prompt64, color=prompt64_color, marker='o', markevery=markevery, linestyle='-',
-    #                   linewidth=linewidth,
-    #                   markersize=markersize, label="Prompt Size 64", alpha=prompt64_alpha)
-    # plt.fill_between(x_grid, y_prompt64 - y_prompt64_err, y_prompt64 + y_prompt64_err, color=prompt64_color, alpha=fill_in_alpha)
+    l_prompt64 = plt.plot(x_grid, y_prompt64, color=prompt64_color, marker='o', markevery=markevery, linestyle='-',
+                      linewidth=linewidth,
+                      markersize=markersize, label="Prompt Size 64", alpha=prompt64_alpha)
+    plt.fill_between(x_grid, y_prompt64 - y_prompt64_err, y_prompt64 + y_prompt64_err, color=prompt64_color, alpha=fill_in_alpha)
 
 
     # l_input128 = plt.plot(x_grid, y_input128, color=input128_color, marker='o', markevery=markevery, linestyle='-',
@@ -238,20 +238,20 @@ if __name__ == "__main__":
     #                   markersize=markersize, label="Input Size 224", alpha=input224_alpha)
     # plt.fill_between(x_grid, y_input224 - y_input224_err, y_input224 + y_input224_err, color=input224_color, alpha=fill_in_alpha)
 
-    l_pad = plt.plot(x_grid, y_pad, color=pad_color, marker='o', markevery=markevery, linestyle='-',
-                      linewidth=linewidth,
-                      markersize=markersize, label="Pad Prompt", alpha=pad_alpha)
-    plt.fill_between(x_grid, y_pad - y_pad_err, y_pad + y_pad_err, color=pad_color, alpha=fill_in_alpha)
+    # l_pad = plt.plot(x_grid, y_pad, color=pad_color, marker='o', markevery=markevery, linestyle='-',
+    #                   linewidth=linewidth,
+    #                   markersize=markersize, label="Pad Prompt", alpha=pad_alpha)
+    # plt.fill_between(x_grid, y_pad - y_pad_err, y_pad + y_pad_err, color=pad_color, alpha=fill_in_alpha)
 
-    l_fix = plt.plot(x_grid, y_fix, color=fix_color, marker='o', markevery=markevery, linestyle='-',
-                      linewidth=linewidth,
-                      markersize=markersize, label="Fix Prompt", alpha=fix_alpha)
-    plt.fill_between(x_grid, y_fix - y_fix_err, y_fix + y_fix_err, color=fix_color, alpha=fill_in_alpha)
+    # l_fix = plt.plot(x_grid, y_fix, color=fix_color, marker='o', markevery=markevery, linestyle='-',
+    #                   linewidth=linewidth,
+    #                   markersize=markersize, label="Fix Prompt", alpha=fix_alpha)
+    # plt.fill_between(x_grid, y_fix - y_fix_err, y_fix + y_fix_err, color=fix_color, alpha=fill_in_alpha)
 
-    l_random = plt.plot(x_grid, y_random, color=random_color, marker='o', markevery=markevery, linestyle='-',
-                      linewidth=linewidth,
-                      markersize=markersize, label="Random Prompt", alpha=random_alpha)
-    plt.fill_between(x_grid, y_random - y_random_err, y_random + y_random_err, color=input224_color, alpha=fill_in_alpha)
+    # l_random = plt.plot(x_grid, y_random, color=random_color, marker='o', markevery=markevery, linestyle='-',
+    #                   linewidth=linewidth,
+    #                   markersize=markersize, label="Random Prompt", alpha=random_alpha)
+    # plt.fill_between(x_grid, y_random - y_random_err, y_random + y_random_err, color=input224_color, alpha=fill_in_alpha)
 
 
     lbest = plt.axhline(y=y_best, color=best_color, linestyle='--', linewidth=3, alpha=best_alpha,

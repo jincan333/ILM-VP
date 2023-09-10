@@ -5,7 +5,7 @@ import numpy as np
 from torch.nn.parameter import Parameter
 import torch.autograd as autograd
 import torch.nn.functional as F
-from torch.nn import Conv2d, Linear
+from torch.nn import Conv2d, Linear, BatchNorm2d
 
 
 
@@ -52,7 +52,7 @@ def get_layers(layer_type):
     if layer_type == "dense":
         return nn.Conv2d, nn.Linear
     elif layer_type == "subnet":
-        return SubnetConv, SubnetLinear
+        return SubnetConv, SubnetLinear, SubnetBatchNorm2d
     else:
         raise ValueError("Incorrect layer type")
 
@@ -180,10 +180,37 @@ class SubnetLinear(nn.Linear):
         return x
 
 
+class SubnetBatchNorm2d(nn.BatchNorm2d):
+    def __init__(self, batch_norm):
+        super(SubnetBatchNorm2d, self).__init__(batch_norm.num_features)
+        # Duplicate the weight parameter
+        self.weight.data = batch_norm.weight.data.clone().detach()
+        self.bias.data = batch_norm.bias.data.clone().detach()
+        self.running_mean = batch_norm.running_mean.clone().detach()
+        self.running_var = batch_norm.running_var.clone().detach()
+        self.weight_mask = torch.ones_like(self.weight.data)
+        
+    def set_mask(self,adj):
+        self.weight_mask=adj
+
+    def forward(self, x):       
+        result = super(SubnetBatchNorm2d, self).forward(x)
+        if type(self.weight_mask) is float:
+            mask=self.weight_mask
+        else:
+            mask=self.weight_mask.view(1,result.shape[1],1,1)
+        result1=result*mask
+        #self.weight = weight_orig  # restore original weight
+        
+        return result1
+
+
+
 def set_scored_network(network, args):
-    cl, ll = get_layers('subnet')
-    network=replace_layers(network,Conv2d,cl,'weight',args)
-    network=replace_layers(network,Linear,ll,'weight',args)
+    cl, ll, bl = get_layers('subnet')
+    network=replace_layers(network,Conv2d,cl,'channel',args)
+    network=replace_layers(network,Linear,ll,'channel',args)
+    network=replace_layers(network,BatchNorm2d,ll,'channel',args)
     network.to(args.device)
     if args.hydra_scaled_init:
         print('Using scaled score initialization\n')

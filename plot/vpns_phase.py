@@ -72,9 +72,9 @@ if __name__ == "__main__":
     # y_IMP = np.array([y_dense,73.01,72.72,72.36,71.97,71.18,70.49,69.52,68.43,67.17,65.89])
     # y_IMP_err = np.array([0,0.10,0.16,0.10,0.17,0.39,0.21,0.25,0.39,0.33,0.18])
 
-    VPNs_score ='81.87 	82.82 	82.22 	81.79 	80.80 	79.80 '
-    VPNs_weight='82.73 	83.13 	82.80 	82.61 	82.24 	80.57 '
-    VPNs       ='83.47 	83.29 	82.91 	82.64 	81.85 	80.17 '
+    VPNs_score ='82.67 	82.79 	82.68 	82.28 	81.42 	79.97 '
+    VPNs_weight='83.24 	83.09 	83.38 	82.43 	81.87 	80.66 '
+    VPNs       ='83.47 	83.29 	83.29 	82.98 	82.17 	80.87 '
 
     y_VPNs, y_VPNs_err = extract_y_err(y_dense, VPNs)
     y_VPNs_score, y_VPNs_score_err = extract_y_err(y_dense, VPNs_score)

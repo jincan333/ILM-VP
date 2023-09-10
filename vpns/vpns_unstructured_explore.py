@@ -247,6 +247,9 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
 
             fx = label_mapping(network(visual_prompt(val_x)))
             loss = F.cross_entropy(fx, val_y, reduction='mean')
+            # fx = label_mapping(network(args.normalize(x)))
+            # loss = F.cross_entropy(fx, y, reduction='mean')
+            
             init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
             loss.backward()
             weight_optimizer.step()
@@ -267,6 +270,9 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
 
             fx = label_mapping(network(visual_prompt(val_x)))
             loss = F.cross_entropy(fx, val_y, reduction='mean')
+            # fx=label_mapping(network(args.normalize(x)))
+            # loss = F.cross_entropy(fx, y, reduction='mean')
+
             init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
             loss.backward()
             score_optimizer.step()

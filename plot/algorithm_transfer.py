@@ -59,10 +59,10 @@ if __name__ == "__main__":
     # y_Grasp_time = np.insert(np.array([120 for i in range(num - 1)]), 0, 0)
     
     # 7, 11; 9, 20
-    title = 'VPNs w. Random, CIFAR100'
+    title = 'VPNs w. IMP, CIFAR100'
     num, imp_num = 7, 11
     y_dense = 82.10
-    y_min, y_max = 67,83.5
+    y_min, y_max = 78,84
     
     # 10, 20
     x_sparsity_list = np.array([0, 40, 50, 60, 70, 80, 90, 95, 99][:num])
@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     IMP       ='82.02 	81.72 	81.36 	81.16 	80.76 	80.35 	79.70 	79.23 	78.91 	78.50 '
     IMP_VP    ='82.84 	82.65 	81.84 	81.90 	81.55 	81.07 	80.57 	80.65 	80.28 	79.56 '
-    VPNs      ='83.31 	83.18 	83.16 	82.74 	82.00 	80.58 '
+    VPNs      ='83.47 	83.29 	83.29 	82.74 	82.00 	80.71 '
 
     y_OMP, y_OMP_err = extract_y_err(y_dense, OMP)
     y_OMP_VP, y_OMP_VP_err = extract_y_err(y_dense, OMP_VP)
@@ -186,23 +186,23 @@ if __name__ == "__main__":
     #                 markersize=markersize, label="VPNs w. OMP", alpha=OMP_VP_alpha)
     # plt.fill_between(x_grid, y_OMP_VP - y_OMP_VP_err, y_OMP_VP + y_OMP_VP_err, color=OMP_VP_color, alpha=fill_in_alpha)
 
-    l_Random = plt.plot(x_grid, y_Random, color=Random_color, marker='o', markevery=markevery, linestyle='-',
-            linewidth=linewidth,
-            markersize=markersize + 4, label="Random", alpha=Random_alpha)
-    plt.fill_between(x_grid, y_Random - y_Random_err, y_Random + y_Random_err, color=Random_color, alpha=fill_in_alpha)
+    # l_Random = plt.plot(x_grid, y_Random, color=Random_color, marker='o', markevery=markevery, linestyle='-',
+    #         linewidth=linewidth,
+    #         markersize=markersize + 4, label="Random", alpha=Random_alpha)
+    # plt.fill_between(x_grid, y_Random - y_Random_err, y_Random + y_Random_err, color=Random_color, alpha=fill_in_alpha)
 
-    l_Random_VP = plt.plot(x_grid, y_Random_VP, color=Random_VP_color, marker='o', markevery=markevery, linestyle='-', linewidth=linewidth,
-                    markersize=markersize, label="VPNs w. Random", alpha=Random_VP_alpha)
-    plt.fill_between(x_grid, y_Random_VP - y_Random_VP_err, y_Random_VP + y_Random_VP_err, color=Random_VP_color, alpha=fill_in_alpha)
+    # l_Random_VP = plt.plot(x_grid, y_Random_VP, color=Random_VP_color, marker='o', markevery=markevery, linestyle='-', linewidth=linewidth,
+    #                 markersize=markersize, label="VPNs w. Random", alpha=Random_VP_alpha)
+    # plt.fill_between(x_grid, y_Random_VP - y_Random_VP_err, y_Random_VP + y_Random_VP_err, color=Random_VP_color, alpha=fill_in_alpha)
 
 
-    # l_IMP = plt.plot(x_IMP_sparsity_list, y_IMP, color=IMP_color, marker='o', markevery=markevery, linestyle='-', linewidth=linewidth,
-    #                 markersize=markersize, label="IMP", alpha=IMP_alpha)
-    # plt.fill_between(x_IMP_sparsity_list, y_IMP - y_IMP_err, y_IMP + y_IMP_err, color=IMP_color, alpha=fill_in_alpha)
+    l_IMP = plt.plot(x_IMP_sparsity_list, y_IMP, color=IMP_color, marker='o', markevery=markevery, linestyle='-', linewidth=linewidth,
+                    markersize=markersize, label="IMP", alpha=IMP_alpha)
+    plt.fill_between(x_IMP_sparsity_list, y_IMP - y_IMP_err, y_IMP + y_IMP_err, color=IMP_color, alpha=fill_in_alpha)
 
-    # l_IMP_VP = plt.plot(x_IMP_sparsity_list, y_IMP_VP, color=IMP_VP_color, marker='o', markevery=markevery, linestyle='-', linewidth=linewidth,
-    #                 markersize=markersize, label="VPNs w. IMP", alpha=IMP_VP_alpha)
-    # plt.fill_between(x_IMP_sparsity_list, y_IMP_VP - y_IMP_VP_err, y_IMP_VP + y_IMP_VP_err, color=IMP_VP_color, alpha=fill_in_alpha)
+    l_IMP_VP = plt.plot(x_IMP_sparsity_list, y_IMP_VP, color=IMP_VP_color, marker='o', markevery=markevery, linestyle='-', linewidth=linewidth,
+                    markersize=markersize, label="VPNs w. IMP", alpha=IMP_VP_alpha)
+    plt.fill_between(x_IMP_sparsity_list, y_IMP_VP - y_IMP_VP_err, y_IMP_VP + y_IMP_VP_err, color=IMP_VP_color, alpha=fill_in_alpha)
 
 
     l_VPNs = plt.plot(x_grid, y_VPNs, color=VPNs_color, marker='*', markevery=markevery, linestyle='-',
