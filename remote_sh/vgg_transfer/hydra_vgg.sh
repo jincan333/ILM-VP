@@ -16,7 +16,7 @@ epochs=60
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.60,0.50,0.40,0.30,0.20,0.10'
+density_list='1,0.50,0.40,0.30,0.20,0.10'
 
 weight_optimizer='sgd'
 weight_lr=0.005
@@ -35,7 +35,7 @@ for j in ${!networks[@]};do
             for l in ${!prune_methods[@]};do
                 for m in ${!seeds[@]};do            
                     log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seeds[m]}_${weight_optimizer}_${weight_lr}_${score_optimizer}_${score_lr}.log
-                        nohup python ./vpns/hydra.py \
+                        nohup python -u ./vpns/hydra.py \
                             --experiment_name ${experiment_name} \
                             --dataset ${datasets[i]} \
                             --network ${networks[j]} \

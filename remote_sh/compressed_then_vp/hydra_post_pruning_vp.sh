@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='compressed_then_vp_more'
+experiment_name='post_pruning_prompt'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -16,7 +16,7 @@ epochs=60
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.05'
+density_list='1,0.6,0.5,0.4,0.3,0.2,0.1'
 
 weight_optimizer='sgd'
 weight_lr=0.01
@@ -34,7 +34,7 @@ for j in ${!networks[@]};do
             for l in ${!prune_methods[@]};do
                 for m in ${!seeds[@]};do            
                     log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seeds[m]}_${weight_optimizer}_${weight_lr}_${score_optimizer}_${score_lr}.log
-                        nohup python ./vpns/hydra_then_vp.py \
+                        nohup python -u ./vpns/hydra_post_pruning_vp.py \
                             --experiment_name ${experiment_name} \
                             --dataset ${datasets[i]} \
                             --network ${networks[j]} \

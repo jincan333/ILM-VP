@@ -6,55 +6,7 @@ from torch.nn.parameter import Parameter
 import torch.autograd as autograd
 import torch.nn.functional as F
 from torch.nn import Conv2d, Linear, BatchNorm2d
-
-
-
-def replace_layers(model, old_layer, new_layer, channelPrune, args):
-    for name, module in reversed(model._modules.items()):
-        if len(list(module.children())) > 0:
-            model._modules[name] = replace_layers(module, old_layer, new_layer,channelPrune,args)
-
-        if type(module) == old_layer:
-            if isinstance(module, nn.Conv2d):
-                if args.network == 'vgg':
-                    layer_new = new_layer(module.in_channels, module.out_channels, module.kernel_size, module.stride, module.padding, module.dilation, module.groups, False,channelPrune)
-                else:
-                    layer_new = new_layer(module.in_channels, module.out_channels, module.kernel_size, module.stride, module.padding, module.dilation, module.groups, module.bias,channelPrune)
-            elif isinstance(module, nn.Linear):
-                layer_new = new_layer(module.in_features, module.out_features, module.bias,channelPrune)
-            layer_new.weight.data=module.weight.data
-            if args.network == 'vgg' and isinstance(module, nn.Conv2d):
-                pass
-            elif module.bias is not None:
-                layer_new.bias.data=module.bias.data
-            model._modules[name] = layer_new
-
-    return model
-
-
-def initialize_scaled_score(model):
-    print(
-        "Initialization relevance score proportional to weight magnitudes (OVERWRITING SOURCE NET SCORES)"
-    )
-    for m in model.modules():
-        if hasattr(m, "popup_scores"):
-            n = nn.init._calculate_correct_fan(m.popup_scores, "fan_in")
-            # Close to kaiming unifrom init
-            m.popup_scores.data = (
-                math.sqrt(6 / n) * m.weight.data / torch.max(torch.abs(m.weight.data))
-            )
-
-
-def get_layers(layer_type):
-    """
-        Returns: (conv_layer, linear_layer)
-    """
-    if layer_type == "dense":
-        return nn.Conv2d, nn.Linear
-    elif layer_type == "subnet":
-        return SubnetConv, SubnetLinear, SubnetBatchNorm2d
-    else:
-        raise ValueError("Incorrect layer type")
+from torchvision import models
 
 
 # https://github.com/allenai/hidden-networks
@@ -118,26 +70,40 @@ class SubnetConv(nn.Conv2d):
         self.w = 0
         self.k=False
         self.threshold=False
-
-    def set_prune_rate(self, k):
-        self.k = k
+        self.adj=1.0
+        self.pre_adj=1.0
+        self.pre_scores=1.0
+        self.training = True
 
     def set_threshold(self, threshold):
         self.threshold = threshold
 
-    def forward(self, x):
-        # Get the subnetwork by sorting the scores.
-        if self.threshold is False:
-            adj=1.0
+    def calculate_mask(self,pre_adj,pre_scores=None):
+        if type(pre_adj) is float:
+            self.pre_adj=pre_adj            
         else:
-            adj = GetSubnet.apply(self.popup_scores.abs(), self.threshold)
+            self.pre_adj=pre_adj.view(1,self.weight.data.shape[1],1,1)
+        if type(pre_scores) is float:
+            self.pre_scores=pre_scores
+        else:
+            self.pre_scores=pre_scores.view(1,self.weight.data.shape[1],1,1)
 
-        # Use only the subnetwork in the forward pass.
-        self.w = self.weight * adj
+        if self.threshold is False:
+            self.adj=1.0
+        self.adj=GetSubnet.apply(self.popup_scores.abs(), self.threshold)
+        return self.adj
+
+    def forward(self, x):    
+        if self.channel_prune=='channel':
+            self.w=self.weight*self.adj*self.pre_adj
+        else:
+            self.adj=GetSubnet.apply(self.popup_scores.abs(), self.threshold)
+            self.w = self.weight * self.adj
         x = F.conv2d(
             x, self.w, self.bias, self.stride, self.padding, self.dilation, self.groups
         )
         return x
+
 
 class SubnetLinear(nn.Linear):
     # self.k is the % of weights remaining, a real number in [0,1]
@@ -160,23 +126,17 @@ class SubnetLinear(nn.Linear):
         self.k=False
         self.threshold=False
 
-    def set_prune_rate(self, k):
-        self.k = k
-
     def set_threshold(self, threshold):
         self.threshold = threshold
 
     def forward(self, x):
-        # Get the subnetwork by sorting the scores.
-        if self.threshold is False:
-            adj=1.0
-        else:
-            adj = GetSubnet.apply(self.popup_scores.abs(), self.threshold)
-
-        # Use only the subnetwork in the forward pass.
+        # if self.threshold is False:
+        #     adj=1.0
+        # else:
+        #     adj = GetSubnet.apply(self.popup_scores.abs(), self.threshold)
+        adj=1.0
         self.w = self.weight * adj
         x = F.linear(x, self.w, self.bias)
-
         return x
 
 
@@ -200,49 +160,86 @@ class SubnetBatchNorm2d(nn.BatchNorm2d):
         else:
             mask=self.weight_mask.view(1,result.shape[1],1,1)
         result1=result*mask
-        #self.weight = weight_orig  # restore original weight
-        
         return result1
 
+
+def replace_layers(model, old_layer, new_layer, channelPrune, args):
+    for name, module in reversed(model._modules.items()):
+        if len(list(module.children())) > 0:
+            model._modules[name] = replace_layers(module, old_layer, new_layer,channelPrune,args)
+
+        if type(module) == old_layer:
+            if isinstance(module, nn.Conv2d):
+                if args.network == 'vgg':
+                    layer_new = new_layer(module.in_channels, module.out_channels, module.kernel_size, module.stride, module.padding, module.dilation, module.groups, False,channelPrune)
+                else:
+                    layer_new = new_layer(module.in_channels, module.out_channels, module.kernel_size, module.stride, module.padding, module.dilation, module.groups, module.bias,channelPrune)
+            elif isinstance(module, nn.Linear):
+                layer_new = new_layer(module.in_features, module.out_features, module.bias,channelPrune)
+            elif isinstance(module, nn.BatchNorm2d):
+                layer_new = new_layer(module)
+            layer_new.weight.data=module.weight.data
+            if args.network == 'vgg' and isinstance(module, nn.Conv2d):
+                pass
+            elif module.bias is not None:
+                layer_new.bias.data=module.bias.data
+            model._modules[name] = layer_new
+
+    return model
+
+
+def initialize_scaled_score(model):
+    print(
+        "Initialization relevance score proportional to weight magnitudes (OVERWRITING SOURCE NET SCORES)"
+    )
+    for m in model.modules():
+        if hasattr(m, "popup_scores"):
+            n = nn.init._calculate_correct_fan(m.popup_scores, "fan_in")
+            # Close to kaiming unifrom init
+            m.popup_scores.data = (
+                math.sqrt(6 / n) * m.weight.data / torch.max(torch.abs(m.weight.data))
+            )
+
+
+def get_layers(layer_type):
+    """
+        Returns: (conv_layer, linear_layer)
+    """
+    if layer_type == "dense":
+        return nn.Conv2d, nn.Linear
+    elif layer_type == "subnet":
+        return SubnetConv, SubnetLinear, SubnetBatchNorm2d
+    else:
+        raise ValueError("Incorrect layer type")
 
 
 def set_scored_network(network, args):
     cl, ll, bl = get_layers('subnet')
     network=replace_layers(network,Conv2d,cl,'channel',args)
-    network=replace_layers(network,Linear,ll,'channel',args)
-    network=replace_layers(network,BatchNorm2d,ll,'channel',args)
+    # network=replace_layers(network,Linear,ll,'channel',args)
+    network=replace_layers(network,BatchNorm2d,bl,'channel',args)
+    for name, weight in network.named_parameters():
+        if hasattr(weight, 'is_score') and weight.is_score:
+            print(name, weight.shape)
     network.to(args.device)
-    if args.hydra_scaled_init:
-        print('Using scaled score initialization\n')
-        initialize_scaled_score(network)
-    
     return network
-
-
-def set_prune_rate(network, prune_rate):
-    cl, ll = get_layers('subnet')
-    for name, module in network.named_modules():
-        if isinstance(module,cl):
-            module.set_prune_rate(prune_rate)
-        if  isinstance(module,ll):
-            module.set_prune_rate(prune_rate)
 
 
 def set_prune_threshold(network, prune_rate):
     score_dict={}
     for name, weight in network.named_parameters():
-        if hasattr(weight, 'is_score') and weight.is_score:
+        if 'conv' in name and hasattr(weight, 'is_score') and weight.is_score:
             score_dict[name] = torch.clone(weight.data).detach().abs_()
     global_scores = torch.cat([torch.flatten(v) for v in score_dict.values()])
     k = int((1 - prune_rate) * global_scores.numel())
     if not k < 1:
         threshold, _ = torch.kthvalue(global_scores, k)
-        cl, ll = get_layers('subnet')
+        cl, ll, bl = get_layers('subnet')
         for name, module in network.named_modules():
             if isinstance(module,cl):
                 module.set_threshold(threshold)
-            if  isinstance(module,ll):
-                module.set_threshold(threshold)
+            # if  isinstance(module,ll):
+            #     module.set_threshold(threshold)
 
 
 def freeze_vars(model, var_name, freeze_bn=False):
@@ -289,3 +286,97 @@ def switch_to_bilevel(model):
     unfreeze_vars(model, "popup_scores")
     unfreeze_vars(model, "weight")
     unfreeze_vars(model, "bias")
+
+
+def Calculate_mask(model,bn_detach=True):
+    pre_adj=1.0
+    pre_scores=1.0
+    # model.conv1.threshold=thres
+    cur_adj=model.conv1.calculate_mask(pre_adj,pre_scores)
+    cur_scores=model.conv1.popup_scores
+    if bn_detach and type(cur_adj) is not float:
+        model.bn1.set_mask(cur_adj.detach())
+    else:
+        model.bn1.set_mask(cur_adj)
+    pre_adj=cur_adj
+    pre_scores=cur_scores
+    for name,module in model.named_modules():
+        if isinstance(module, models.resnet.BasicBlock):           
+            if module.downsample is not None:
+                if type(pre_adj) is float:
+                    copy_adj=pre_adj
+                    copy_scores=pre_scores
+                else:
+                    copy_adj=pre_adj.clone()
+                    copy_scores=pre_scores.clone()
+                # module.conv1.threshold=thres
+                cur_adj=module.conv1.calculate_mask(pre_adj,pre_scores)
+                cur_scores=module.conv1.popup_scores
+                #print("name",name,thres)
+                if bn_detach and type(cur_adj) is not float:
+                    module.bn1.set_mask(cur_adj.detach())
+                else:
+                    module.bn1.set_mask(cur_adj)
+                pre_adj=cur_adj
+                pre_scores=cur_scores
+                # module.conv2.threshold=thres
+                cur_adj=module.conv2.calculate_mask(pre_adj,pre_scores)
+                cur_scores=module.conv2.popup_scores
+                
+                if bn_detach and type(cur_adj) is not float:
+                    module.bn2.set_mask(cur_adj.detach())
+                else:
+                    module.bn2.set_mask(cur_adj)
+
+
+                pre_adj=cur_adj
+                pre_scores=cur_scores
+                # module.downsample[0].threshold=thres
+                cur_adj=module.downsample[0].calculate_mask(copy_adj,1.0)
+                cur_scores=module.downsample[0].popup_scores
+
+                # if args.shortcut=='depend':
+                module.downsample[0].adj=pre_adj
+                # module.downsample[0].popup_scores=1.0
+
+                #module.downsample[1].set_mask(pre_adj)
+                if bn_detach and type(pre_adj) is not float:
+                    module.downsample[1].set_mask(pre_adj.detach())
+                else:
+                    module.downsample[1].set_mask(pre_adj)
+                # elif args.shortcut=='intersect':
+                #     adj=((cur_adj+pre_adj)>0).long()
+                #     module.conv2.adj=adj
+                #     if bn_detach and type(adj) is not float:
+                #         module.downsample[1].set_mask(adj.detach())
+                #     else:
+                #         module.downsample[1].set_mask(adj)
+                #     module.downsample[0].adj=adj
+                #     #module.downsample[1].set_mask(adj)
+                #     pre_adj=adj
+                    
+
+                ##no need for bn2
+            else:
+                #copy_adj=pre_adj.clone()
+                # module.conv1.threshold=thres
+                cur_adj=module.conv1.calculate_mask(pre_adj,pre_scores)
+                cur_scores=module.conv1.popup_scores
+                #module.bn1.set_mask(cur_adj)
+                if bn_detach and type(cur_adj) is not float:
+                    module.bn1.set_mask(cur_adj.detach())
+                else:
+                    module.bn1.set_mask(cur_adj)
+                pre_adj=cur_adj
+                pre_scores=cur_scores
+
+                # module.conv2.threshold=thres
+                cur_adj=module.conv2.calculate_mask(pre_adj,pre_scores)
+                cur_scores=module.conv2.popup_scores
+                #module.bn2.set_mask(cur_adj)
+                if bn_detach and type(cur_adj) is not float:
+                    module.bn2.set_mask(cur_adj.detach())
+                else:
+                    module.bn2.set_mask(cur_adj)
+                pre_adj=cur_adj
+                pre_scores=cur_scores

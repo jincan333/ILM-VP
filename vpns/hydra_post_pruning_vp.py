@@ -13,7 +13,7 @@ from utils import set_seed, setup_optimizer_and_prompt, calculate_label_mapping,
 from get_model_dataset import choose_dataloader, get_model
 from pruner import extract_mask, prune_model_custom, check_sparsity, remove_prune, pruning_model
 from core import Masking, CosineDecay
-from structured_network_with_score import set_prune_threshold, set_scored_network, switch_to_finetune, switch_to_prune, Calculate_mask
+from unstructured_network_with_score import set_prune_threshold, set_scored_network, switch_to_finetune, switch_to_bilevel, switch_to_prune
 
 
 def main():    
@@ -26,23 +26,23 @@ def main():
     parser.add_argument('--weight_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--weight_lr', default=0.01, type=float, help='initial learning rate')
     parser.add_argument('--weight_weight_decay', default=1e-4, type=float, help='finetune weight decay')
-    parser.add_argument('--weight_vp_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
+    parser.add_argument('--weight_vp_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--weight_vp_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--weight_vp_lr', default=0.01, type=float, help='initial learning rate')
     parser.add_argument('--weight_vp_weight_decay', default=1e-4, type=float, help='visual prompt weight decay')
     parser.add_argument('--score_vp_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
-    parser.add_argument('--score_vp_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
-    parser.add_argument('--score_vp_lr', default=0.001, type=float, help='initial learning rate')
+    parser.add_argument('--score_vp_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
+    parser.add_argument('--score_vp_lr', default=0.01, type=float, help='initial learning rate')
     parser.add_argument('--score_vp_weight_decay', default=1e-4, type=float, help='visual prompt weight decay')
     parser.add_argument('--score_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--score_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--score_lr', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--score_weight_decay', default=1e-4, type=float, help='hydra weight decay')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg"])
-    parser.add_argument('--dataset', default="oxfordpets", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'sun397', 'tiny_imagenet', 'imagenet'])
+    parser.add_argument('--dataset', default="cifar10", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'sun397', 'tiny_imagenet', 'imagenet'])
     parser.add_argument('--experiment_name', default='exp_new', type=str, help='name of experiment')
-    parser.add_argument('--gpu', type=int, default=1, help='gpu device id')
-    parser.add_argument('--epochs', default=1, type=int, help='number of total eopchs to run')
+    parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
+    parser.add_argument('--epochs', default=80, type=int, help='number of total eopchs to run')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
     parser.add_argument('--density_list', default='1,0.50,0.20,0.10', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
@@ -169,12 +169,6 @@ def main():
         all_results['ckpt_epoch'] = epoch
         checkpoint['ckpt_test_acc'] = test_acc
         print(f'Best Accuracy after prune: {test_acc:.4f}')
-
-        # print pruned channels
-        for name, layer in network.named_modules():
-            if isinstance(layer, torch.nn.modules.conv.Conv2d):
-                print(name, (layer.adj * layer.pre_adj).sum())
-
         torch.save(checkpoint, os.path.join(save_path, str(state)+'prune.pth'))
         # Plot training curve
         plot_train(all_results, save_path, state)
@@ -184,8 +178,40 @@ def main():
         all_results['no_train_acc'] = test_acc
         for epoch in range(args.epochs):
             train_acc = train(train_loader, val_loader, 'finetune', network, epoch, label_mapping, visual_prompt, args=args,
-                            weight_optimizer=weight_optimizer, vp_optimizer=weight_vp_optimizer, score_optimizer=score_optimizer, 
-                            weight_scheduler=weight_scheduler, vp_scheduler=weight_vp_scheduler, score_scheduler=score_scheduler)
+                            weight_optimizer=weight_optimizer, vp_optimizer=weight_vp_optimizer, score_optimizer=None, 
+                            weight_scheduler=weight_scheduler, vp_scheduler=weight_vp_scheduler, score_scheduler=None)
+            val_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
+            all_results['train_acc'].append(train_acc)
+            all_results['val_acc'].append(val_acc)
+            # Save CKPT
+            checkpoint = {
+                'state_dict': network.state_dict()
+                ,'init_weight': pre_state_init
+                ,"weight_optimizer": weight_optimizer.state_dict() if weight_optimizer else None
+                ,'weight_scheduler': weight_scheduler.state_dict() if weight_scheduler else None
+                ,"weight_vp_optimizer": weight_vp_optimizer.state_dict() if weight_vp_optimizer else None
+                ,'weight_vp_scheduler': weight_vp_scheduler.state_dict() if weight_vp_scheduler else None
+                ,"score_optimizer": score_optimizer.state_dict() if score_optimizer else None
+                ,'score_scheduler': score_scheduler.state_dict() if score_scheduler else None
+                ,'visual_prompt': visual_prompt.state_dict() if visual_prompt else None
+                ,'mapping_sequence': mapping_sequence
+                ,"val_best_acc": best_acc
+                ,'ckpt_test_acc': 0
+                ,'all_results': all_results
+                ,"epoch": epoch
+                ,'state': 0
+            }
+            if val_acc > best_acc:
+                best_acc = val_acc
+                checkpoint['val_best_acc'] = best_acc
+            torch.save(checkpoint, os.path.join(save_path, str(state)+'best.pth'))
+            # Plot training curve
+            plot_train(all_results, save_path, state)
+        visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(network, visual_prompt_init, mapping_sequence, None, args)
+        for epoch in range(args.epochs):
+            train_acc = train(train_loader, val_loader, 'prompt', network, epoch, label_mapping, visual_prompt, args=args,
+                            weight_optimizer=weight_optimizer, vp_optimizer=weight_vp_optimizer, score_optimizer=None, 
+                            weight_scheduler=weight_scheduler, vp_scheduler=weight_vp_scheduler, score_scheduler=None)
             val_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
             all_results['train_acc'].append(train_acc)
             all_results['val_acc'].append(val_acc)
@@ -223,10 +249,6 @@ def main():
         all_results['ckpt_test_acc'] = test_acc
         all_results['ckpt_epoch'] = best_ckpt['epoch']
         plot_train(all_results, save_path, state)
-        # print pruned channels
-        for name, layer in network.named_modules():
-            if isinstance(layer, torch.nn.modules.conv.Conv2d):
-                print(name, (layer.adj * layer.pre_adj).sum())
 
 
 def init_gradients(weight_optimizer, vp_optimizer, score_optimizer):
@@ -238,7 +260,7 @@ def init_gradients(weight_optimizer, vp_optimizer, score_optimizer):
         score_optimizer.zero_grad()
 
 
-def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual_prompt, args, weight_optimizer, vp_optimizer, score_optimizer, weight_scheduler, vp_scheduler, score_scheduler):
+def train(train_loader, val_loader, phase, network, epoch, label_mapping, visual_prompt, args, weight_optimizer, vp_optimizer, score_optimizer, weight_scheduler, vp_scheduler, score_scheduler):
     # switch to train mode
     if visual_prompt:
         visual_prompt.train()
@@ -251,52 +273,37 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
     for i, (train_batch, val_batch) in enumerate(zip(train_loader, val_loader)):
         x, y = train_batch[0].cuda(), train_batch[1].cuda()
         val_x, val_y = val_batch[0].cuda(), val_batch[1].cuda()
-        if stage == 'finetune':
-            # finetune
-            switch_to_finetune(network)
-
-            init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
-            fx = label_mapping(network(visual_prompt(val_x)))
-            loss = F.cross_entropy(fx, val_y, reduction='mean')
-            loss.backward()
-            weight_optimizer.step()
-            if vp_optimizer:
-                vp_optimizer.step()
-
-            init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
-            fx = label_mapping(network(args.normalize(x)))
-            loss = F.cross_entropy(fx, y, reduction='mean')
-            loss.backward()
-            weight_optimizer.step()
-            if vp_optimizer:
-                vp_optimizer.step()
-
-        if stage == 'prune':
+        if phase == 'prune':
             # prune
             switch_to_prune(network)
-
-            init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
-            fx = label_mapping(network(visual_prompt(val_x)))
-            loss = F.cross_entropy(fx, val_y, reduction='mean')
-            loss.backward()
-            score_optimizer.step()
-            if vp_optimizer:
-                vp_optimizer.step()
-            set_prune_threshold(network, args.density)
-            Calculate_mask(network)
-
-            init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
+            visual_prompt.requires_grad_(False)
             fx=label_mapping(network(args.normalize(x)))
             loss = F.cross_entropy(fx, y, reduction='mean')
+            init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
             loss.backward()
             score_optimizer.step()
-            if vp_optimizer:
-                vp_optimizer.step()
             set_prune_threshold(network, args.density)
-            Calculate_mask(network)
+
+        elif phase == 'finetune':
+            # finetune
+            switch_to_finetune(network)
+            visual_prompt.requires_grad_(False) 
+            fx=label_mapping(network(args.normalize(x)))
+            loss = F.cross_entropy(fx, y, reduction='mean')
+            init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
+            loss.backward()
+            weight_optimizer.step()
+        
+        elif phase == 'prompt':
+            for param in network.parameters():
+                param.requires_grad_ = False
+            fx=label_mapping(network(visual_prompt(val_x)))
+            loss = F.cross_entropy(fx, val_y, reduction='mean')
+            init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
+            loss.backward()
+            vp_optimizer.step()
 
         args.current_steps+=1
-
         total_num += y.size(0)
         true_num += torch.argmax(fx, 1).eq(y).float().sum().item()
         train_acc= true_num / total_num
@@ -342,7 +349,10 @@ def evaluate(test_loader, network, label_mapping, visual_prompt):
         # compute output
 
         with torch.no_grad():
-            fx = label_mapping(network(args.normalize(x)))
+            if visual_prompt:
+                fx = label_mapping(network(visual_prompt(x)))
+            else:
+                fx = label_mapping(network(x))
             loss = F.cross_entropy(fx, y, reduction='mean')
         # measure accuracy and record loss
         total_num += y.size(0)
