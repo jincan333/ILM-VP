@@ -32,7 +32,7 @@ batch_size=256
 # gmp_T=1000
 
 seeds=(7)
-gpus=(7)
+gpus=(2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
