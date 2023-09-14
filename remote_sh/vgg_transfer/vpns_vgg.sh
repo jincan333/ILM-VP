@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_vgg_transfer_remote'
+experiment_name='vpns_vgg_transfer'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -18,7 +18,7 @@ epochs=30
 density_list='1,0.60,0.50,0.40,0.30,0.20,0.10'
 
 weight_optimizer='sgd'
-weight_lr=0.005
+weight_lr=0.004
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
 score_optimizer='adam'
@@ -28,11 +28,11 @@ score_vp_lr=${score_lr}
 prune_modes=('score+vp_weight+vp')
 prune_methods=('vpns')
 global_vp_data=0
-batch_size=256
+batch_size=128
 # gmp_T=1000
 
 seeds=(7)
-gpus=(2)
+gpus=(7)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='bip_cifar100_more'
+experiment_name='bip_cifar100_test'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -12,22 +12,22 @@ fi
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 datasets=('cifar100')
-epochs=60
+epochs=1
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'score+weight_vp', 'weight+vp_score', 'score+vp_weight+vp', 'score_weight']
 
-density_list='1,0.6,0.4,0.3'
+density_list='1,0.6'
 
 weight_optimizer='sgd'
 weight_lr=0.01
 score_optimizer='adam'
 score_lr=0.0001
-seeds=(7 9 17)
+seeds=(7)
 # gmp_T=1000
 
 prune_modes=('score_weight')
 prune_methods=('bip')
-gpus=(5 4 1)
+gpus=(1)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

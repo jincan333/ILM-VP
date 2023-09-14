@@ -327,6 +327,7 @@ def evaluate(test_loader, network, label_mapping, visual_prompt):
     if visual_prompt:
         visual_prompt.eval()
     network.eval()
+    start = time.time()
     total_num = 0
     true_num = 0
     loss_sum = 0
@@ -348,9 +349,11 @@ def evaluate(test_loader, network, label_mapping, visual_prompt):
                 f'Loss_sum {loss_sum:.4f}\t'
                 f'Accuracy {test_acc:.4f}\t'
             )
+    end = time.time()
     print(f'evaluate: [{i}/{len(test_loader)}]\t'
         f'Loss_sum {loss_sum:.4f}\t'
         f'Accuracy {test_acc:.4f}\t'
+        f'Time {end-start:.2f}'
     )
     print(f'evaluate_accuracy {test_acc:.3f}')
 

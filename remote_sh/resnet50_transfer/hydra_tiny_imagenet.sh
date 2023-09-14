@@ -22,7 +22,7 @@ weight_optimizer='sgd'
 weight_lr=0.0001
 score_optimizer='adam'
 score_lr=0.0001
-seeds=(7)
+seeds=(9)
 # gmp_T=1000
 
 prune_modes=('score_weight')

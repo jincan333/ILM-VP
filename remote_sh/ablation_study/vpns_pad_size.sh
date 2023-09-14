@@ -29,10 +29,10 @@ prune_methods=('vpns')
 global_vp_data=0
 # gmp_T=1000
 
-seeds=(7)
+seeds=(17)
 
-pad_sizes=(0 32 48 64 80 96)
-gpus=(7 6 5 4 3 2)
+pad_sizes=(32 48 64)
+gpus=(5 4 1)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

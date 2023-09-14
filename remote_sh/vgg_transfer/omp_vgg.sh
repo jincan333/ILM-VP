@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='omp_vgg_transfer_more'
+experiment_name='omp_vgg_transfer'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -13,14 +13,14 @@ networks=('vgg')
 datasets=('tiny_imagenet')
 epochs=120
 # seed 7 9 17
-density_list='1,0.30,0.20,0.10'
+density_list='1,0.6,0.5,0.4,0.3,0.2,0.1'
 prune_modes=('weight')
 
 weight_optimizer='sgd'
-weight_lr=0.01
+weight_lr=0.005
 seeds=(7)
 prune_methods=('omp')
-gpus=(0)
+gpus=(3)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
