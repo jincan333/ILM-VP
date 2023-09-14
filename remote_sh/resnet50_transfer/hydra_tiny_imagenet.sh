@@ -20,7 +20,7 @@ density_list='1,0.60,0.50,0.40,0.30,0.20,0.10'
 
 weight_optimizer='sgd'
 weight_lr=0.0001
-score_optimizer='adam'
+score_optimizer='sgd'
 score_lr=0.0001
 seeds=(9)
 # gmp_T=1000
