@@ -10,7 +10,7 @@ fi
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('vgg')
 datasets=('tiny_imagenet')
-epochs=5
+epochs=30
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
