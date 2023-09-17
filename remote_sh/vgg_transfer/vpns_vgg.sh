@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_vgg_transfer'
+experiment_name='vpns_vgg_transfer_new'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -10,7 +10,7 @@ fi
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('vgg')
 datasets=('tiny_imagenet')
-epochs=30
+epochs=5
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
@@ -18,21 +18,21 @@ epochs=30
 density_list='1,0.60,0.50,0.40,0.30,0.20,0.10'
 
 weight_optimizer='sgd'
-weight_lr=0.004
+weight_lr=0.005
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
-score_optimizer='adam'
-score_lr=0.00005
+score_optimizer='sgd'
+score_lr=0.005
 score_vp_optimizer=${score_optimizer}
 score_vp_lr=${score_lr}
 prune_modes=('score+vp_weight+vp')
 prune_methods=('vpns')
 global_vp_data=0
-batch_size=128
+batch_size=256
 # gmp_T=1000
 
 seeds=(7)
-gpus=(7)
+gpus=(3)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

@@ -247,14 +247,14 @@ if __name__ == "__main__":
                     Line2D([0], [0], color=SynFlow_color, lw=5),
                     Line2D([0], [0], color=HYDRA_color, lw=5)]
 
-    custom_markers = [Line2D([0], [0], marker='*', color='black', markerfacecolor='green', markersize=markersize+10),
-                    Line2D([0], [0], marker='o', color='black', markerfacecolor='green', markersize=markersize+2)]
+    custom_markers = [Line2D([0], [0], marker='*', color='black', markerfacecolor='black', markersize=markersize+10),
+                    Line2D([0], [0], marker='o', color='black', markerfacecolor='black', markersize=markersize+2)]
 
     # Then you can use these custom_lines to create your legend
     legend1 = plt.legend(custom_lines, ['Dense', 'OMP', 'Random', 'SNIP', 'SynFlow', 'HYDRA'], loc='lower left', bbox_to_anchor=(0, 0.16), fontsize=fontsize - 8, fancybox=True, shadow=False, framealpha=0, borderpad=0.3)
     plt.gca().add_artist(legend1)  # gca = "get current axis"
 
-    legend2 = plt.legend(custom_markers, ['Current Method', 'Post-pruning Prompt'], loc='lower left', fontsize=fontsize - 8, fancybox=True, shadow=False, framealpha=0, borderpad=0.3)
+    legend2 = plt.legend(custom_markers, ['w.o. Post-pruning Prompt', 'w. Post-pruning Prompt'], loc='lower left', fontsize=fontsize - 8, fancybox=True, shadow=False, framealpha=0, borderpad=0.3)
     plt.gca().add_artist(legend2)
 
 

@@ -4,6 +4,10 @@ import seaborn as sns
 import re
 from matplotlib.lines import Line2D
 import matplotlib.ticker as ticker 
+import matplotlib.patches as patches
+import matplotlib.lines as mlines
+
+
 
 def winning_ticket_gap(unpruned_acc, avg_acc_list, num_sparsities):
     x = np.arange(num_sparsities)
@@ -35,33 +39,8 @@ def extract_y_err(y_dense, performance_str):
     return np.array(y), np.array(err)
 
 if __name__ == "__main__":
-    # num = 14
-    # # x_grid = np.array(range(num))
-    # step = 1
-    # index = np.arange(0, num, step)
-    # x = np.arange(num)[index]
-    # x_density = 100 - 100 * (0.8 ** x)
-    # x_grid = x_density
-    # x_density_list = ['{:.2f}'.format(value) for value in x_density]
-
-    # num = 14
-    # x_grid = np.array(range(num))
-    # step = 1
-    # index = np.arange(0, num, step)
-    # x = np.arange(num)[index]
-    # x_density = 100 - 100 * (0.8 ** x)
-    # x_grid = x_density
-    # x_density_list = ['{:.2f}'.format(value) for value in x_density]
-
-    # y_PFTT_time = np.insert(np.array([180 for i in range(num - 1)]), 0, 0)
-    # y_BiP_time = np.insert(np.array([225 for i in range(num - 1)]), 0, 0)
-    # y_hydra_time = np.insert(np.array([136 for i in range(num - 1)]), 0, 0)
-    # y_IMP_time = np.array([115.2 * i for i in range(num)])
-    # y_OMP_time = np.insert(np.array([115.2 for i in range(num - 1)]), 0, 0)
-    # y_Grasp_time = np.insert(np.array([120 for i in range(num - 1)]), 0, 0)
-    
     # 7, 11; 9, 20
-    title = 'ResNet-18, Tiny-ImageNet'
+    title = 'legend'
     num, imp_num = 7, 11
     y_dense = 73.03
     y_min, y_max = 57,74
@@ -116,22 +95,22 @@ if __name__ == "__main__":
     # last_winning_ticket_sparsity(y_IMP[0], y_BiP, num, y_BiP_err)
 
 
-    x_label = "Sparsity (%)"
-    y_label = "Test Accuracy (%)"
+    # x_label = "Sparsity (%)"
+    # y_label = "Test Accuracy (%)"
 
     # Canvas setting
-    width = 14
-    height = 12
-    plt.figure(figsize=(width, height))
+    # width = 20
+    # height = 4
+    # plt.figure(figsize=(width, height))
 
-    sns.set_theme()
-    plt.grid(visible=True, which='major', linestyle='-', linewidth=4)
-    plt.grid(visible=True, which='minor')
-    plt.minorticks_on()
+    # sns.set_theme()
+    # plt.grid(visible=True, which='major', linestyle='-', linewidth=4)
+    # plt.grid(visible=True, which='minor')
+    # plt.minorticks_on()
     plt.rcParams['font.serif'] = 'Times New Roman'
 
-    markersize = 20
-    linewidth = 4
+    markersize = 6
+    linewidth = 2
     markevery = 1
     fontsize = 50
     alpha = 0.7
@@ -183,54 +162,54 @@ if __name__ == "__main__":
     # plt.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
 
 
-    l_dense = plt.axhline(y=y_dense, color=dense_color, linestyle='--', linewidth=3, label="Dense")
+    # l_dense = plt.axhline(y=y_dense, color=dense_color, linestyle='--', linewidth=3, label="Dense")
 
 
-    l_OMP = plt.plot(x_grid, y_OMP, color=OMP_color, marker='v', markevery=markevery, linestyle='-', linewidth=linewidth,
-                    markersize=markersize+1, label="OMP", alpha=OMP_alpha)
-    plt.fill_between(x_grid, y_OMP - y_OMP_err, y_OMP + y_OMP_err, color=OMP_color, alpha=fill_in_alpha)
+    # l_OMP = plt.plot(x_grid, y_OMP, color=OMP_color, marker='v', markevery=markevery, linestyle='-', linewidth=linewidth,
+    #                 markersize=markersize+1, label="OMP", alpha=OMP_alpha)
+    # plt.fill_between(x_grid, y_OMP - y_OMP_err, y_OMP + y_OMP_err, color=OMP_color, alpha=fill_in_alpha)
 
-    l_LTH = plt.plot(x_LTH_sparsity_list, y_LTH, color=LTH_color, marker='*', markevery=markevery, linestyle='-', linewidth=linewidth,
-                    markersize=markersize+7, label="LTH", alpha=LTH_alpha)
-    plt.fill_between(x_LTH_sparsity_list, y_LTH - y_LTH_err, y_LTH + y_LTH_err, color=LTH_color, alpha=fill_in_alpha)
+    # l_LTH = plt.plot(x_LTH_sparsity_list, y_LTH, color=LTH_color, marker='*', markevery=markevery, linestyle='-', linewidth=linewidth,
+    #                 markersize=markersize+7, label="LTH", alpha=LTH_alpha)
+    # plt.fill_between(x_LTH_sparsity_list, y_LTH - y_LTH_err, y_LTH + y_LTH_err, color=LTH_color, alpha=fill_in_alpha)
 
-    l_Random = plt.plot(x_grid, y_Random, color=Random_color, marker='s', markevery=markevery, linestyle='-',
-            linewidth=linewidth,
-            markersize=markersize-5, label="Random", alpha=Random_alpha)
-    plt.fill_between(x_grid, y_Random - y_Random_err, y_Random + y_Random_err, color=Random_color, alpha=fill_in_alpha)
+    # l_Random = plt.plot(x_grid, y_Random, color=Random_color, marker='s', markevery=markevery, linestyle='-',
+    #         linewidth=linewidth,
+    #         markersize=markersize-5, label="Random", alpha=Random_alpha)
+    # plt.fill_between(x_grid, y_Random - y_Random_err, y_Random + y_Random_err, color=Random_color, alpha=fill_in_alpha)
 
-    l_BiP = plt.plot(x_grid, y_BiP, color=BiP_color, marker='v', markevery=markevery, linestyle='-', linewidth=linewidth,
-                    markersize=markersize+1, label="BiP", alpha=BiP_alpha)
-    plt.fill_between(x_grid, y_BiP - y_BiP_err, y_BiP + y_BiP_err, color=BiP_color, alpha=fill_in_alpha)
-
-
-    l_SNIP = plt.plot(x_grid, y_SNIP, color=SNIP_color, marker='o', markevery=markevery, linestyle='-', linewidth=linewidth,
-                    markersize=markersize, label="SNIP", alpha=SNIP_alpha)
-    plt.fill_between(x_grid, y_SNIP - y_SNIP_err, y_SNIP + y_SNIP_err, color=SNIP_color, alpha=fill_in_alpha)
-
-    l_GraSP = plt.plot(x_grid, y_GraSP, color=GraSP_color, marker='s', markevery=markevery, linestyle='-', linewidth=linewidth,
-                    markersize=markersize-5, label="GraSP", alpha=GraSP_alpha)
-    plt.fill_between(x_grid, y_GraSP - y_GraSP_err, y_GraSP + y_GraSP_err, color=GraSP_color, alpha=fill_in_alpha)
+    # l_BiP = plt.plot(x_grid, y_BiP, color=BiP_color, marker='v', markevery=markevery, linestyle='-', linewidth=linewidth,
+    #                 markersize=markersize+1, label="BiP", alpha=BiP_alpha)
+    # plt.fill_between(x_grid, y_BiP - y_BiP_err, y_BiP + y_BiP_err, color=BiP_color, alpha=fill_in_alpha)
 
 
-    l_SynFlow = plt.plot(x_grid, y_SynFlow, color=SynFlow_color, marker='*', markevery=markevery, linestyle='-',
-        linewidth=linewidth,
-        markersize=markersize+7, label="SynFlow", alpha=SynFlow_alpha)
-    plt.fill_between(x_grid, y_SynFlow - y_SynFlow_err, y_SynFlow + y_SynFlow_err, color=SynFlow_color, alpha=fill_in_alpha)
+    # l_SNIP = plt.plot(x_grid, y_SNIP, color=SNIP_color, marker='o', markevery=markevery, linestyle='-', linewidth=linewidth,
+    #                 markersize=markersize, label="SNIP", alpha=SNIP_alpha)
+    # plt.fill_between(x_grid, y_SNIP - y_SNIP_err, y_SNIP + y_SNIP_err, color=SNIP_color, alpha=fill_in_alpha)
+
+    # l_GraSP = plt.plot(x_grid, y_GraSP, color=GraSP_color, marker='s', markevery=markevery, linestyle='-', linewidth=linewidth,
+    #                 markersize=markersize-5, label="GraSP", alpha=GraSP_alpha)
+    # plt.fill_between(x_grid, y_GraSP - y_GraSP_err, y_GraSP + y_GraSP_err, color=GraSP_color, alpha=fill_in_alpha)
 
 
-    l_HYDRA = plt.plot(x_grid, y_HYDRA, color=HYDRA_color, marker='v', markevery=markevery, linestyle='-',
-        linewidth=linewidth,
-        markersize=markersize+1, label="HYDRA", alpha=HYDRA_alpha)
-    plt.fill_between(x_grid, y_HYDRA - y_HYDRA_err, y_HYDRA + y_HYDRA_err, color=HYDRA_color, alpha=fill_in_alpha)
+    # l_SynFlow = plt.plot(x_grid, y_SynFlow, color=SynFlow_color, marker='*', markevery=markevery, linestyle='-',
+    #     linewidth=linewidth,
+    #     markersize=markersize+7, label="SynFlow", alpha=SynFlow_alpha)
+    # plt.fill_between(x_grid, y_SynFlow - y_SynFlow_err, y_SynFlow + y_SynFlow_err, color=SynFlow_color, alpha=fill_in_alpha)
 
 
-    l_VPNs = plt.plot(x_grid, y_VPNs, color=VPNs_color, marker='*', markevery=markevery, linestyle='-', linewidth=linewidth,
-                    markersize=markersize+7, label="VPNs", alpha=VPNs_alpha)
-    plt.fill_between(x_grid, y_VPNs - y_VPNs_err, y_VPNs + y_VPNs_err, color=VPNs_color, alpha=fill_in_alpha)
+    # l_HYDRA = plt.plot(x_grid, y_HYDRA, color=HYDRA_color, marker='v', markevery=markevery, linestyle='-',
+    #     linewidth=linewidth,
+    #     markersize=markersize+1, label="HYDRA", alpha=HYDRA_alpha)
+    # plt.fill_between(x_grid, y_HYDRA - y_HYDRA_err, y_HYDRA + y_HYDRA_err, color=HYDRA_color, alpha=fill_in_alpha)
 
-    lbest = plt.axhline(y=y_best, color=best_color, linestyle='--', linewidth=3, alpha=best_alpha,
-                        label="Our Best")
+
+    # l_VPNs = plt.plot(x_grid, y_VPNs, color=VPNs_color, marker='*', markevery=markevery, linestyle='-', linewidth=linewidth,
+    #                 markersize=markersize+7, label="VPNs", alpha=VPNs_alpha)
+    # plt.fill_between(x_grid, y_VPNs - y_VPNs_err, y_VPNs + y_VPNs_err, color=VPNs_color, alpha=fill_in_alpha)
+
+    # lbest = plt.axhline(y=y_best, color=best_color, linestyle='--', linewidth=3, alpha=best_alpha,
+    #                     label="Our Best")
 
     # dense_line = Line2D([0], [0], color=dense_color, lw=3, linestyle='--')
     # custom_lines = [dense_line,
@@ -251,20 +230,59 @@ if __name__ == "__main__":
     # plt.gca().add_artist(legend2)
 
 
-    plt.ylim([y_min, y_max])
-    plt.xlim(0, 100)
+    labels = ["Dense", "OMP", "LTH", "Random", "BiP", "SNIP",
+            "GraSP", "SynFlow", "HYDRA", "VPNs", "Our Best"]
+
+    colors = [dense_color, OMP_color, LTH_color, Random_color,
+            BiP_color, SNIP_color, GraSP_color, SynFlow_color,
+            HYDRA_color, VPNs_color, best_color]
+    
+    linestyles=['--', *['-' for i in range(9)], '--']
+
+    markers = [None, 'v', '*', 's', 'v', 'o', 's', '*', 'v', '*', None]
+
+    markersizes = [None, markersize, markersize+3, markersize, markersize, markersize, markersize, markersize+3, markersize, markersize+3, None]
+
+    alpha_values = [None, OMP_alpha, LTH_alpha, Random_alpha,
+                    BiP_alpha, SNIP_alpha, GraSP_alpha, SynFlow_alpha,
+                    HYDRA_alpha, VPNs_alpha, best_alpha]
+
+    lines = [mlines.Line2D([], [], color=color, linestyle= linestyle, linewidth=linewidth, marker=marker, markersize=markersize, label=label, alpha=alpha)
+            for color, linestyle, marker, markersize, label, alpha in zip(colors, linestyles, markers, markersizes, labels, alpha_values)]
+
+    # patches = [patches.Patch(color=color, alpha=fill_in_alpha, label=f"{label} Fill")
+    #         for color, label in zip(colors[1:], labels[1:])]
+    legend_elements = lines
+    legend_elements[7], legend_elements[-2] = legend_elements[-2], legend_elements[7]
+    legend_elements[-2], legend_elements[-1] = legend_elements[-1], legend_elements[-2]
+    # legend_elements[8], legend_elements[-1], legend_elements[-2] = legend_elements[-2], legend_elements[8], legend_elements[-1]
+    # Create a legend figure
+    fig, ax = plt.subplots(figsize=(6, 0.5))
+    # legend1 = ax.legend(handles=legend_elements[:6], loc=(0, 0), ncol=6)  # Adjust loc as needed
+    # legend2 = ax.legend(handles=legend_elements[6:], loc=(0, -0.1), ncol=6)  # Adjust loc as needed
+
+    ax.legend(handles=legend_elements, loc='center', ncol=6, frameon=False)  # Arrange the elements in 2 rows
+    # ax.add_artist(legend1) 
+    ax.axis('off')  # Hide axes
+    # Save the figure
+    fig.tight_layout()
+    fig.savefig(f"pic/superior_performance/{title}.pdf", bbox_inches='tight', pad_inches=0)
+
+
+    # plt.ylim([y_min, y_max])
+    # plt.xlim(0, 100)
 
     # plt.legend(fontsize=fontsize - 8, loc=3, fancybox=True, shadow=False, framealpha=0, borderpad=0.3)
-    plt.xlabel(x_label, fontsize=fontsize-2)
-    plt.ylabel(y_label, fontsize=fontsize-2)
-    plt.xticks(x_grid, x_sparsity_list, rotation=0, fontsize=fontsize-2)
-    plt.xscale("linear")
-    ax = plt.gca()  # Get the current Axes instance on the current figure
-    ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-    plt.yticks(fontsize=fontsize-2)
+    # plt.xlabel(x_label, fontsize=fontsize-2)
+    # plt.ylabel(y_label, fontsize=fontsize-2)
+    # plt.xticks(x_grid, x_sparsity_list, rotation=0, fontsize=fontsize-2)
+    # plt.xscale("linear")
+    # ax = plt.gca()  # Get the current Axes instance on the current figure
+    # ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+    # plt.yticks(fontsize=fontsize-2)
 
-    plt.title(title, fontsize=fontsize-2)
-    plt.tight_layout()
+    # plt.title(title, fontsize=fontsize-2)
+    # plt.tight_layout()
     # plt.twinx()
     # y_time_label = "Time Consumption (min)"
     # linewidth = 2
@@ -286,9 +304,9 @@ if __name__ == "__main__":
     # plt.ylabel(y_time_label, fontsize=fontsize)
     # plt.yticks(fontsize=fontsize)
     # plt.ylim(0, (int(max(y_IMP_time) / 100) + 1) * 100)
-    plt.savefig(f"pic/superior_performance/{title}.pdf")
-    plt.show()
-    plt.close()
+    # plt.savefig(f"pic/superior_performance/{title}.pdf")
+    # plt.show()
+    # plt.close()
 
 
 

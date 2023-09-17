@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
     pad    = '83.47 	83.29 	83.29 	82.98 	82.17 	80.87 '
     fix    = '82.98 	83.08 	83.00 	82.93 	81.93 	80.55 '
-    random = '82.93 	83.13 	82.98 	83.30 	82.22 	81.07 '
+    random = '82.93 	83.13 	82.98 	82.87 	82.02 	81.07 '
     y_pad, y_pad_err = extract_y_err(y_dense, pad)
     y_fix, y_fix_err = extract_y_err(y_dense, fix)
     y_random, y_random_err = extract_y_err(y_dense, random)
