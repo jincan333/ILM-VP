@@ -22,7 +22,7 @@ weight_lr=0.005
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
 score_optimizer='sgd'
-score_lr=0.005
+score_lr=0.001
 score_vp_optimizer=${score_optimizer}
 score_vp_lr=${score_lr}
 prune_modes=('score+vp_weight+vp')
@@ -32,7 +32,7 @@ batch_size=256
 # gmp_T=1000
 
 seeds=(7)
-gpus=(3)
+gpus=(1)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
