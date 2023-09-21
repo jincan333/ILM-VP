@@ -221,6 +221,10 @@ if __name__ == "__main__":
     #                 markersize=markersize+7, label="VPNs", alpha=VPNs_alpha)
     # plt.fill_between(x_grid, y_VPNs - y_VPNs_err, y_VPNs + y_VPNs_err, color=VPNs_color, alpha=fill_in_alpha)
 
+    l_prompt64 = plt.plot(x_grid, y_prompt64, color=prompt64_color, marker='o', markevery=markevery, linestyle='-',
+                      linewidth=linewidth,
+                      markersize=markersize, label="Pad Size 64", alpha=prompt64_alpha)
+    plt.fill_between(x_grid, y_prompt64 - y_prompt64_err, y_prompt64 + y_prompt64_err, color=prompt64_color, alpha=fill_in_alpha)
 
 
     l_prompt48 = plt.plot(x_grid, y_prompt48, color=prompt48_color, marker='o', markevery=markevery, linestyle='-',
@@ -228,10 +232,6 @@ if __name__ == "__main__":
                       markersize=markersize, label="Pad Size 48", alpha=prompt48_alpha)
     plt.fill_between(x_grid, y_prompt48 - y_prompt48_err, y_prompt48 + y_prompt48_err, color=prompt48_color, alpha=fill_in_alpha)
 
-    l_prompt64 = plt.plot(x_grid, y_prompt64, color=prompt64_color, marker='o', markevery=markevery, linestyle='-',
-                      linewidth=linewidth,
-                      markersize=markersize, label="Pad Size 64", alpha=prompt64_alpha)
-    plt.fill_between(x_grid, y_prompt64 - y_prompt64_err, y_prompt64 + y_prompt64_err, color=prompt64_color, alpha=fill_in_alpha)
 
     l_prompt32 = plt.plot(x_grid, y_prompt32, color=prompt32_color, marker='o', markevery=markevery, linestyle='-',
                       linewidth=linewidth,

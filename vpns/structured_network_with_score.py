@@ -280,6 +280,13 @@ def switch_to_finetune(model):
     freeze_vars(model, "popup_scores")
     unfreeze_vars(model, "weight")
     unfreeze_vars(model, "bias")
+    cl, ll, bl = get_layers('subnet')
+    for name, module in model.named_modules():
+        if isinstance(module,cl):
+            if isinstance(module.adj, torch.Tensor):
+                module.adj = module.adj.detach()
+            if isinstance(module.pre_adj, torch.Tensor):
+                module.pre_adj = module.pre_adj.detach()
 
 
 def switch_to_bilevel(model):
@@ -380,3 +387,39 @@ def Calculate_mask(model,bn_detach=True):
                     module.bn2.set_mask(cur_adj)
                 pre_adj=cur_adj
                 pre_scores=cur_scores
+
+
+def display_sparsity(network, args):
+    print(f'Sparsity Level: {1-args.density}')
+    print('Channel-wise Sparsity')
+    cl, ll, bl = get_layers('subnet')
+    total_channel_num = 0
+    total_channel_mask_num = 0
+    for name, module in network.named_modules():
+        if isinstance(module,cl):
+            if isinstance(module.adj, float):
+                channel_mask_num = 0
+                channel_num = module.weight.shape[0]
+                channel_sparsity = 0
+            else:
+                channel_num = module.weight.shape[0]
+                channel_mask_num = channel_num - module.adj.sum()
+                channel_sparsity = channel_mask_num / channel_num
+            total_channel_num += channel_num
+            total_channel_mask_num += channel_mask_num
+            print(f'name:{name}   score_shape:{module.popup_scores.shape}   channel_num:{channel_num}   channel_mask_num:{channel_mask_num}   channel_sparsity:{channel_sparsity}')
+    print(f'Total channel-wise   total_channel_num:{total_channel_num}   total_channel_mask_num:{total_channel_mask_num}   channel_sparsity:{total_channel_mask_num / total_channel_num}')
+    
+    print('Parameter Sparsity')
+    total_param_num = 0
+    total_param_mask_num = 0
+    for name, module in network.named_modules():
+        if isinstance(module,cl):
+            param_num = module.weight.numel()
+            param_mask_num = param_num - torch.nonzero(module.weight*module.adj*module.pre_adj).size(0)
+            param_sparsity = param_mask_num / param_num
+            total_param_num += param_num
+            total_param_mask_num += param_mask_num
+            print(f'name: {name}   param_num:{param_num}   param_mask_num: {param_mask_num}   param_sparsity:{param_sparsity}')
+    total_param_num += 512000
+    print(f'Total param-wise   total_param_num: {total_param_num}   total_param_mask_num: {total_param_mask_num}   param_sparsity:{total_param_mask_num / total_param_num}')

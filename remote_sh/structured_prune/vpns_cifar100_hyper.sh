@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_structured_prune'
+experiment_name='structured_prune'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -10,17 +10,17 @@ fi
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
 datasets=('cifar100')
-epochs=30
+epochs=10
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.6,0.5,0.4,0.3,0.2,0.1'
+density_list='1,0.2'
 
 weight_optimizer='sgd'
 weight_lr=0.01
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
-score_optimizer='sgd'
+score_optimizer='adam'
 score_lr=0.01
 score_vp_optimizer='adam'
 score_vp_lr=0.001
@@ -30,13 +30,18 @@ global_vp_data=0
 prefix='test'
 # gmp_T=1000
 
+optimizers=('sgd')
+lrs=(0.05 0.005)
 seeds=(7)
-gpus=(1)
+gpus=(3 2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
             for l in ${!prune_methods[@]};do
-                    for m in ${!seeds[@]};do            
+                for m in ${!seeds[@]};do
+                    for n in ${!lrs[@]};do
+                        score_optimizer=${optimizers[0]}
+                        score_lr=${lrs[n]}
                         log_filename=${foler_name}/${prefix}_${networks[j]}_${datasets[i]}_${prune_methods[l]}_${seeds[m]}_${weight_optimizer}_${weight_lr}_${weight_vp_optimizer}_${weight_vp_lr}_${score_optimizer}_${score_lr}_${score_vp_optimizer}_${score_vp_lr}.log
                             nohup python -u ./vpns/vpns_structured.py \
                                 --experiment_name ${experiment_name} \
@@ -53,7 +58,7 @@ for j in ${!networks[@]};do
                                 --score_lr ${score_lr} \
                                 --score_vp_optimizer ${score_vp_optimizer} \
                                 --score_vp_lr ${score_vp_lr} \
-                                --gpu ${gpus[m]} \
+                                --gpu ${gpus[n]} \
                                 --epochs ${epochs} \
                                 --seed ${seeds[m]} \
                                 > $log_filename 2>&1 &

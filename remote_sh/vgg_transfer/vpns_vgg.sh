@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_vgg_transfer_new'
+experiment_name='vpns_vgg_transfer_0.20_0.10'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -15,7 +15,7 @@ epochs=30
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
 # density_list='1,0.60'
-density_list='1,0.60,0.50,0.40,0.30,0.20,0.10'
+density_list='1,0.20,0.10'
 
 weight_optimizer='sgd'
 weight_lr=0.005
@@ -32,7 +32,7 @@ batch_size=256
 # gmp_T=1000
 
 seeds=(7)
-gpus=(1)
+gpus=(2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

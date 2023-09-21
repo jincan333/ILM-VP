@@ -228,7 +228,7 @@ if __name__ == "__main__":
 
     l_pad = plt.plot(x_grid, y_pad, color=pad_color, marker='*', markevery=markevery, linestyle='-',
                       linewidth=linewidth,
-                      markersize=markersize+7, label="VPNs", alpha=pad_alpha)
+                      markersize=markersize+7, label="VPNs (Pad Prompt)", alpha=pad_alpha)
     plt.fill_between(x_grid, y_pad - y_pad_err, y_pad + y_pad_err, color=pad_color, alpha=fill_in_alpha)
 
 
