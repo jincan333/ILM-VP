@@ -20,7 +20,7 @@ density_list='1,0.20,0.10'
 weight_optimizer='sgd'
 
 weight_vp_optimizer=${weight_optimizer}
-weight_vp_lr=${weight_lr}
+
 score_optimizer='sgd'
 score_lr=0.001
 score_vp_optimizer=${score_optimizer}
@@ -31,7 +31,7 @@ global_vp_data=0
 batch_size=256
 # gmp_T=1000
 
-seeds=(7)
+seeds=(7 7 7)
 gpus=(0 1)
 weight_lrs=(0.01 0.001)
 for j in ${!networks[@]};do
@@ -40,12 +40,13 @@ for j in ${!networks[@]};do
             for l in ${!prune_methods[@]};do
                 for m in ${!gpus[@]};do  
                     weight_lr=${weight_lrs[m]}
+                    weight_vp_lr=${weight_lr}
                     log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seeds[m]}_${weight_optimizer}_${weight_lr}_${weight_vp_optimizer}_${weight_vp_lr}_${score_optimizer}_${score_lr}_${score_vp_optimizer}_${score_vp_lr}_${epochs}_${gpus[m]}.log
                     nohup python -u ./vpns/vpns_unstructured_explore.py \
                         --experiment_name ${experiment_name} \
                         --dataset ${datasets[i]} \
                         --network ${networks[j]} \
-                        --prune_method ${prune_methods[0]} \
+                        --prune_method ${prune_methods[l]} \
                         --prune_mode ${prune_modes[k]} \
                         --density_list ${density_list} \
                         --weight_optimizer ${weight_optimizer} \
@@ -59,7 +60,7 @@ for j in ${!networks[@]};do
                         --gpu ${gpus[m]} \
                         --epochs ${epochs} \
                         --batch_size ${batch_size} \
-                        --seed ${seeds[0]} \
+                        --seed ${seeds[m]} \
                         > $log_filename 2>&1 &
                 done
                 wait
