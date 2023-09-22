@@ -90,7 +90,8 @@ class SubnetConv(nn.Conv2d):
 
         if self.threshold is False:
             self.adj=1.0
-        self.adj=GetSubnet.apply(self.popup_scores.abs(), self.threshold)
+        else:
+            self.adj=GetSubnet.apply(self.popup_scores.abs(), self.threshold)
         return self.adj
 
     def forward(self, x):    
@@ -270,6 +271,8 @@ def switch_to_prune(model):
     unfreeze_vars(model, "popup_scores")
     freeze_vars(model, "weight")
     freeze_vars(model, "bias")
+    for param in model.fc.parameters():
+        param.requires_grad= True
 
 
 def switch_to_finetune(model):
@@ -293,6 +296,7 @@ def switch_to_bilevel(model):
     unfreeze_vars(model, "popup_scores")
     unfreeze_vars(model, "weight")
     unfreeze_vars(model, "bias")
+
 
 
 def Calculate_mask(model,bn_detach=True):

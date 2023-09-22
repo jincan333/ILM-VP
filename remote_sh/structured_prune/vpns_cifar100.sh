@@ -14,7 +14,7 @@ epochs=30
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.6,0.5,0.4,0.3,0.2,0.1'
+density_list='1,0.9,0.8,0.7,0.6,0.5,0.4'
 
 weight_optimizer='sgd'
 weight_lr=0.01
@@ -27,11 +27,11 @@ score_vp_lr=0.001
 prune_modes=('score+vp_weight+vp')
 prune_methods=('vpns')
 global_vp_data=0
-prefix='test'
+prefix='agc'
 # gmp_T=1000
 
 seeds=(7)
-gpus=(1)
+gpus=(3)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

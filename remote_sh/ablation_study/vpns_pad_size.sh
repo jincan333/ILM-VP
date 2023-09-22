@@ -31,8 +31,8 @@ global_vp_data=0
 
 seeds=(17)
 
-pad_sizes=(32 48 64)
-gpus=(5 4 1)
+pad_sizes=(8)
+gpus=(1)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

@@ -61,7 +61,7 @@ if __name__ == "__main__":
     # y_Grasp_time = np.insert(np.array([120 for i in range(num - 1)]), 0, 0)
     
     # 7, 11; 9, 20
-    title = 'Post-pruning Prompt with Fine-tune'
+    title = 'Post-pruning Prompt with Fine-tuning'
     num, imp_num = 7, 11
     y_dense = 96.09
     y_min, y_max = 93.5,96.4
@@ -251,11 +251,11 @@ if __name__ == "__main__":
                     Line2D([0], [0], marker='o', color='black', markerfacecolor='black', markersize=markersize+2)]
 
     # Then you can use these custom_lines to create your legend
-    legend1 = plt.legend(custom_lines, ['Dense', 'OMP', 'Random', 'SNIP', 'SynFlow', 'HYDRA'], loc='lower left', bbox_to_anchor=(0, 0.16), fontsize=fontsize - 8, fancybox=True, shadow=False, framealpha=0, borderpad=0.3)
-    plt.gca().add_artist(legend1)  # gca = "get current axis"
+    # legend1 = plt.legend(custom_lines, ['Dense', 'OMP', 'Random', 'SNIP', 'SynFlow', 'HYDRA'], loc='lower left', bbox_to_anchor=(0, 0.16), fontsize=fontsize - 8, fancybox=True, shadow=False, framealpha=0, borderpad=0.3)
+    # plt.gca().add_artist(legend1)  # gca = "get current axis"
 
-    legend2 = plt.legend(custom_markers, ['w.o. Post-pruning Prompt', 'w. Post-pruning Prompt'], loc='lower left', fontsize=fontsize - 8, fancybox=True, shadow=False, framealpha=0, borderpad=0.3)
-    plt.gca().add_artist(legend2)
+    # legend2 = plt.legend(custom_markers, ['w.o. Post-pruning Prompt', 'w. Post-pruning Prompt'], loc='lower left', fontsize=fontsize - 8, fancybox=True, shadow=False, framealpha=0, borderpad=0.3)
+    # plt.gca().add_artist(legend2)
 
 
     plt.ylim([y_min, y_max])
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
     plt.yticks(fontsize=fontsize-2)
 
-    # plt.title(title, fontsize=fontsize)
+    plt.title('(b) Fine-tuning', fontsize=fontsize)
     plt.tight_layout()
     # plt.twinx()
     # y_time_label = "Time Consumption (min)"

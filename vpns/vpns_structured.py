@@ -39,12 +39,12 @@ def main():
     parser.add_argument('--score_lr', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--score_weight_decay', default=1e-4, type=float, help='hydra weight decay')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg"])
-    parser.add_argument('--dataset', default="oxfordpets", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'sun397', 'tiny_imagenet', 'imagenet'])
+    parser.add_argument('--dataset', default="dtd", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'sun397', 'tiny_imagenet', 'imagenet'])
     parser.add_argument('--experiment_name', default='exp_new', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=1, help='gpu device id')
     parser.add_argument('--epochs', default=1, type=int, help='number of total eopchs to run')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
-    parser.add_argument('--density_list', default='1,0.50,0.20,0.10', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
+    parser.add_argument('--density_list', default='1,0.20,0.10', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
 
     ##################################### General setting ############################################
@@ -280,6 +280,7 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
             fx = label_mapping(network(visual_prompt(val_x)))
             loss = F.cross_entropy(fx, val_y, reduction='mean')
             loss.backward()
+            torch.nn.utils.clip_grad_value_(network.parameters(), clip_value=0.25)
             score_optimizer.step()
             if vp_optimizer:
                 vp_optimizer.step()
@@ -290,6 +291,7 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
             fx=label_mapping(network(args.normalize(x)))
             loss = F.cross_entropy(fx, y, reduction='mean')
             loss.backward()
+            torch.nn.utils.clip_grad_value_(network.parameters(), clip_value=0.25)
             score_optimizer.step()
             if vp_optimizer:
                 vp_optimizer.step()

@@ -252,7 +252,7 @@ if __name__ == "__main__":
 
 
     plt.ylim([y_min, y_max])
-    plt.xlim(0, 100)
+    plt.xlim(0, 90)
 
     plt.legend(fontsize=fontsize - 8, loc=3, fancybox=True, shadow=False, framealpha=0, borderpad=0.3)
     plt.xlabel(x_label, fontsize=fontsize-2)

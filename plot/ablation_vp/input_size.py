@@ -61,7 +61,7 @@ if __name__ == "__main__":
     # y_Grasp_time = np.insert(np.array([120 for i in range(num - 1)]), 0, 0)
     
     # 7, 11; 9, 20
-    title = 'Input Size'
+    title = '(a) Input Size'
     num, imp_num = 7, 11
     y_dense = 82.10
     y_min, y_max = 78.5,84
@@ -237,7 +237,7 @@ if __name__ == "__main__":
 
     l_input224 = plt.plot(x_grid, y_input224, color=input224_color, marker='*', markevery=markevery, linestyle='-',
                       linewidth=linewidth,
-                      markersize=markersize+7, label="VPNs (Input Size 224)", alpha=input224_alpha)
+                      markersize=markersize+7, label="Input Size 224 (VPNs)", alpha=input224_alpha)
     plt.fill_between(x_grid, y_input224 - y_input224_err, y_input224 + y_input224_err, color=input224_color, alpha=fill_in_alpha)
 
 

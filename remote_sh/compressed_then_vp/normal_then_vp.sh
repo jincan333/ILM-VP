@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='compressed_then_vp_more_more'
+experiment_name='compressed_then_vp'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -13,15 +13,15 @@ networks=('resnet18')
 datasets=('cifar10')
 epochs=120
 # seed 7 9 17
-density_list='1,0.20'
+density_list='1,0.4,0.5,0.6,0.7,0.8,0.9'
 prune_modes=('weight+vp')
 
 weight_optimizer='sgd'
 weight_lr=0.01
-seeds=(7)
-prune_methods=('random' 'snip')
+seeds=(9)
+prune_methods=('omp')
 # prune_methods=('omp' 'random' 'snip' 'synflow')
-gpus=(2 1)
+gpus=(5)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

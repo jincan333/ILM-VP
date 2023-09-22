@@ -8,6 +8,7 @@ from functools import partial
 import warnings
 import pickle
 import json
+from nfnets.agc import AGC
 
 from visual_prompt import ExpansiveVisualPrompt, PadVisualPrompt, FixVisualPrompt, RandomVisualPrompt
 from label_mapping import label_mapping_base, generate_label_mapping_by_frequency, generate_label_mapping_by_frequency_ordinary
@@ -72,6 +73,8 @@ def setup_optimizer_and_prompt(network, args):
     if args.prune_method in ('vpns', 'bip', 'hydra'):
         score_params = [param for param in network.parameters() if hasattr(param, 'is_score') and param.is_score]
         score_optimizer, score_scheduler = get_optimizer(score_params, args.score_optimizer, args.score_scheduler, args.score_lr, args.score_weight_decay, args)
+         # Needs testing
+        # score_optimizer = AGC(score_params, score_optimizer, model=network, ignore_agc=['fc'])
     
     return visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler
 
