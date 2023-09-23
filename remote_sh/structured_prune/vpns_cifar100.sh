@@ -27,11 +27,11 @@ score_vp_lr=0.001
 prune_modes=('score+vp_weight+vp')
 prune_methods=('vpns')
 global_vp_data=0
-prefix='agc'
+prefix='limited_warmup5'
 # gmp_T=1000
 
 seeds=(7)
-gpus=(3)
+gpus=(0)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

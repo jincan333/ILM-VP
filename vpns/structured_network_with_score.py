@@ -214,6 +214,28 @@ def get_layers(layer_type):
         raise ValueError("Incorrect layer type")
 
 
+def calculate_channel_sparsity(module):
+    if isinstance(module,SubnetConv):
+        if isinstance(module.adj, float):
+            channel_mask_num = 0
+            channel_num = module.weight.shape[0]
+            channel_sparsity = 0
+        else:
+            channel_num = module.weight.shape[0]
+            channel_mask_num = channel_num - module.adj.sum().item()
+            channel_sparsity = channel_mask_num / channel_num
+    else:
+        channel_mask_num = 0
+        channel_num = 0
+        channel_sparsity = 0
+    return channel_num, channel_mask_num, channel_sparsity
+
+
+def calculate_flops(model):
+    pass
+
+
+
 def set_scored_network(network, args):
     cl, ll, bl = get_layers('subnet')
     network=replace_layers(network,Conv2d,cl,'channel',args)
@@ -237,10 +259,57 @@ def set_prune_threshold(network, prune_rate):
         threshold, _ = torch.kthvalue(global_scores, k)
         cl, ll, bl = get_layers('subnet')
         for name, module in network.named_modules():
-            if isinstance(module,cl):
+            if isinstance(module,cl) and ('conv' in name):
                 module.set_threshold(threshold)
             # if  isinstance(module,ll):
             #     module.set_threshold(threshold)
+
+
+def set_channel_threshold(module, args):
+    if isinstance(module, SubnetConv):
+        scores = torch.flatten(torch.clone(module.popup_scores.data).detach().abs_())
+    k = int(args.channel_max * scores.numel())
+    threshold, _ = torch.kthvalue(scores, k)
+    module.set_threshold(threshold)
+
+
+def set_limited_threshold(model, args):
+    normal=True
+    set_prune_threshold(model, args.density)
+    # print('before limit')
+    # display_sparsity(model, args)
+    conv1_t_c, conv1_m_c, conv1_s = calculate_channel_sparsity(model.conv1)
+    conv2_t_c, conv2_m_c, conv2_s = calculate_channel_sparsity(model.layer1[0].conv1)
+    conv3_t_c, conv3_m_c, conv3_s = calculate_channel_sparsity(model.layer1[0].conv2)
+    if conv1_s > args.channel_max:
+        normal=False
+        set_channel_threshold(model.conv1, args)
+        conv1_t_c, conv1_m_c, conv1_s = calculate_channel_sparsity(model.conv1)
+    if conv2_s > args.channel_max:
+        normal=False
+        set_channel_threshold(model.layer1[0].conv1, args)
+        conv2_t_c, conv2_m_c, conv2_s = calculate_channel_sparsity(model.layer1[0].conv1)
+    if conv3_s > args.channel_max:
+        normal=False
+        set_channel_threshold(model.layer1[0].conv2, args)
+        conv3_t_c, conv3_m_c, conv3_s = calculate_channel_sparsity(model.layer1[0].conv2)
+    if not normal:
+        limited_t_c = conv1_t_c + conv2_t_c + conv3_t_c
+        limited_m_c = conv1_m_c + conv2_m_c + conv3_m_c
+        score_dict={}
+        for name, module in model.named_modules():
+            if (name not in ['conv1', 'layer1.0.conv1', 'layer1.0.conv2']) and ('conv' in name) and isinstance(module, SubnetConv):
+                score_dict[name] = torch.clone(module.popup_scores).detach().abs_()
+        global_scores = torch.cat([torch.flatten(v) for v in score_dict.values()])
+        k = int((1-args.density) * (global_scores.numel()+limited_t_c) - limited_m_c)
+        if not k < 1:
+            threshold, _ = torch.kthvalue(global_scores, k)
+            for name, module in model.named_modules():
+                if (name not in ['conv1', 'layer1.0.conv1', 'layer1.0.conv2']) and ('conv' in name) and isinstance(module, SubnetConv):
+                    module.set_threshold(threshold)
+        # print('after limit')
+        # display_sparsity(model, args)
+
 
 
 def freeze_vars(model, var_name, freeze_bn=False):
@@ -298,11 +367,10 @@ def switch_to_bilevel(model):
     unfreeze_vars(model, "bias")
 
 
-
-def Calculate_mask(model,bn_detach=True):
+def Calculate_mask(model, args, bn_detach=True):
+    set_limited_threshold(model, args)
     pre_adj=1.0
     pre_scores=1.0
-    # model.conv1.threshold=thres
     cur_adj=model.conv1.calculate_mask(pre_adj,pre_scores)
     cur_scores=model.conv1.popup_scores
     if bn_detach and type(cur_adj) is not float:
@@ -407,7 +475,7 @@ def display_sparsity(network, args):
                 channel_sparsity = 0
             else:
                 channel_num = module.weight.shape[0]
-                channel_mask_num = channel_num - module.adj.sum()
+                channel_mask_num = channel_num - module.adj.sum().item()
                 channel_sparsity = channel_mask_num / channel_num
             total_channel_num += channel_num
             total_channel_mask_num += channel_mask_num

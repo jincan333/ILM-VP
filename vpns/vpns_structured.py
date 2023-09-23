@@ -41,11 +41,13 @@ def main():
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg"])
     parser.add_argument('--dataset', default="dtd", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'sun397', 'tiny_imagenet', 'imagenet'])
     parser.add_argument('--experiment_name', default='exp_new', type=str, help='name of experiment')
-    parser.add_argument('--gpu', type=int, default=1, help='gpu device id')
+    parser.add_argument('--gpu', type=int, default=3, help='gpu device id')
     parser.add_argument('--epochs', default=1, type=int, help='number of total eopchs to run')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
     parser.add_argument('--density_list', default='1,0.20,0.10', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
+    parser.add_argument('--channel_max', type=float, default=0.25)
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
+    parser.add_argument('--warm_up', type=float, default=5)
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='result', type=str)
@@ -107,6 +109,10 @@ def main():
     # Label Mapping
     label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
     print('mapping_sequence: ', mapping_sequence)
+    for epoch in range(args.warm_up):
+        train_acc = train(train_loader, val_loader, 'finetune', network, epoch, label_mapping, visual_prompt, args=args,
+                    weight_optimizer=weight_optimizer, vp_optimizer=weight_vp_optimizer, score_optimizer=score_optimizer, 
+                    weight_scheduler=weight_scheduler, vp_scheduler=weight_vp_scheduler, score_scheduler=score_scheduler)
     # initiate
     pre_state_init = copy.deepcopy(network.state_dict())
     visual_prompt_init = copy.deepcopy(visual_prompt.state_dict()) if visual_prompt else None
@@ -284,8 +290,7 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
             score_optimizer.step()
             if vp_optimizer:
                 vp_optimizer.step()
-            set_prune_threshold(network, args.density)
-            Calculate_mask(network)
+            Calculate_mask(network, args)
 
             init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
             fx=label_mapping(network(args.normalize(x)))
@@ -295,8 +300,7 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
             score_optimizer.step()
             if vp_optimizer:
                 vp_optimizer.step()
-            set_prune_threshold(network, args.density)
-            Calculate_mask(network)
+            Calculate_mask(network, args)
 
         args.current_steps+=1
         total_num += y.size(0)
