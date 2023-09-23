@@ -20,11 +20,9 @@ density_list='1,0.20,0.10'
 weight_optimizer='sgd'
 weight_lr=0.01
 weight_vp_optimizer=${weight_optimizer}
-
 score_optimizer='sgd'
 # score_lr=0.001
 score_vp_optimizer=${score_optimizer}
-score_vp_lr=${score_lr}
 prune_modes=('score+vp_weight+vp')
 prune_methods=('vpns')
 global_vp_data=0
@@ -41,6 +39,7 @@ for j in ${!networks[@]};do
                 for m in ${!gpus[@]};do  
                     score_lr=${score_lrs[m]}
                     weight_vp_lr=${weight_lr}
+                    score_vp_lr=${score_lr}
                     log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seeds[m]}_${weight_optimizer}_${weight_lr}_${weight_vp_optimizer}_${weight_vp_lr}_${score_optimizer}_${score_lr}_${score_vp_optimizer}_${score_vp_lr}_${epochs}_${gpus[m]}.log
                     nohup python -u ./vpns/vpns_unstructured_explore.py \
                         --experiment_name ${experiment_name} \
