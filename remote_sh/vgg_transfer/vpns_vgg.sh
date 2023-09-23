@@ -18,7 +18,7 @@ epochs=30
 density_list='1,0.20,0.10'
 
 weight_optimizer='sgd'
-weight_lr=0.005
+weight_lr=0.01
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
 score_optimizer='sgd'
@@ -32,7 +32,7 @@ batch_size=256
 # gmp_T=1000
 
 seeds=(7)
-gpus=(2)
+gpus=(3)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
