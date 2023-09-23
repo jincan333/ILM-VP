@@ -30,8 +30,8 @@ batch_size=256
 # gmp_T=1000
 
 seeds=(7 7 7)
-gpus=(1 2 3)
-score_lrs=(0.01 0.005 0.001)
+gpus=(1 2)
+score_lrs=(0.01 0.005)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
