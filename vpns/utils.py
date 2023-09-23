@@ -74,7 +74,7 @@ def setup_optimizer_and_prompt(network, args):
         score_params = [param for param in network.parameters() if hasattr(param, 'is_score') and param.is_score]
         score_optimizer, score_scheduler = get_optimizer(score_params, args.score_optimizer, args.score_scheduler, args.score_lr, args.score_weight_decay, args)
          # Needs testing
-        score_optimizer = AGC(score_params, score_optimizer, model=network)
+        # score_optimizer = AGC(score_params, score_optimizer, model=network)
     
     return visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler
 
