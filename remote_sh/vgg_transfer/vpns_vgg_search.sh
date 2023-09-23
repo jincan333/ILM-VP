@@ -18,11 +18,11 @@ epochs=10
 density_list='1,0.20,0.10'
 
 weight_optimizer='sgd'
-
+weight_lr=0.01
 weight_vp_optimizer=${weight_optimizer}
 
 score_optimizer='sgd'
-score_lr=0.001
+# score_lr=0.001
 score_vp_optimizer=${score_optimizer}
 score_vp_lr=${score_lr}
 prune_modes=('score+vp_weight+vp')
@@ -32,14 +32,14 @@ batch_size=256
 # gmp_T=1000
 
 seeds=(7 7 7)
-gpus=(0 1)
-weight_lrs=(0.01 0.001)
+gpus=(1 2 3)
+score_lrs=(0.01 0.005 0.001)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
             for l in ${!prune_methods[@]};do
                 for m in ${!gpus[@]};do  
-                    weight_lr=${weight_lrs[m]}
+                    score_lr=${score_lrs[m]}
                     weight_vp_lr=${weight_lr}
                     log_filename=${foler_name}/${networks[j]}_${datasets[i]}_${prune_modes[k]}_${prune_methods[l]}_${seeds[m]}_${weight_optimizer}_${weight_lr}_${weight_vp_optimizer}_${weight_vp_lr}_${score_optimizer}_${score_lr}_${score_vp_optimizer}_${score_vp_lr}_${epochs}_${gpus[m]}.log
                     nohup python -u ./vpns/vpns_unstructured_explore.py \
