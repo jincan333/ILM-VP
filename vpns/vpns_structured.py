@@ -13,7 +13,7 @@ from utils import set_seed, setup_optimizer_and_prompt, calculate_label_mapping,
 from get_model_dataset import choose_dataloader, get_model
 from pruner import extract_mask, prune_model_custom, check_sparsity, remove_prune, pruning_model
 from core import Masking, CosineDecay
-from structured_network_with_score import set_prune_threshold, set_scored_network, switch_to_finetune, switch_to_prune, Calculate_mask, display_sparsity
+from structured_network_with_score import set_prune_threshold, set_scored_network, switch_to_finetune, switch_to_prune, Calculate_mask, display_sparsity, set_limited_threshold
 
 
 def main():    
@@ -36,15 +36,15 @@ def main():
     parser.add_argument('--score_vp_weight_decay', default=1e-4, type=float, help='visual prompt weight decay')
     parser.add_argument('--score_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--score_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
-    parser.add_argument('--score_lr', default=0.0001, type=float, help='initial learning rate')
-    parser.add_argument('--score_weight_decay', default=1e-4, type=float, help='hydra weight decay')
+    parser.add_argument('--score_lr', default=1, type=float, help='initial learning rate')
+    parser.add_argument('--score_weight_decay', default=0.01, type=float, help='hydra weight decay')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg"])
     parser.add_argument('--dataset', default="dtd", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'sun397', 'tiny_imagenet', 'imagenet'])
     parser.add_argument('--experiment_name', default='exp_new', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=3, help='gpu device id')
     parser.add_argument('--epochs', default=1, type=int, help='number of total eopchs to run')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
-    parser.add_argument('--density_list', default='1,0.20,0.10', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
+    parser.add_argument('--density_list', default='1,0.4', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
     parser.add_argument('--channel_max', type=float, default=0.25)
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
     parser.add_argument('--warm_up', type=float, default=5)
@@ -135,7 +135,7 @@ def main():
         # prune
         args.density = args.density_list[state]
         print('Network Density Setting:', args.density)
-        set_prune_threshold(network, args.density)
+        set_limited_threshold(network, args)
         display_sparsity(network, args)
         label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
         print('mapping_sequence: ', mapping_sequence)
@@ -315,7 +315,8 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
                 f'Accuracy {train_acc:.4f}\t'
                 f'Time {end-start:.2f}')
             start = time.time()
-    # display_sparsity(network, args)
+    if stage=='prune':
+        display_sparsity(network, args)
     end = time.time()
     print(f'Epoch: [{epoch}][{i}/{len(train_loader)}]\t'
         f'loss_sum {loss_sum:.4f}\t'

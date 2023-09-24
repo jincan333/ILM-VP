@@ -14,28 +14,28 @@ epochs=10
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.5'
+density_list='1,0.4'
 
 weight_optimizer='sgd'
 weight_lr=0.01
-weight_weight_decay=0.0005
+weight_weight_decay=0.0001
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
-score_optimizer='sgd'
-score_lr=0.01
-score_weight_decay=0.0005
+score_optimizer='adam'
+score_lr=0.001
+score_weight_decay=0.1
 score_vp_optimizer='adam'
 score_vp_lr=0.001
 prune_modes=('score+vp_weight+vp')
 prune_methods=('vpns')
 global_vp_data=0
-prefix='limited_warmup5'
+prefix='limited2_warmup5'
 # gmp_T=1000
 
-optimizers=('sgd')
-lrs=(0.01)
+optimizers=('adam')
+lrs=(1 0.1)
 seeds=(7)
-gpus=(1)
+gpus=(1 1 1 1 1)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

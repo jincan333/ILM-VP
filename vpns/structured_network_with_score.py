@@ -281,6 +281,8 @@ def set_limited_threshold(model, args):
     conv1_t_c, conv1_m_c, conv1_s = calculate_channel_sparsity(model.conv1)
     conv2_t_c, conv2_m_c, conv2_s = calculate_channel_sparsity(model.layer1[0].conv1)
     conv3_t_c, conv3_m_c, conv3_s = calculate_channel_sparsity(model.layer1[0].conv2)
+    conv4_t_c, conv4_m_c, conv4_s = calculate_channel_sparsity(model.layer1[1].conv1)
+    conv5_t_c, conv5_m_c, conv5_s = calculate_channel_sparsity(model.layer1[1].conv2)
     if conv1_s > args.channel_max:
         normal=False
         set_channel_threshold(model.conv1, args)
@@ -293,19 +295,27 @@ def set_limited_threshold(model, args):
         normal=False
         set_channel_threshold(model.layer1[0].conv2, args)
         conv3_t_c, conv3_m_c, conv3_s = calculate_channel_sparsity(model.layer1[0].conv2)
+    if conv4_s > args.channel_max:
+        normal=False
+        set_channel_threshold(model.layer1[1].conv1, args)
+        conv4_t_c, conv4_m_c, conv4_s = calculate_channel_sparsity(model.layer1[1].conv1)
+    if conv5_s > args.channel_max:
+        normal=False
+        set_channel_threshold(model.layer1[1].conv2, args)
+        conv5_t_c, conv5_m_c, conv5_s = calculate_channel_sparsity(model.layer1[1].conv2)
     if not normal:
-        limited_t_c = conv1_t_c + conv2_t_c + conv3_t_c
-        limited_m_c = conv1_m_c + conv2_m_c + conv3_m_c
+        limited_t_c = conv1_t_c + conv2_t_c + conv3_t_c + conv4_t_c + conv5_t_c
+        limited_m_c = conv1_m_c + conv2_m_c + conv3_m_c + conv4_m_c + conv5_m_c
         score_dict={}
         for name, module in model.named_modules():
-            if (name not in ['conv1', 'layer1.0.conv1', 'layer1.0.conv2']) and ('conv' in name) and isinstance(module, SubnetConv):
+            if (name not in ['conv1', 'layer1.0.conv1', 'layer1.0.conv2', 'layer1.1.conv1', 'layer1.1.conv2']) and ('conv' in name) and isinstance(module, SubnetConv):
                 score_dict[name] = torch.clone(module.popup_scores).detach().abs_()
         global_scores = torch.cat([torch.flatten(v) for v in score_dict.values()])
         k = int((1-args.density) * (global_scores.numel()+limited_t_c) - limited_m_c)
         if not k < 1:
             threshold, _ = torch.kthvalue(global_scores, k)
             for name, module in model.named_modules():
-                if (name not in ['conv1', 'layer1.0.conv1', 'layer1.0.conv2']) and ('conv' in name) and isinstance(module, SubnetConv):
+                if (name not in ['conv1', 'layer1.0.conv1', 'layer1.0.conv2', 'layer1.1.conv1', 'layer1.1.conv2']) and ('conv' in name) and isinstance(module, SubnetConv):
                     module.set_threshold(threshold)
         # print('after limit')
         # display_sparsity(model, args)
