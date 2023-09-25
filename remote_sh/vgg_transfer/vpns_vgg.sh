@@ -23,7 +23,7 @@ weight_weight_decay=0.0001
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
 score_optimizer='adam'
-score_lr=0.0001
+score_lr=0.0005
 score_weight_decay=0.0001
 score_vp_optimizer=${score_optimizer}
 score_vp_lr=${score_lr}
@@ -34,7 +34,7 @@ batch_size=256
 # gmp_T=1000
 
 seeds=(7)
-gpus=(1)
+gpus=(2)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
