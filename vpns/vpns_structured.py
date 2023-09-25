@@ -13,7 +13,7 @@ from utils import set_seed, setup_optimizer_and_prompt, calculate_label_mapping,
 from get_model_dataset import choose_dataloader, get_model
 from pruner import extract_mask, prune_model_custom, check_sparsity, remove_prune, pruning_model
 from core import Masking, CosineDecay
-from structured_network_with_score import set_prune_threshold, set_scored_network, switch_to_finetune, switch_to_prune, Calculate_mask, display_sparsity, set_limited_threshold
+from structured_network_with_score import set_prune_threshold, set_scored_network, switch_to_finetune, switch_to_prune, Calculate_mask, display_sparsity, set_limited_threshold, count_model_param_flops
 
 
 def main():    
@@ -301,6 +301,7 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
             if vp_optimizer:
                 vp_optimizer.step()
             Calculate_mask(network, args)
+            # count_model_param_flops(network, )
 
         args.current_steps+=1
         total_num += y.size(0)

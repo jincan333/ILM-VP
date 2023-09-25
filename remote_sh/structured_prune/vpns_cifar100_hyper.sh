@@ -22,18 +22,19 @@ weight_weight_decay=0.0001
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
 score_optimizer='adam'
-score_lr=0.001
-score_weight_decay=0.01
+score_lr=1
+# score_weight_decay=0.1
 score_vp_optimizer='adam'
 score_vp_lr=0.001
 prune_modes=('score+vp_weight+vp')
 prune_methods=('vpns')
 global_vp_data=0
-prefix='limited2_warmup0'
+prefix='limited2_warmup5'
 # gmp_T=1000
 
-optimizers=('sgd')
-lrs=(0.5 0.1 0.05 0.01)
+optimizers=('adam')
+# lrs=(1 0.8 0.2 0.1)
+weight_decays=(0.5 0.2 0.08 0.05)
 seeds=(7)
 gpus=(5 4 3 1)
 for j in ${!networks[@]};do
@@ -41,9 +42,10 @@ for j in ${!networks[@]};do
         for k in ${!prune_modes[@]};do
             for l in ${!prune_methods[@]};do
                 for m in ${!seeds[@]};do
-                    for n in ${!lrs[@]};do
+                    for n in ${!gpus[@]};do
                         score_optimizer=${optimizers[0]}
-                        score_lr=${lrs[n]}
+                        # score_lr=${lrs[n]}
+                        score_weight_decay=${weight_decays[n]}
                         log_filename=${foler_name}/${prefix}_${networks[j]}_${datasets[i]}_${prune_methods[l]}_${seeds[m]}_${weight_optimizer}_${weight_lr}_${weight_weight_decay}_${weight_vp_optimizer}_${weight_vp_lr}_${score_optimizer}_${score_lr}_${score_weight_decay}_${score_vp_optimizer}_${score_vp_lr}.log
                             nohup python -u ./vpns/vpns_structured.py \
                                 --experiment_name ${experiment_name} \

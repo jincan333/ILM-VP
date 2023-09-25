@@ -32,7 +32,7 @@ prefix='limited_warmup5_0.5'
 # gmp_T=1000
 
 seeds=(7)
-gpus=(2)
+gpus=(4)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
