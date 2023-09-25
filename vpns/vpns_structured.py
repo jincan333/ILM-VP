@@ -315,8 +315,8 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
                 f'Accuracy {train_acc:.4f}\t'
                 f'Time {end-start:.2f}')
             start = time.time()
-    if stage=='prune':
-        display_sparsity(network, args)
+    # if stage=='prune':
+    #     display_sparsity(network, args)
     end = time.time()
     print(f'Epoch: [{epoch}][{i}/{len(train_loader)}]\t'
         f'loss_sum {loss_sum:.4f}\t'
