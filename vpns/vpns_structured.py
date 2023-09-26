@@ -81,6 +81,7 @@ def main():
     args.prompt_method=None if args.prompt_method=='None' else args.prompt_method        
     args.density_list=[float(i) for i in args.density_list.split(',')]
     args.current_steps=0
+    args.epochs=args.warm_up
     print(json.dumps(vars(args), indent=4))
     # Device
     device = torch.device(f"cuda:{args.gpu}")
@@ -126,6 +127,7 @@ def main():
         print('******************************************')
         # init
         network.load_state_dict(pre_state_init)
+        args.epochs=5
         if args.prune_method in ('vpns', 'hydra', 'bip'):
             set_prune_threshold(network, 1)
         label_mapping = obtain_label_mapping(mapping_sequence_init)
@@ -187,6 +189,7 @@ def main():
         # Plot training curve
         plot_train(all_results, save_path, state)
         # train
+        args.epochs=30
         visual_prompt_state = copy.deepcopy(visual_prompt.state_dict()) if visual_prompt else None
         visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(network, visual_prompt_state, mapping_sequence, None, args)
         all_results['no_train_acc'] = test_acc

@@ -62,12 +62,12 @@ if __name__ == "__main__":
     
     # 7, 11; 9, 20
     title = 'ResNet-18, CIFAR100'
-    num, imp_num = 7, 11
-    y_dense = 82.10
-    y_min, y_max = 74,84
+    num, imp_num = 6, 11
+    y_dense = 81.90
+    y_min, y_max = 74.9,82.8
     
     # 10, 20
-    x_sparsity_list = np.array([0, 40, 50, 60, 70, 80, 90, 95, 99][:num])
+    x_sparsity_list = np.array([0, 10, 20, 30, 40, 50, 60, 70, 80][:num])
     x_grid = x_sparsity_list
     x_LTH_sparsity_list = np.array([0, 20.00, 36.00, 48.80, 59.00, 67.20, 73.80, 79.03, 83.22, 86.58, 89.26, 91.41, 93.13, 94.50, 95.60, 96.50, 97.75, 98.20, 98.56, 98.85][:imp_num])
 
@@ -81,10 +81,10 @@ if __name__ == "__main__":
     # HYDRA  ='81.59(0.17)	81.11(0.15)	80.88(0.27)	80.01(0.10)	78.86(0.15)	77.12(0.16)				'
     # VPNs   ='83.31(0.20)	83.18(0.13)	83.16(0.21)	82.74(0.21)	82.00(0.16)	80.58(0.37)				'
 
-    Slimming      ='83.05 	82.58 	81.08 	77.40 	66.69 	4.58'
-    DepGraph      ='81.02 	80.14 	76.62 	62.78 	6.36 	3.67'
-    ABCpruner     ='80.02 	79.14 	75.62 	61.78 	6.36 	3.67'
-    VPNs          ='83.85 	82.86 	81.96 	80.47 	78.92 	74.10'
+    Slimming      ='81.38 	80.17 	74.94 	69.88 	65.94'
+    DepGraph      ='81.40 	80.11 	79.31 	77.32 	75.36'
+    ABCpruner     ='80.02 	79.14 	75.62 	61.78 	6.36 '
+    VPNs          ='82.60 	81.21 	79.97 	77.34 	75.58'
 
     y_Slimming, y_Slimming_err = extract_y_err(y_dense, Slimming)
     y_DepGraph, y_DepGraph_err = extract_y_err(y_dense, DepGraph)
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     # last_winning_ticket_sparsity(y_IMP[0], y_BiP, num, y_BiP_err)
 
 
-    x_label = "Sparsity (%)"
+    x_label = "Channel Sparsity (%)"
     y_label = "Test Accuracy (%)"
 
     # Canvas setting
@@ -249,9 +249,9 @@ if __name__ == "__main__":
                     markersize=markersize, label="DepGraph", alpha=DepGraph_alpha)
     plt.fill_between(x_grid, y_DepGraph - y_DepGraph_err, y_DepGraph + y_DepGraph_err, color=DepGraph_color, alpha=fill_in_alpha)
 
-    l_ABCpruner = plt.plot(x_grid, y_ABCpruner, color=ABCpruner_color, marker='o', markevery=markevery, linestyle='-', linewidth=linewidth,
-                    markersize=markersize, label="ABCpruner", alpha=ABCpruner_alpha)
-    plt.fill_between(x_grid, y_ABCpruner - y_ABCpruner_err, y_ABCpruner + y_ABCpruner_err, color=ABCpruner_color, alpha=fill_in_alpha)
+    # l_ABCpruner = plt.plot(x_grid, y_ABCpruner, color=ABCpruner_color, marker='o', markevery=markevery, linestyle='-', linewidth=linewidth,
+    #                 markersize=markersize, label="ABCpruner", alpha=ABCpruner_alpha)
+    # plt.fill_between(x_grid, y_ABCpruner - y_ABCpruner_err, y_ABCpruner + y_ABCpruner_err, color=ABCpruner_color, alpha=fill_in_alpha)
 
     l_VPNs = plt.plot(x_grid, y_VPNs, color=VPNs_color, marker='*', markevery=markevery, linestyle='-', linewidth=linewidth,
                     markersize=markersize+7, label="VPNs", alpha=VPNs_alpha)
@@ -280,7 +280,7 @@ if __name__ == "__main__":
 
 
     plt.ylim([y_min, y_max])
-    plt.xlim(0, 100)
+    plt.xlim(0, 50)
 
     plt.legend(fontsize=fontsize - 8, loc=3, fancybox=True, shadow=False, framealpha=0, borderpad=0.3)
     plt.xlabel(x_label, fontsize=fontsize-2)
