@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='omp_cifar100'
+experiment_name='omp_vgg_cifar100'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -11,7 +11,7 @@ fi
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('vgg')
 datasets=('cifar100')
-epochs=120
+epochs=60
 # seed 7 9 17
 density_list='1,0.60,0.50,0.40,0.30,0.20,0.10'
 prune_modes=('weight')

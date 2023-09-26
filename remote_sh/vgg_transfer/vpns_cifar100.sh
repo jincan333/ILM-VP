@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_cifar100'
+experiment_name='vpns_vgg_cifar100'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
