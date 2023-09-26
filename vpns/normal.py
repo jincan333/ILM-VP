@@ -128,8 +128,8 @@ def main():
     print(f'#######################Train init dense network for {args.prune_method}######################')
     for epoch in range(args.epochs):
         train_acc = 0
-        # if args.prune_method in ('imp', 'omp'):
-        if args.prune_method in (''):
+        if args.prune_method in ('imp', 'omp'):
+        # if args.prune_method in (''):
             train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
                             weight_optimizer=weight_optimizer, vp_optimizer=weight_vp_optimizer,
                             weight_scheduler=weight_scheduler, vp_scheduler=weight_vp_scheduler)
@@ -165,9 +165,9 @@ def main():
         torch.save(checkpoint, os.path.join(save_path, '0best.pth'))
         # Plot training curve
         plot_train(all_results, save_path, 0)
-        # if not (args.prune_method in ('imp', 'omp') or ('vp' in args.prune_mode and args.prune_method in ('grasp', 'synflow', 'snip'))):
-        #     break
-        break
+        if not (args.prune_method in ('imp', 'omp') or ('vp' in args.prune_mode and args.prune_method in ('grasp', 'synflow', 'snip'))):
+            break
+        # break
     test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
     print(f'Best CKPT Accuracy: {test_acc:.4f}')
     all_results['ckpt_test_acc'] = test_acc
