@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_vgg_transfer_0.20_0.10'
+experiment_name='vpns_vggbn_transfer'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -23,7 +23,7 @@ weight_weight_decay=0.0001
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
 score_optimizer='sgd'
-score_lr=0.00005
+score_lr=0.0001
 score_weight_decay=0.0001
 score_vp_optimizer=${score_optimizer}
 score_vp_lr=${score_lr}
