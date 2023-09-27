@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_vgg_cifar100'
+experiment_name='vpns_vggbn_cifar100'
 foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -20,8 +20,8 @@ weight_optimizer='sgd'
 weight_lr=0.01
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
-score_optimizer='sgd'
-score_lr=0.001
+score_optimizer='adam'
+score_lr=0.0001
 score_vp_optimizer=${score_optimizer}
 score_vp_lr=${score_lr}
 prune_modes=('score+vp_weight+vp')
@@ -30,7 +30,7 @@ global_vp_data=0
 # gmp_T=1000
 
 seeds=(7)
-gpus=(3)
+gpus=(0)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do

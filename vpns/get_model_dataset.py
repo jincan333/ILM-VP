@@ -47,8 +47,9 @@ def get_model(args):
         from torch import hub
         network = hub.load('facebookresearch/WSL-Images', 'resnext101_32x8d_wsl').to(args.device)
     elif args.network == 'vgg':
-        from torchvision.models import vgg16, VGG16_Weights
-        network = vgg16(weights=VGG16_Weights.IMAGENET1K_V1).to(args.device)
+        from torchvision.models import vgg16, VGG16_Weights, vgg16_bn
+        # network = vgg16(weights=VGG16_Weights.IMAGENET1K_V1).to(args.device)
+        network = vgg16_bn(pretrained=True)
     else:
         raise NotImplementedError(f"{args.network} is not supported")
     
