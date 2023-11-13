@@ -88,7 +88,7 @@ def main():
     args.prompt_method=None if args.prompt_method=='None' else args.prompt_method
     args.density_list=[float(i) for i in args.density_list.split(',')]
     
-    args.dataset_list=['tiny_imagenet', 'cifar100']
+    args.dataset_list=['imagenet']
     print(json.dumps(vars(args), indent=4))
     args.current_steps = 0
     # Device
@@ -143,7 +143,7 @@ def main():
             network.load_state_dict(pre_state_init)
             visual_prompt_state = pre_visual_prompt_init
             visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(network, visual_prompt_state, mapping_sequence, None, args)
-            label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
+            # label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
             print('mapping_sequence: ', mapping_sequence)
             test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
             print('Accuracy before prune: ', evaluate(test_loader, network, label_mapping, visual_prompt))
@@ -167,7 +167,7 @@ def main():
                 if args.prune_method == 'gmp':
                     args.gmp_final_sparsity = 1 - args.density_list[state]
             masks = get_masks(mask) if mask else None
-            label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
+            # label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
             print('mapping_sequence: ', mapping_sequence)
             test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
             print(f'Best Accuracy after prune: {test_acc:.4f}')
@@ -230,7 +230,7 @@ def init_gradients(weight_optimizer, vp_optimizer):
 
 def train(train_loader, network, epoch, label_mapping, visual_prompt, mask, weight_optimizer, vp_optimizer, weight_scheduler, vp_scheduler):
     def update_visual_prompt(visual_prompt, x, y):
-        fx = label_mapping(network(visual_prompt(x)))
+        fx = network(visual_prompt(x))
         loss = F.cross_entropy(fx, y, reduction='mean')
         init_gradients(weight_optimizer, vp_optimizer)
         loss.backward()
@@ -249,9 +249,9 @@ def train(train_loader, network, epoch, label_mapping, visual_prompt, mask, weig
         x = x.cuda()
         y = y.cuda()
         if visual_prompt:
-            fx = label_mapping(network(visual_prompt(x)))
+            fx = network(visual_prompt(x))
         else:
-            fx = label_mapping(network(x))
+            fx = network(x)
         loss = F.cross_entropy(fx, y, reduction='mean')
         init_gradients(weight_optimizer, vp_optimizer)
         loss.backward()
@@ -306,9 +306,9 @@ def evaluate(val_loader, network, label_mapping, visual_prompt):
         # compute output
         with torch.no_grad():
             if visual_prompt:
-                fx = label_mapping(network(visual_prompt(x)))
+                fx = network(visual_prompt(x))
             else:
-                fx = label_mapping(network(x))
+                fx = network(x)
             loss = F.cross_entropy(fx, y, reduction='mean')
         total_num += y.size(0)
         true_num += torch.argmax(fx, 1).eq(y).float().sum().item()

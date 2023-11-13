@@ -83,7 +83,7 @@ def main():
     args.density_list=[float(i) for i in args.density_list.split(',')]
     args.step_division=int(args.score_vp_ratio)+1 if args.score_vp_ratio>=1 else int(1/args.score_vp_ratio)+1
     args.current_steps=0
-    args.dataset_list=['tiny_imagenet', 'cifar100']
+    args.dataset_list=['imagenet']
     print(json.dumps(vars(args), indent=4))
     # Device
     device = torch.device(f"cuda:{args.gpu}")
@@ -139,7 +139,7 @@ def main():
         args.density = args.density_list[state]
         print('Network Density Setting:', args.density)
         set_prune_threshold(network, args.density)
-        label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
+        # label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
         print('mapping_sequence: ', mapping_sequence)
         for epoch in range(args.epochs):
             train_acc = train(train_loader, 'prune', network, epoch, label_mapping, visual_prompt, args=args,
@@ -190,7 +190,7 @@ def main():
             network.load_state_dict(best_ckpt['state_dict'])
             visual_prompt_state = copy.deepcopy(best_ckpt['visual_prompt']) if best_ckpt['visual_prompt'] else None
             visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(network, visual_prompt_state, mapping_sequence, None, args)
-            label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
+            # label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
             print('mapping_sequence: ', mapping_sequence)
             test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
             print('Accuracy before finetune: ', evaluate(test_loader, network, label_mapping, visual_prompt))
@@ -249,15 +249,25 @@ def init_gradients(weight_optimizer, vp_optimizer, score_optimizer):
 
 def train(train_loader, stage, network, epoch, label_mapping, visual_prompt, args, weight_optimizer, vp_optimizer, score_optimizer, weight_scheduler, vp_scheduler, score_scheduler):
 
+    # def calculate_fx(phase, x):
+    #     if visual_prompt and (args.global_vp_data or args.prune_mode in phase):
+    #         fx = label_mapping(network(visual_prompt(x)))
+    #     elif args.prune_method == 'vpns':
+    #         fx = label_mapping(network(args.normalize(x)))
+    #     else:
+    #         fx = label_mapping(network(x))
+    #     return fx
+    
     def calculate_fx(phase, x):
         if visual_prompt and (args.global_vp_data or args.prune_mode in phase):
-            fx = label_mapping(network(visual_prompt(x)))
+            fx = network(visual_prompt(x))
         elif args.prune_method == 'vpns':
-            fx = label_mapping(network(args.normalize(x)))
+            fx = network(args.normalize(x))
         else:
-            fx = label_mapping(network(x))
+            fx = network(x)
         return fx
-    
+
+
     # switch to train mode
     if visual_prompt:
         visual_prompt.train()
@@ -326,15 +336,24 @@ def train(train_loader, stage, network, epoch, label_mapping, visual_prompt, arg
 
 def evaluate(test_loader, network, label_mapping, visual_prompt):
 
+    # def calculate_fx(phase, x):
+    #     if visual_prompt and (args.global_vp_data or args.prune_mode in phase):
+    #         fx = label_mapping(network(visual_prompt(x)))
+    #     elif args.prune_method == 'vpns':
+    #         fx = label_mapping(network(args.normalize(x)))
+    #     else:
+    #         fx = label_mapping(network(x))
+    #     return fx
+    
     def calculate_fx(phase, x):
         if visual_prompt and (args.global_vp_data or args.prune_mode in phase):
-            fx = label_mapping(network(visual_prompt(x)))
+            fx = network(visual_prompt(x))
         elif args.prune_method == 'vpns':
-            fx = label_mapping(network(args.normalize(x)))
+            fx = network(args.normalize(x))
         else:
-            fx = label_mapping(network(x))
+            fx = network(x)
         return fx
-    
+
     # switch to evaluate mode
     if visual_prompt:
         visual_prompt.eval()

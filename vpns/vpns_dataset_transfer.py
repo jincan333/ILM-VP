@@ -81,7 +81,7 @@ def main():
     args.prompt_method=None if args.prompt_method=='None' else args.prompt_method        
     args.density_list=[float(i) for i in args.density_list.split(',')]
     args.current_steps=0
-    args.dataset_list=['tiny_imagenet', 'cifar100']
+    args.dataset_list=['imagenet']
     print(json.dumps(vars(args), indent=4))
     # Device
     device = torch.device(f"cuda:{args.gpu}")
@@ -137,7 +137,7 @@ def main():
         args.density = args.density_list[state]
         print('Network Density Setting:', args.density)
         set_prune_threshold(network, args.density)
-        label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
+        # label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
         print('mapping_sequence: ', mapping_sequence)
         for epoch in range(args.epochs):
             train_acc = train(train_loader, val_loader, 'prune', network, epoch, label_mapping, visual_prompt, args=args,
@@ -188,7 +188,7 @@ def main():
             network.load_state_dict(best_ckpt['state_dict'])
             visual_prompt_state = copy.deepcopy(best_ckpt['visual_prompt']) if best_ckpt['visual_prompt'] else None
             visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(network, visual_prompt_state, mapping_sequence, None, args)
-            label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
+            # label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
             print('mapping_sequence: ', mapping_sequence)
             test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
             print('Accuracy before finetune: ', evaluate(test_loader, network, label_mapping, visual_prompt))
@@ -262,17 +262,15 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
             # finetune
             switch_to_finetune(network)
 
-            # fx = label_mapping(network(visual_prompt(val_x)))
-            # loss = F.cross_entropy(fx, val_y, reduction='mean')
-            fx = label_mapping(network(args.normalize(x)))
-            loss = F.cross_entropy(fx, y, reduction='mean')
+            fx = network(visual_prompt(val_x))
+            loss = F.cross_entropy(fx, val_y, reduction='mean')
             init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
             loss.backward()
             weight_optimizer.step()
             if vp_optimizer:
                 vp_optimizer.step()
 
-            fx = label_mapping(network(args.normalize(x)))
+            fx = network(args.normalize(x))
             loss = F.cross_entropy(fx, y, reduction='mean')
             init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
             loss.backward()
@@ -284,7 +282,7 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
             # prune
             switch_to_prune(network)
 
-            fx = label_mapping(network(visual_prompt(val_x)))
+            fx = network(visual_prompt(val_x))
             loss = F.cross_entropy(fx, val_y, reduction='mean')
             init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
             loss.backward()
@@ -293,7 +291,7 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
                 vp_optimizer.step()
             set_prune_threshold(network, args.density)
 
-            fx=label_mapping(network(args.normalize(x)))
+            fx= network(args.normalize(x))
             loss = F.cross_entropy(fx, y, reduction='mean')
             init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
             loss.backward()
@@ -349,7 +347,7 @@ def evaluate(test_loader, network, label_mapping, visual_prompt):
         # compute output
 
         with torch.no_grad():
-            fx = label_mapping(network(args.normalize(x)))
+            fx = network(args.normalize(x))
             loss = F.cross_entropy(fx, y, reduction='mean')
         # measure accuracy and record loss
         total_num += y.size(0)
