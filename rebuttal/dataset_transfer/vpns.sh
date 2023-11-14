@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_imagenet'
+experiment_name='vpns_imagenet_0.1'
 foler_name=rebuttal_logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -14,7 +14,7 @@ epochs=30
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.5,0.10'
+density_list='1,0.10'
 
 weight_optimizer='sgd'
 weight_lr=0.01
@@ -30,7 +30,7 @@ global_vp_data=0
 # gmp_T=1000
 
 seeds=(7)
-gpus=(2)
+gpus=(3)
 imagenet_path='/home/xinyu/dataset/imagenet2012'
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
