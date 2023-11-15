@@ -30,7 +30,7 @@ global_vp_data=0
 # gmp_T=1000
 
 seeds=(7)
-gpus=(3)
+gpus=(2)
 imagenet_path='/home/xinyu/dataset/imagenet2012'
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
