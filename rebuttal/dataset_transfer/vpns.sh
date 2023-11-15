@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_imagenet_0.1'
+experiment_name='vpns_imagenet_adam0.0001'
 foler_name=rebuttal_logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -14,14 +14,14 @@ epochs=30
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.10'
+density_list='1,0.5,0.1'
 
 weight_optimizer='sgd'
 weight_lr=0.01
 weight_vp_optimizer=${weight_optimizer}
 weight_vp_lr=${weight_lr}
-score_optimizer='sgd'
-score_lr=0.01
+score_optimizer='adam'
+score_lr=0.0001
 score_vp_optimizer=${score_optimizer}
 score_vp_lr=${score_lr}
 prune_modes=('score+vp_weight+vp')
