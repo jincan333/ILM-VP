@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='vpns_imagenet_adam0.0001'
+experiment_name='vpns_imagenet_new_0.1'
 foler_name=rebuttal_logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
