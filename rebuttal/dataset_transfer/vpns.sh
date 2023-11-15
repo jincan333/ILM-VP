@@ -10,11 +10,11 @@ fi
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
 datasets=('imagenet')
-epochs=30
+epochs=10
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.5,0.1'
+density_list='1,0.1'
 
 weight_optimizer='sgd'
 weight_lr=0.01

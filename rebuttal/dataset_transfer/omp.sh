@@ -1,7 +1,7 @@
 #!/bin/sh
 
-experiment_name='omp_imagenet'
-foler_name=logs/${experiment_name}
+experiment_name='omp_imagenet_0.1'
+foler_name=rebuttal_logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
 fi
@@ -11,9 +11,9 @@ fi
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
 datasets=('imagenet')
-epochs=120
+epochs=30
 # seed 7 9 17
-density_list='1,0.5,0.10'
+density_list='1,0.1,0.5'
 prune_modes=('weight')
 
 weight_optimizer='sgd'

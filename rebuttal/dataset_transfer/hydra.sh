@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='hydra_imagenet'
+experiment_name='hydra_imagenet_0.1'
 foler_name=rebuttal_logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -12,11 +12,11 @@ fi
 networks=('resnet18')
 datasets=('imagenet')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
-epochs=50
+epochs=20
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp','score_weight']
 
-density_list='1,0.5,0.1'
+density_list='1,0.1,0.5'
 
 weight_optimizer='sgd'
 weight_lr=0.01
