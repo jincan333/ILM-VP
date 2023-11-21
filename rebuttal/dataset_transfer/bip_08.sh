@@ -12,7 +12,7 @@ fi
 networks=('resnet18')
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 datasets=('imagenet')
-epochs=1
+epochs=20
 # seed 7 9 17
 # prune_modes=['score+vp_weight', 'score+weight_vp', 'weight+vp_score', 'score+vp_weight+vp', 'score_weight']
 
