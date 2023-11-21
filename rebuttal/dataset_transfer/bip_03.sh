@@ -1,7 +1,7 @@
 #!/bin/sh
 
 experiment_name='bip_imagenet_0.3'
-foler_name=logs/${experiment_name}
+foler_name=rebuttal_logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
 fi
@@ -28,6 +28,7 @@ seeds=(7)
 prune_modes=('score_weight')
 prune_methods=('bip')
 gpus=(3)
+imagenet_path='/home/xinyu/dataset/imagenet2012'
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
@@ -48,6 +49,7 @@ for j in ${!networks[@]};do
                             --gpu ${gpus[m]} \
                             --epochs ${epochs} \
                             --seed ${seeds[m]} \
+                            --imagenet_path ${imagenet_path} \
                             > $log_filename 2>&1 &
                 done
                 wait
