@@ -1,7 +1,7 @@
 #!/bin/sh
 
 experiment_name='imp_algorithm_transfer'
-foler_name=rebuttal_logs/${experiment_name}
+foler_name=logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
 fi

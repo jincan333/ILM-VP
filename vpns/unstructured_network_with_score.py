@@ -218,6 +218,15 @@ def set_prune_threshold(network, prune_rate):
                 module.set_threshold(threshold)
 
 
+def set_weight_zero(network):
+    cl, ll = get_layers('subnet')
+    for name, module in network.named_modules():
+        if isinstance(module,cl) or isinstance(module,ll):
+            adj = GetSubnet.apply(module.popup_scores.abs(), module.threshold)
+            module.weight = torch.nn.Parameter(module.weight * adj)
+    return network
+
+
 def freeze_vars(model, var_name, freeze_bn=False):
     """
     freeze vars. If freeze_bn then only freeze batch_norm params.

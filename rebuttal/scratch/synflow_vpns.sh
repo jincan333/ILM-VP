@@ -1,6 +1,6 @@
 #!/bin/sh
 
-experiment_name='imp_algorithm_transfer'
+experiment_name='scratch'
 foler_name=rebuttal_logs/${experiment_name}
 if [ ! -d ${foler_name} ]; then
     mkdir -p ${foler_name}
@@ -10,19 +10,18 @@ fi
 # ['random', 'imp', 'omp', 'grasp', 'snip', 'synflow', 'gmp']
 # datasets=('cifar100' 'flowers102' 'dtd' 'food101' 'oxfordpets')
 networks=('resnet18')
-datasets=('tiny_imagenet')
-epochs=30
+datasets=('cifar100')
+epochs=100
 # seed 7 9 17
-# density_list='1,0.8000,0.6400,0.5120,0.4100,0.3280,0.2620,0.2097,0.1678,0.1342,0.1074,0.0859,0.0687,0.0550'
-density_list='1,0.8000,0.6400,0.5120,0.4100,0.3280,0.2620,0.2097,0.1678,0.1342,0.1074'
-# 'weight', 'weight+vp'
+density_list='1,0.5,0.1'
 prune_modes=('weight+vp')
 
 weight_optimizer='sgd'
-weight_lr=0.01
+weight_lr=0.1
 seeds=(7)
-prune_methods=('imp')
-gpus=(5)
+prune_methods=('synflow')
+scratch=1
+gpus=(4)
 for j in ${!networks[@]};do
     for i in ${!datasets[@]};do
         for k in ${!prune_modes[@]};do
@@ -41,6 +40,7 @@ for j in ${!networks[@]};do
                             --gpu ${gpus[m]} \
                             --epochs ${epochs} \
                             --seed ${seeds[m]} \
+                            --scratch ${scratch} \
                             > $log_filename 2>&1 &
                 done
                 wait

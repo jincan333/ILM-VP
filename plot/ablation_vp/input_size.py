@@ -241,8 +241,8 @@ if __name__ == "__main__":
     plt.fill_between(x_grid, y_input224 - y_input224_err, y_input224 + y_input224_err, color=input224_color, alpha=fill_in_alpha)
 
 
-    lbest = plt.axhline(y=y_best, color=best_color, linestyle='--', linewidth=3, alpha=best_alpha,
-                        label="Our Best")
+    # lbest = plt.axhline(y=y_best, color=best_color, linestyle='--', linewidth=3, alpha=best_alpha,
+    #                     label="Our Best")
 
     # dense_line = Line2D([0], [0], color=dense_color, lw=3, linestyle='--')
     # custom_lines = [dense_line,

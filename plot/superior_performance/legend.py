@@ -231,21 +231,21 @@ if __name__ == "__main__":
 
 
     labels = ["Dense", "OMP", "LTH", "Random", "BiP", "SNIP",
-            "GraSP", "SynFlow", "HYDRA", "VPNs", "Our Best"]
+            "GraSP", "SynFlow", "HYDRA", "VPNs"]
 
     colors = [dense_color, OMP_color, LTH_color, Random_color,
             BiP_color, SNIP_color, GraSP_color, SynFlow_color,
             HYDRA_color, VPNs_color, best_color]
     
-    linestyles=['--', *['-' for i in range(9)], '--']
+    linestyles=['--', *['-' for i in range(9)]]
 
-    markers = [None, 'v', '*', 's', 'v', 'o', 's', '*', 'v', '*', None]
+    markers = [None, 'v', '*', 's', 'v', 'o', 's', '*', 'v', '*']
 
-    markersizes = [None, markersize, markersize+3, markersize, markersize, markersize, markersize, markersize+3, markersize, markersize+3, None]
+    markersizes = [None, markersize, markersize+3, markersize, markersize, markersize, markersize, markersize+3, markersize, markersize+3]
 
     alpha_values = [None, OMP_alpha, LTH_alpha, Random_alpha,
                     BiP_alpha, SNIP_alpha, GraSP_alpha, SynFlow_alpha,
-                    HYDRA_alpha, VPNs_alpha, best_alpha]
+                    HYDRA_alpha, VPNs_alpha]
 
     lines = [mlines.Line2D([], [], color=color, linestyle= linestyle, linewidth=linewidth, marker=marker, markersize=markersize, label=label, alpha=alpha)
             for color, linestyle, marker, markersize, label, alpha in zip(colors, linestyles, markers, markersizes, labels, alpha_values)]
@@ -253,15 +253,15 @@ if __name__ == "__main__":
     # patches = [patches.Patch(color=color, alpha=fill_in_alpha, label=f"{label} Fill")
     #         for color, label in zip(colors[1:], labels[1:])]
     legend_elements = lines
-    legend_elements[7], legend_elements[-2] = legend_elements[-2], legend_elements[7]
-    legend_elements[-2], legend_elements[-1] = legend_elements[-1], legend_elements[-2]
+    # legend_elements[7], legend_elements[-2] = legend_elements[-2], legend_elements[7]
+    # legend_elements[-2], legend_elements[-1] = legend_elements[-1], legend_elements[-2]
     # legend_elements[8], legend_elements[-1], legend_elements[-2] = legend_elements[-2], legend_elements[8], legend_elements[-1]
     # Create a legend figure
     fig, ax = plt.subplots(figsize=(6, 0.5))
     # legend1 = ax.legend(handles=legend_elements[:6], loc=(0, 0), ncol=6)  # Adjust loc as needed
     # legend2 = ax.legend(handles=legend_elements[6:], loc=(0, -0.1), ncol=6)  # Adjust loc as needed
 
-    ax.legend(handles=legend_elements, loc='center', ncol=6, frameon=False)  # Arrange the elements in 2 rows
+    ax.legend(handles=legend_elements, loc='center', ncol=5, frameon=False)  # Arrange the elements in 2 rows
     # ax.add_artist(legend1) 
     ax.axis('off')  # Hide axes
     # Save the figure

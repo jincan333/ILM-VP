@@ -8,19 +8,21 @@ from matplotlib import pyplot as plt
 import copy
 import warnings
 import json
+import numpy as np
+from torch.autograd import Variable
 
 from utils import set_seed, setup_optimizer_and_prompt, calculate_label_mapping, obtain_label_mapping, save_args, get_masks
 from get_model_dataset import choose_dataloader, get_model
 from pruner import extract_mask, prune_model_custom, check_sparsity, remove_prune, pruning_model
 from core import Masking, CosineDecay
-from unstructured_network_with_score import set_prune_threshold, set_scored_network, switch_to_finetune, switch_to_bilevel, switch_to_prune
+from unstructured_network_with_score import set_prune_threshold, set_scored_network, switch_to_finetune, switch_to_bilevel, switch_to_prune, set_weight_zero
 
 
 def main():    
     parser = argparse.ArgumentParser(description='PyTorch Visual Prompt + Prune Experiments')
     global args
-    parser.add_argument('--prune_mode', type=str, default='weight+vp_score', choices=['score+vp_weight', 'weight+vp_score', 'score+vp_weight+vp', 'score_weight'], help='prune method implement ways')
-    parser.add_argument('--prune_method', type=str, default='vpns', choices=['vpns', 'hydra'])
+    parser.add_argument('--prune_mode', type=str, default='weight_score', choices=['score_weight', 'score_weight+vp'], help='prune method implement ways')
+    parser.add_argument('--prune_method', type=str, default='hydra', choices=['hydra'])
     parser.add_argument('--ckpt_directory', type=str, default='', help='sub-network ckpt directory')
     parser.add_argument('--weight_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--weight_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
@@ -34,18 +36,21 @@ def main():
     parser.add_argument('--score_vp_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--score_vp_lr', default=0.001, type=float, help='initial learning rate')
     parser.add_argument('--score_vp_weight_decay', default=1e-4, type=float, help='visual prompt weight decay')
-    parser.add_argument('--score_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
+    parser.add_argument('--score_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
     parser.add_argument('--score_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--score_lr', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--score_weight_decay', default=1e-4, type=float, help='hydra weight decay')
     parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg", "mobilenet"])
-    parser.add_argument('--dataset', default="oxfordpets", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'sun397', 'tiny_imagenet', 'imagenet'])
+    parser.add_argument('--dataset', default="cifar100", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'sun397', 'tiny_imagenet', 'imagenet'])
     parser.add_argument('--experiment_name', default='exp_new', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
-    parser.add_argument('--epochs', default=80, type=int, help='number of total eopchs to run')
+    parser.add_argument('--epochs', default=60, type=int, help='number of total eopchs to run')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
     parser.add_argument('--density_list', default='1,0.50,0.20,0.10', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
+    parser.add_argument('--score_vp_ratio', type=float, default=5, choices=[20,10,9,8,7,6,5,4,3,2,1])
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
+    parser.add_argument('--global_vp_data', default=0, type=int, choices=[0,1], help='while using visual prompt, whether use vp_data in all training phase')
+    parser.add_argument('--mixup', default=0, type=int, choices=[0,1])
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='result', type=str)
@@ -57,8 +62,8 @@ def main():
     parser.add_argument('--data', type=str, default='dataset', help='location of the data corpus')
     parser.add_argument('--randomcrop', type=int, default=0, help='dataset randomcrop.', choices=[0, 1])
     parser.add_argument('--input_size', type=int, default=224, help='image size before prompt, no more than 224', choices=[224, 192, 160, 128, 96, 64, 32])
-    parser.add_argument('--pad_size', type=int, default=16, help='only for padprompt, no more than 112, parameters cnt 4*pad**2+896pad', choices=[0, 8, 16, 32, 48, 64, 80, 96, 112])
-    parser.add_argument('--mask_size', type=int, default=115, help='only for fixadd and randomadd, no more than 224, parameters cnt mask**2', choices=[115, 156, 183, 202, 214, 221, 224])
+    parser.add_argument('--pad_size', type=int, default=16, help='only for padprompt, no more than 112, parameters cnt 4*pad**2+896pad', choices=[0, 16, 32, 48, 64, 80, 96, 112])
+    parser.add_argument('--mask_size', type=int, default=183, help='only for fixadd and randomadd, no more than 224, parameters cnt mask**2', choices=[115, 156, 183, 202, 214, 221, 224])
 
     ##################################### Architecture ############################################
 
@@ -78,6 +83,7 @@ def main():
     args = parser.parse_args()
     args.prompt_method=None if args.prompt_method=='None' else args.prompt_method        
     args.density_list=[float(i) for i in args.density_list.split(',')]
+    args.step_division=int(args.score_vp_ratio)+1 if args.score_vp_ratio>=1 else int(1/args.score_vp_ratio)+1
     args.current_steps=0
     print(json.dumps(vars(args), indent=4))
     # Device
@@ -91,7 +97,7 @@ def main():
                 args.weight_optimizer+'_'+args.weight_vp_optimizer+'_'+args.score_optimizer+'_'+args.score_vp_optimizer, 
                 args.weight_scheduler+'_'+args.weight_vp_scheduler+'_'+args.score_scheduler+'_'+args.score_vp_scheduler, 
                 'LR'+str(args.weight_lr)+'_'+str(args.weight_vp_lr)+'_'+str(args.score_lr)+'_'+str(args.score_vp_lr),  
-                'DENSITY'+str(args.density_list), 'EPOCHS'+str(args.epochs), 'SEED'+str(args.seed),'GPU'+str(args.gpu))
+                'GLOBAL_DATA'+str(args.global_vp_data)+'DENSITY'+str(args.density_list), 'EPOCHS'+str(args.epochs), 'SEED'+str(args.seed),'GPU'+str(args.gpu))
     os.makedirs(save_path, exist_ok=True)
     save_args(args, save_path+'/args.json')
     args.device=device
@@ -133,7 +139,7 @@ def main():
         label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
         print('mapping_sequence: ', mapping_sequence)
         for epoch in range(args.epochs):
-            train_acc = train(train_loader, val_loader, 'prune', network, epoch, label_mapping, visual_prompt, args=args,
+            train_acc = train(train_loader, 'prune', network, epoch, label_mapping, visual_prompt, args=args,
                             weight_optimizer=None, vp_optimizer=score_vp_optimizer, score_optimizer=score_optimizer, 
                             weight_scheduler=None, vp_scheduler=score_vp_scheduler, score_scheduler=score_scheduler)
             val_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
@@ -174,10 +180,10 @@ def main():
         plot_train(all_results, save_path, state)
         # train
         visual_prompt_state = copy.deepcopy(visual_prompt.state_dict()) if visual_prompt else None
-        visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(network, visual_prompt_state, mapping_sequence, None, args)
+        visual_prompt, score_optimizer, score_scheduler, score_vp_optimizer, score_vp_scheduler, weight_optimizer, weight_scheduler, weight_vp_optimizer, weight_vp_scheduler, checkpoint, best_acc, all_results = init_ckpt_vp_optimizer(network, visual_prompt_init, mapping_sequence, None, args)
         all_results['no_train_acc'] = test_acc
         for epoch in range(args.epochs):
-            train_acc = train(train_loader, val_loader, 'finetune', network, epoch, label_mapping, visual_prompt, args=args,
+            train_acc = train(train_loader, 'finetune', network, epoch, label_mapping, visual_prompt, args=args,
                             weight_optimizer=weight_optimizer, vp_optimizer=weight_vp_optimizer, score_optimizer=None, 
                             weight_scheduler=weight_scheduler, vp_scheduler=weight_vp_scheduler, score_scheduler=None)
             val_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
@@ -217,6 +223,9 @@ def main():
         all_results['ckpt_test_acc'] = test_acc
         all_results['ckpt_epoch'] = best_ckpt['epoch']
         plot_train(all_results, save_path, state)
+        # calculate FLOPs
+        network = set_weight_zero(network)
+        count_model_param_flops(model = network, input_res=192)
 
 
 def init_gradients(weight_optimizer, vp_optimizer, score_optimizer):
@@ -228,7 +237,17 @@ def init_gradients(weight_optimizer, vp_optimizer, score_optimizer):
         score_optimizer.zero_grad()
 
 
-def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual_prompt, args, weight_optimizer, vp_optimizer, score_optimizer, weight_scheduler, vp_scheduler, score_scheduler):
+def train(train_loader, stage, network, epoch, label_mapping, visual_prompt, args, weight_optimizer, vp_optimizer, score_optimizer, weight_scheduler, vp_scheduler, score_scheduler):
+
+    def calculate_fx(phase, x):
+        if visual_prompt and (args.global_vp_data or args.prune_mode in phase):
+            fx = label_mapping(network(visual_prompt(x)))
+        elif args.prune_method == 'vpns':
+            fx = label_mapping(network(args.normalize(x)))
+        else:
+            fx = label_mapping(network(x))
+        return fx
+    
     # switch to train mode
     if visual_prompt:
         visual_prompt.train()
@@ -238,58 +257,58 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
     true_num = 0
     loss_sum = 0
 
-    for i, (train_batch, val_batch) in enumerate(zip(train_loader, val_loader)):
-        x, y = train_batch[0].cuda(), train_batch[1].cuda()
-        val_x, val_y = val_batch[0].cuda(), val_batch[1].cuda()
+    for i, (x, y) in enumerate(train_loader):
+        args.current_steps+=1
+        x = x.cuda()
+        y = y.cuda()
         if stage == 'finetune':
             # finetune
             switch_to_finetune(network)
-
-            fx = label_mapping(network(visual_prompt(val_x)))
-            loss = F.cross_entropy(fx, val_y, reduction='mean')
-            # fx = label_mapping(network(args.normalize(x)))
-            # loss = F.cross_entropy(fx, y, reduction='mean')
-            
-            init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
-            loss.backward()
-            weight_optimizer.step()
-            if vp_optimizer:
-                vp_optimizer.step()
-
-            fx = label_mapping(network(args.normalize(x)))
+            phase = ['weight+vp_score', 'score+vp_weight+vp']
+            fx = calculate_fx(phase, x)
             loss = F.cross_entropy(fx, y, reduction='mean')
             init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
             loss.backward()
             weight_optimizer.step()
-            if vp_optimizer:
-                vp_optimizer.step()
+
+            # # mixup
+            # x, y_a, y_b, lam = mixup_data(x, y, alpha=1.0, use_cuda=torch.cuda.is_available())
+            # if visual_prompt:
+            #     fx = label_mapping(network(visual_prompt(x)))
+            # else:
+            #     fx = label_mapping(network(x))
+            # loss_func = mixup_criterion(y_a, y_b, lam)
+            # loss = loss_func(fx, y)
+            # init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
+            # loss.backward()
+            # weight_optimizer.step()
+            # # mixup
 
         if stage == 'prune':
             # prune
             switch_to_prune(network)
-
-            fx = label_mapping(network(visual_prompt(val_x)))
-            loss = F.cross_entropy(fx, val_y, reduction='mean')
-            # fx=label_mapping(network(args.normalize(x)))
-            # loss = F.cross_entropy(fx, y, reduction='mean')
-
-            init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
-            loss.backward()
-            score_optimizer.step()
-            if vp_optimizer:
-                vp_optimizer.step()
-            set_prune_threshold(network, args.density)
-
-            fx=label_mapping(network(args.normalize(x)))
+            phase = ['score+vp_weight','score+vp_weight+vp']
+            fx = calculate_fx(phase, x)
             loss = F.cross_entropy(fx, y, reduction='mean')
             init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
             loss.backward()
             score_optimizer.step()
-            if vp_optimizer:
-                vp_optimizer.step()
-            set_prune_threshold(network, args.density)
 
-        args.current_steps+=1
+            # # mixup
+            # x, y_a, y_b, lam = mixup_data(x, y, alpha=1.0, use_cuda=torch.cuda.is_available())
+            # if visual_prompt:
+            #     fx = label_mapping(network(visual_prompt(x)))
+            # else:
+            #     fx = label_mapping(network(x))
+            # loss_func = mixup_criterion(y_a, y_b, lam)
+            # loss = loss_func(fx, y)
+            # init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
+            # loss.backward()
+            # score_optimizer.step()
+            # # mixup
+
+            # reset threshold
+            set_prune_threshold(network, args.density)
 
         total_num += y.size(0)
         true_num += torch.argmax(fx, 1).eq(y).float().sum().item()
@@ -323,11 +342,20 @@ def train(train_loader, val_loader, stage, network, epoch, label_mapping, visual
 
 
 def evaluate(test_loader, network, label_mapping, visual_prompt):
+
+    def calculate_fx(phase, x):
+        if visual_prompt and (args.global_vp_data or args.prune_mode in phase):
+            fx = label_mapping(network(visual_prompt(x)))
+        elif args.prune_method == 'vpns':
+            fx = label_mapping(network(args.normalize(x)))
+        else:
+            fx = label_mapping(network(x))
+        return fx
+    
     # switch to evaluate mode
     if visual_prompt:
         visual_prompt.eval()
     network.eval()
-    start = time.time()
     total_num = 0
     true_num = 0
     loss_sum = 0
@@ -337,7 +365,8 @@ def evaluate(test_loader, network, label_mapping, visual_prompt):
         # compute output
 
         with torch.no_grad():
-            fx = label_mapping(network(args.normalize(x)))
+            phase = ['weight+vp_score', 'score+vp_weight+vp']
+            fx = calculate_fx(phase, x)
             loss = F.cross_entropy(fx, y, reduction='mean')
         # measure accuracy and record loss
         total_num += y.size(0)
@@ -349,11 +378,9 @@ def evaluate(test_loader, network, label_mapping, visual_prompt):
                 f'Loss_sum {loss_sum:.4f}\t'
                 f'Accuracy {test_acc:.4f}\t'
             )
-    end = time.time()
     print(f'evaluate: [{i}/{len(test_loader)}]\t'
         f'Loss_sum {loss_sum:.4f}\t'
         f'Accuracy {test_acc:.4f}\t'
-        f'Time {end-start:.2f}'
     )
     print(f'evaluate_accuracy {test_acc:.3f}')
 
@@ -402,6 +429,124 @@ def plot_train(all_results, save_path, state):
     plt.title(save_path, fontsize = 'xx-small')
     plt.savefig(os.path.join(save_path, str(state)+'train.png'))
     plt.close()
+
+def mixup_data(x, y, alpha=1.0, use_cuda=True):
+    if alpha > 0:
+        lam = np.random.beta(alpha, alpha)
+    else:
+        lam = 1
+
+    batch_size = x.size()[0]
+    if use_cuda:
+        index = torch.randperm(batch_size).cuda()
+    else:
+        index = torch.randperm(batch_size)
+
+    mixed_x = lam * x + (1 - lam) * x[index, :]
+    y_a, y_b = y, y[index]
+    return mixed_x, y_a, y_b, lam
+
+
+def mixup_criterion(y_a, y_b, lam):
+    def criterion(y_pred, y_true):
+        return lam * torch.nn.CrossEntropyLoss()(y_pred, y_true) + (1 - lam) * torch.nn.CrossEntropyLoss()(y_pred, y_true[y_b])
+
+    return criterion
+
+
+def count_model_param_flops(model=None,channels=None, input_res=224, multiply_adds=True,s_list=None):
+
+    prods = {}
+    def save_hook(name):
+        def hook_per(self, input, output):
+            prods[name] = np.prod(input[0].shape)
+        return hook_per
+
+    list_1=[]
+    def simple_hook(self, input, output):
+        list_1.append(np.prod(input[0].shape))
+    list_2={}
+    def simple_hook2(self, input, output):
+        list_2['names'] = np.prod(input[0].shape)
+
+
+    list_conv=[]
+    def conv_hook(self, input, output):
+        batch_size, input_channels, input_height, input_width = input[0].size()
+        output_channels, output_height, output_width = output[0].size()
+
+        kernel_ops = self.kernel_size[0] * self.kernel_size[1] * (self.in_channels / self.groups)
+        bias_ops = 1 if self.bias is not None else 0
+
+        params = output_channels * (kernel_ops + bias_ops)
+
+        num_weight_params = (self.weight.data != 0).float().sum()
+        assert self.weight.numel() == kernel_ops * output_channels, "Not match"
+        flops = (num_weight_params * (2 if multiply_adds else 1) + bias_ops * output_channels) * output_height * output_width * batch_size
+
+        list_conv.append(flops)
+
+    list_linear=[]
+    def linear_hook(self, input, output):
+        batch_size = input[0].size(0) if input[0].dim() == 2 else 1
+
+        num_weight_params = (self.weight.data != 0).float().sum()
+        weight_ops = num_weight_params * (2 if multiply_adds else 1)
+        bias_ops = self.bias.nelement() if self.bias is not None else 0
+
+        flops = batch_size * (weight_ops + bias_ops)
+        list_linear.append(flops)
+
+    list_bn=[]
+    def bn_hook(self, input, output):
+        list_bn.append(input[0].nelement() * 2)
+
+    list_relu=[]
+    def relu_hook(self, input, output):
+        list_relu.append(input[0].nelement())
+
+    list_pooling=[]
+    def pooling_hook(self, input, output):
+        batch_size, input_channels, input_height, input_width = input[0].size()
+        output_channels, output_height, output_width = output[0].size()
+
+        kernel_ops = self.kernel_size * self.kernel_size
+        bias_ops = 0
+        params = 0
+        flops = (kernel_ops + bias_ops) * output_channels * output_height * output_width * batch_size
+
+        list_pooling.append(flops)
+
+    list_upsample=[]
+    # For bilinear upsample
+    def upsample_hook(self, input, output):
+        batch_size, input_channels, input_height, input_width = input[0].size()
+        output_channels, output_height, output_width = output[0].size()
+
+        flops = output_height * output_width * output_channels * batch_size * 12
+        list_upsample.append(flops)
+
+    def foo(net):
+        childrens = list(net.children())
+        if not childrens:
+            if isinstance(net, torch.nn.Conv2d):
+                net.register_forward_hook(conv_hook)
+            if isinstance(net, torch.nn.Linear):
+                net.register_forward_hook(linear_hook)
+            if isinstance(net, torch.nn.Upsample):
+                 net.register_forward_hook(upsample_hook)
+            return
+        for c in childrens:
+            foo(c)
+
+    foo(model)
+    input = Variable(torch.rand(3,input_res,input_res).unsqueeze(0), requires_grad = True).cuda()
+    out = model(input)
+    total_flops = (sum(list_conv) + sum(list_linear) + sum(list_bn) + sum(list_relu) + sum(list_pooling) + sum(list_upsample))
+
+    print('  + Number of FLOPs: %.2f' % (total_flops/2/1000000))
+
+    return total_flops/2/1000000
 
 
 if __name__ == '__main__':

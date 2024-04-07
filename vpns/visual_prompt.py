@@ -46,6 +46,9 @@ class PadVisualPrompt(nn.Module):
             self.register_buffer("mask", mask)
         else:
             raise ValueError("Pad Should Not Exceed Half Of Output Size")
+        print('*'*100)
+        print(f'input size: {args.input_size}, output size: {args.output_size}, pad size: {args.pad_size}')
+        print('*'*100)
 
     def forward(self, x):
         # x = F.pad(x, (self.l_pad, self.r_pad, self.l_pad, self.r_pad), value=0) + torch.sigmoid(self.program) * self.mask

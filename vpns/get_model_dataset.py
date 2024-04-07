@@ -40,6 +40,8 @@ def get_model(args):
     if args.network == "resnet18":
         from torchvision.models import resnet18, ResNet18_Weights
         network = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).to(args.device)
+        # if args.scratch:
+        #     network = resnet18(pretrained = False).to(args.device)
     elif args.network == "resnet50":
         from torchvision.models import resnet50, ResNet50_Weights
         network = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2).to(args.device)
@@ -50,6 +52,9 @@ def get_model(args):
         from torchvision.models import vgg16, VGG16_Weights, vgg16_bn, VGG16_BN_Weights
         # network = vgg16(weights=VGG16_Weights.IMAGENET1K_V1).to(args.device)
         network = vgg16_bn(weights=VGG16_BN_Weights.IMAGENET1K_V1).to(args.device)
+    elif args.network == 'mobilenet':
+        from torchvision.models import mobilenet_v2
+        network = mobilenet_v2(pretrained=True).to(args.device)
     else:
         raise NotImplementedError(f"{args.network} is not supported")
     

@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 import copy
 import warnings
 import json
+import numpy as np
 
 from utils import set_seed, setup_optimizer_and_prompt, calculate_label_mapping, obtain_label_mapping, save_args, get_masks
 from get_model_dataset import choose_dataloader, get_model
@@ -19,7 +20,7 @@ from unstructured_network_with_score import set_prune_threshold, set_scored_netw
 def main():    
     parser = argparse.ArgumentParser(description='PyTorch Visual Prompt + Prune Experiments')
     global args
-    parser.add_argument('--prune_mode', type=str, default='weight_score', choices=['score_weight'], help='prune method implement ways')
+    parser.add_argument('--prune_mode', type=str, default='weight_score', choices=['score_weight', 'score_weight+vp'], help='prune method implement ways')
     parser.add_argument('--prune_method', type=str, default='hydra', choices=['hydra'])
     parser.add_argument('--ckpt_directory', type=str, default='', help='sub-network ckpt directory')
     parser.add_argument('--weight_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
@@ -38,7 +39,7 @@ def main():
     parser.add_argument('--score_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--score_lr', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--score_weight_decay', default=1e-4, type=float, help='hydra weight decay')
-    parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg"])
+    parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg", "mobilenet"])
     parser.add_argument('--dataset', default="cifar100", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'sun397', 'tiny_imagenet', 'imagenet'])
     parser.add_argument('--experiment_name', default='exp_new', type=str, help='name of experiment')
     parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
@@ -48,6 +49,7 @@ def main():
     parser.add_argument('--score_vp_ratio', type=float, default=5, choices=[20,10,9,8,7,6,5,4,3,2,1])
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
     parser.add_argument('--global_vp_data', default=0, type=int, choices=[0,1], help='while using visual prompt, whether use vp_data in all training phase')
+    parser.add_argument('--mixup', default=0, type=int, choices=[0,1])
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='result', type=str)
@@ -265,6 +267,19 @@ def train(train_loader, stage, network, epoch, label_mapping, visual_prompt, arg
             loss.backward()
             weight_optimizer.step()
 
+            # # mixup
+            # x, y_a, y_b, lam = mixup_data(x, y, alpha=1.0, use_cuda=torch.cuda.is_available())
+            # if visual_prompt:
+            #     fx = label_mapping(network(visual_prompt(x)))
+            # else:
+            #     fx = label_mapping(network(x))
+            # loss_func = mixup_criterion(y_a, y_b, lam)
+            # loss = loss_func(fx, y)
+            # init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
+            # loss.backward()
+            # weight_optimizer.step()
+            # # mixup
+
         if stage == 'prune':
             # prune
             switch_to_prune(network)
@@ -274,6 +289,20 @@ def train(train_loader, stage, network, epoch, label_mapping, visual_prompt, arg
             init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
             loss.backward()
             score_optimizer.step()
+
+            # # mixup
+            # x, y_a, y_b, lam = mixup_data(x, y, alpha=1.0, use_cuda=torch.cuda.is_available())
+            # if visual_prompt:
+            #     fx = label_mapping(network(visual_prompt(x)))
+            # else:
+            #     fx = label_mapping(network(x))
+            # loss_func = mixup_criterion(y_a, y_b, lam)
+            # loss = loss_func(fx, y)
+            # init_gradients(weight_optimizer, vp_optimizer, score_optimizer)
+            # loss.backward()
+            # score_optimizer.step()
+            # # mixup
+
             # reset threshold
             set_prune_threshold(network, args.density)
 
@@ -396,6 +425,29 @@ def plot_train(all_results, save_path, state):
     plt.title(save_path, fontsize = 'xx-small')
     plt.savefig(os.path.join(save_path, str(state)+'train.png'))
     plt.close()
+
+def mixup_data(x, y, alpha=1.0, use_cuda=True):
+    if alpha > 0:
+        lam = np.random.beta(alpha, alpha)
+    else:
+        lam = 1
+
+    batch_size = x.size()[0]
+    if use_cuda:
+        index = torch.randperm(batch_size).cuda()
+    else:
+        index = torch.randperm(batch_size)
+
+    mixed_x = lam * x + (1 - lam) * x[index, :]
+    y_a, y_b = y, y[index]
+    return mixed_x, y_a, y_b, lam
+
+
+def mixup_criterion(y_a, y_b, lam):
+    def criterion(y_pred, y_true):
+        return lam * torch.nn.CrossEntropyLoss()(y_pred, y_true) + (1 - lam) * torch.nn.CrossEntropyLoss()(y_pred, y_true[y_b])
+
+    return criterion
 
 
 if __name__ == '__main__':

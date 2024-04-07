@@ -37,6 +37,7 @@ def main():
     parser.add_argument('--density_list', default='1,0.10,0.05,0.01', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
     parser.add_argument('--score_vp_ratio', type=float, default=5, choices=[20,10,9,8,7,6,5,4,3,2,1])
+    parser.add_argument('--scratch', type=int, default=0, choices=[0,1])
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='result', type=str)
@@ -132,12 +133,12 @@ def main():
             train_acc = train(train_loader, val_loader, network, epoch, label_mapping, visual_prompt, mask, 
                             weight_optimizer=weight_optimizer, vp_optimizer=weight_vp_optimizer,
                             weight_scheduler=weight_scheduler, vp_scheduler=weight_vp_scheduler)
-        elif 'vp' in args.prune_mode and args.prune_method in ('grasp', 'synflow', 'snip'):
-            label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
-            print('mapping_sequence: ', mapping_sequence)
-            train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
-                            weight_optimizer=None, vp_optimizer=weight_vp_optimizer, hydra_optimizer=None, 
-                            weight_scheduler=None, vp_scheduler=weight_vp_scheduler, hydra_scheduler=None)
+        # elif 'vp' in args.prune_mode and args.prune_method in ('grasp', 'synflow', 'snip'):
+        #     label_mapping, mapping_sequence = calculate_label_mapping(visual_prompt, network, train_loader, args)
+        #     print('mapping_sequence: ', mapping_sequence)
+        #     train_acc = train(train_loader, network, epoch, label_mapping, visual_prompt, mask, 
+        #                     weight_optimizer=None, vp_optimizer=weight_vp_optimizer, hydra_optimizer=None, 
+        #                     weight_scheduler=None, vp_scheduler=weight_vp_scheduler, hydra_scheduler=None)
         val_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
         all_results['train_acc'].append(train_acc)
         all_results['val_acc'].append(val_acc)
@@ -164,7 +165,8 @@ def main():
         torch.save(checkpoint, os.path.join(save_path, '0best.pth'))
         # Plot training curve
         plot_train(all_results, save_path, 0)
-        if not (args.prune_method in ('imp', 'omp') or ('vp' in args.prune_mode and args.prune_method in ('grasp', 'synflow', 'snip'))):
+        # if not (args.prune_method in ('imp', 'omp') or ('vp' in args.prune_mode and args.prune_method in ('grasp', 'synflow', 'snip'))):
+        if not args.prune_method in ('imp', 'omp'):
             break
     test_acc = evaluate(test_loader, network, label_mapping, visual_prompt)
     print(f'Best CKPT Accuracy: {test_acc:.4f}')

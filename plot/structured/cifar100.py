@@ -257,8 +257,8 @@ if __name__ == "__main__":
                     markersize=markersize+7, label="VPNs", alpha=VPNs_alpha)
     plt.fill_between(x_grid, y_VPNs - y_VPNs_err, y_VPNs + y_VPNs_err, color=VPNs_color, alpha=fill_in_alpha)
 
-    lbest = plt.axhline(y=y_best, color=best_color, linestyle='--', linewidth=3, alpha=best_alpha,
-                        label="Our Best")
+    # lbest = plt.axhline(y=y_best, color=best_color, linestyle='--', linewidth=3, alpha=best_alpha,
+    #                     label="Our Best")
 
     # dense_line = Line2D([0], [0], color=dense_color, lw=3, linestyle='--')
     # custom_lines = [dense_line,

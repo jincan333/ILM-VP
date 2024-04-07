@@ -104,68 +104,68 @@ def count_model_param_flops(model=None,channels=None, input_res=224, multiply_ad
         for c in childrens:
             foo(c)
 
-    if model==None:
-        model = models.resnet18().cuda()
+    # if model==None:
+    #     model = models.resnet18().cuda()
 
-    num_channel=model.conv1.weight.shape[0]
-    i=0
-    s=s_list[i]
+    # num_channel=model.conv1.weight.shape[0]
+    # i=0
+    # s=s_list[i]
 
-    model.conv1.weight.data[:int(num_channel*s)]=0
-    i+=1
+    # model.conv1.weight.data[:int(num_channel*s)]=0
+    # i+=1
 
-    pre_num_ch=int(num_channel*s)
-    for name,module in model.named_modules():
-      if isinstance(module, models.resnet.BasicBlock):
-          #module.conv1=create_conv(module.conv1,new_layer,channelPrune,GenerateMask,Samplingnet)
-          copy_ch=pre_num_ch
-          print(copy_ch)
-          num_channel=module.conv1.weight.shape[0]
-          s=s_list[i]
-          module.conv1.weight.data[:int(num_channel*s)]=0
-          module.conv1.weight.data[:,:pre_num_ch,:,:]=0
-          pre_num_ch=int(num_channel*s)
-          i+=1
-          s=s_list[i]
-          num_channel=module.conv2.weight.shape[0]
-          module.conv2.weight.data[:int(num_channel*s)]=0
-          module.conv2.weight.data[:,:pre_num_ch,:,:]=0
-          pre_num_ch=int(num_channel*s)
-          i+=1
+    # pre_num_ch=int(num_channel*s)
+    # for name,module in model.named_modules():
+    #   if isinstance(module, models.resnet.BasicBlock):
+    #       #module.conv1=create_conv(module.conv1,new_layer,channelPrune,GenerateMask,Samplingnet)
+    #       copy_ch=pre_num_ch
+    #       print(copy_ch)
+    #       num_channel=module.conv1.weight.shape[0]
+    #       s=s_list[i]
+    #       module.conv1.weight.data[:int(num_channel*s)]=0
+    #       module.conv1.weight.data[:,:pre_num_ch,:,:]=0
+    #       pre_num_ch=int(num_channel*s)
+    #       i+=1
+    #       s=s_list[i]
+    #       num_channel=module.conv2.weight.shape[0]
+    #       module.conv2.weight.data[:int(num_channel*s)]=0
+    #       module.conv2.weight.data[:,:pre_num_ch,:,:]=0
+    #       pre_num_ch=int(num_channel*s)
+    #       i+=1
 
-          if module.downsample is not None:
-              #module.downsample[0]=create_conv(module.downsample[0],new_layer,channelPrune,GenerateMask,Samplingnet)
-              #if args.shortcut=='none':
-              #    module.downsample[0].is_train=False
-              #    module.conv2.is_train=False
-              #elif  args.shortcut=='depend':
-              num_channel=module.downsample[0].weight.shape[0]
-              module.downsample[0].weight.data[:int(num_channel*s)]
-              module.downsample[0].weight.data[:,:copy_ch,:,:]=0
+    #       if module.downsample is not None:
+    #           #module.downsample[0]=create_conv(module.downsample[0],new_layer,channelPrune,GenerateMask,Samplingnet)
+    #           #if args.shortcut=='none':
+    #           #    module.downsample[0].is_train=False
+    #           #    module.conv2.is_train=False
+    #           #elif  args.shortcut=='depend':
+    #           num_channel=module.downsample[0].weight.shape[0]
+    #           module.downsample[0].weight.data[:int(num_channel*s)]
+    #           module.downsample[0].weight.data[:,:copy_ch,:,:]=0
 
-                  #module.conv2.is_train=True
-              #module.downsample[1]=PrunableBatchNorm2d(module.downsample[1])
-      elif  isinstance(module, models.resnet.Bottleneck):
-          copy_ch=pre_num_ch
-          num_channel=module.conv1.weight.shape[0]
-          module.conv1.weight.data[:int(num_channel*s)]=0
-          module.conv1.weight.data[:,:pre_num_ch,:,:]=0
-          pre_num_ch=int(num_channel*s)
-          num_channel=module.conv2.weight.shape[0]
-          module.conv2.weight.data[:int(num_channel*s)]=0
-          module.conv2.weight.data[:,:pre_num_ch,:,:]=0
-          pre_num_ch=int(num_channel*s)
-          num_channel=module.conv3.weight.shape[0]
-          module.conv3.weight.data[:int(num_channel*s)]=0
-          module.conv3.weight.data[:,:pre_num_ch,:,:]=0
-          pre_num_ch=int(num_channel*s)
-          if module.downsample is not None:
-              num_channel=module.downsample[0].weight.shape[0]
-              module.downsample[0].weight.data[:int(num_channel*s)]=0
-              module.downsample[0].weight.data[:,:copy_ch,:,:]=0
-      elif isinstance(module,torch.nn.Linear):
-        module.weight.data[:,:pre_num_ch]=0
-        #print(pre_num_ch)
+    #               #module.conv2.is_train=True
+    #           #module.downsample[1]=PrunableBatchNorm2d(module.downsample[1])
+    #   elif  isinstance(module, models.resnet.Bottleneck):
+    #       copy_ch=pre_num_ch
+    #       num_channel=module.conv1.weight.shape[0]
+    #       module.conv1.weight.data[:int(num_channel*s)]=0
+    #       module.conv1.weight.data[:,:pre_num_ch,:,:]=0
+    #       pre_num_ch=int(num_channel*s)
+    #       num_channel=module.conv2.weight.shape[0]
+    #       module.conv2.weight.data[:int(num_channel*s)]=0
+    #       module.conv2.weight.data[:,:pre_num_ch,:,:]=0
+    #       pre_num_ch=int(num_channel*s)
+    #       num_channel=module.conv3.weight.shape[0]
+    #       module.conv3.weight.data[:int(num_channel*s)]=0
+    #       module.conv3.weight.data[:,:pre_num_ch,:,:]=0
+    #       pre_num_ch=int(num_channel*s)
+    #       if module.downsample is not None:
+    #           num_channel=module.downsample[0].weight.shape[0]
+    #           module.downsample[0].weight.data[:int(num_channel*s)]=0
+    #           module.downsample[0].weight.data[:,:copy_ch,:,:]=0
+    #   elif isinstance(module,torch.nn.Linear):
+    #     module.weight.data[:,:pre_num_ch]=0
+    #     #print(pre_num_ch)
 
     foo(model)
     input = Variable(torch.rand(3,input_res,input_res).unsqueeze(0), requires_grad = True).cuda()

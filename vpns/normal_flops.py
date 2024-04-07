@@ -8,6 +8,8 @@ from matplotlib import pyplot as plt
 import copy
 import warnings
 import json
+import numpy as np
+from torch.autograd import Variable
 
 from utils import set_seed, setup_optimizer_and_prompt, calculate_label_mapping, obtain_label_mapping, save_args, get_masks
 from get_model_dataset import choose_dataloader, get_model
@@ -28,15 +30,25 @@ def main():
     parser.add_argument('--vp_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
     parser.add_argument('--vp_lr', default=0.001, type=float, help='initial learning rate')
     parser.add_argument('--vp_weight_decay', default=1e-4, type=float, help='visual prompt weight decay')
-    parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg"])
-    parser.add_argument('--dataset', default="cifar100", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'tiny_imagenet', 'imagenet'])
+    parser.add_argument('--weight_vp_optimizer', type=str, default='sgd', help='The optimizer to use.', choices=['sgd', 'adam'])
+    parser.add_argument('--weight_vp_scheduler', default='cosine', help='decreasing strategy.', choices=['cosine', 'multistep'])
+    parser.add_argument('--weight_vp_lr', default=0.01, type=float, help='initial learning rate')
+    parser.add_argument('--weight_vp_weight_decay', default=1e-4, type=float, help='visual prompt weight decay')
+    parser.add_argument('--score_vp_optimizer', type=str, default='adam', help='The optimizer to use.', choices=['sgd', 'adam'])
+    parser.add_argument('--score_vp_scheduler', default='multistep', help='decreasing strategy.', choices=['cosine', 'multistep'])
+    parser.add_argument('--score_vp_lr', default=0.001, type=float, help='initial learning rate')
+    parser.add_argument('--score_vp_weight_decay', default=1e-4, type=float, help='visual prompt weight decay')
+    parser.add_argument('--network', default='resnet18', choices=["resnet18", "resnet50", "vgg", "mobilenet"])
+    parser.add_argument('--dataset', default="dtd", choices=['cifar10', 'cifar100', 'flowers102', 'dtd', 'food101', 'oxfordpets', 'stanfordcars', 'tiny_imagenet', 'imagenet'])
     parser.add_argument('--experiment_name', default='exp', type=str, help='name of experiment')
-    parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
+    parser.add_argument('--gpu', type=int, default=1, help='gpu device id')
     parser.add_argument('--epochs', default=120, type=int, help='number of total eopchs to run')
     parser.add_argument('--seed', default=7, type=int, help='random seed')
     parser.add_argument('--density_list', default='1,0.10,0.05,0.01', type=str, help='density list(1-sparsity), choose from 1,0.50,0.40,0.30,0.20,0.10,0.05')
     parser.add_argument('--label_mapping_mode', type=str, default='flm', choices=['flm', 'ilm'])
     parser.add_argument('--score_vp_ratio', type=float, default=5, choices=[20,10,9,8,7,6,5,4,3,2,1])
+    parser.add_argument('--mixup', default=0, type=int, choices=[0,1])
+    parser.add_argument('--scratch', default=0, type=int, choices=[0,1])
 
     ##################################### General setting ############################################
     parser.add_argument('--save_dir', help='The directory used to save the trained models', default='result', type=str)
@@ -257,6 +269,8 @@ def main():
         all_results['ckpt_test_acc'] = test_acc
         all_results['ckpt_epoch'] = best_ckpt['epoch']
         plot_train(all_results, save_path, state)
+        mask.apply_mask()
+        count_model_param_flops(model = network, input_res=192)
 
 
 def init_gradients(weight_optimizer, vp_optimizer):
@@ -286,6 +300,19 @@ def train(train_loader, network, epoch, label_mapping, visual_prompt, mask, weig
         args.current_steps+=1
         x = x.cuda()
         y = y.cuda()
+        
+        # # mixup
+        # x, y_a, y_b, lam = mixup_data(x, y, alpha=1.0, use_cuda=torch.cuda.is_available())
+        # if visual_prompt:
+        #     fx = label_mapping(network(visual_prompt(x)))
+        # else:
+        #     fx = label_mapping(network(x))
+        # loss_func = mixup_criterion(y_a, y_b, lam)
+        # loss = loss_func(fx, y)
+        # init_gradients(weight_optimizer, vp_optimizer)
+        # loss.backward()
+        # # mixup
+
         if visual_prompt:
             fx = label_mapping(network(visual_prompt(x)))
         else:
@@ -293,14 +320,15 @@ def train(train_loader, network, epoch, label_mapping, visual_prompt, mask, weig
         loss = F.cross_entropy(fx, y, reduction='mean')
         init_gradients(weight_optimizer, vp_optimizer)
         loss.backward()
+
         if weight_optimizer:
             weight_optimizer.step()
         elif vp_optimizer:
             vp_optimizer.step()
         if mask:
             mask.step()
-        if visual_prompt and args.current_steps % args.step_division==0:
-                update_visual_prompt(visual_prompt, x, y)
+        # if visual_prompt and args.current_steps % args.step_division==0:
+        #         update_visual_prompt(visual_prompt, x, y)
 
         total_num += y.size(0)
         true_num += torch.argmax(fx, 1).eq(y).float().sum().item()
@@ -416,6 +444,125 @@ def plot_train(all_results, save_path, state):
     plt.title(save_path, fontsize = 'xx-small')
     plt.savefig(os.path.join(save_path, str(state)+'train.png'))
     plt.close()
+
+
+def mixup_data(x, y, alpha=1.0, use_cuda=True):
+    if alpha > 0:
+        lam = np.random.beta(alpha, alpha)
+    else:
+        lam = 1
+
+    batch_size = x.size()[0]
+    if use_cuda:
+        index = torch.randperm(batch_size).cuda()
+    else:
+        index = torch.randperm(batch_size)
+
+    mixed_x = lam * x + (1 - lam) * x[index, :]
+    y_a, y_b = y, y[index]
+    return mixed_x, y_a, y_b, lam
+
+
+def mixup_criterion(y_a, y_b, lam):
+    def criterion(y_pred, y_true):
+        return lam * torch.nn.CrossEntropyLoss()(y_pred, y_true) + (1 - lam) * torch.nn.CrossEntropyLoss()(y_pred, y_true[y_b])
+
+    return criterion
+
+
+def count_model_param_flops(model=None,channels=None, input_res=224, multiply_adds=True,s_list=None):
+
+    prods = {}
+    def save_hook(name):
+        def hook_per(self, input, output):
+            prods[name] = np.prod(input[0].shape)
+        return hook_per
+
+    list_1=[]
+    def simple_hook(self, input, output):
+        list_1.append(np.prod(input[0].shape))
+    list_2={}
+    def simple_hook2(self, input, output):
+        list_2['names'] = np.prod(input[0].shape)
+
+
+    list_conv=[]
+    def conv_hook(self, input, output):
+        batch_size, input_channels, input_height, input_width = input[0].size()
+        output_channels, output_height, output_width = output[0].size()
+
+        kernel_ops = self.kernel_size[0] * self.kernel_size[1] * (self.in_channels / self.groups)
+        bias_ops = 1 if self.bias is not None else 0
+
+        params = output_channels * (kernel_ops + bias_ops)
+
+        num_weight_params = (self.weight.data != 0).float().sum()
+        assert self.weight.numel() == kernel_ops * output_channels, "Not match"
+        flops = (num_weight_params * (2 if multiply_adds else 1) + bias_ops * output_channels) * output_height * output_width * batch_size
+
+        list_conv.append(flops)
+
+    list_linear=[]
+    def linear_hook(self, input, output):
+        batch_size = input[0].size(0) if input[0].dim() == 2 else 1
+
+        num_weight_params = (self.weight.data != 0).float().sum()
+        weight_ops = num_weight_params * (2 if multiply_adds else 1)
+        bias_ops = self.bias.nelement() if self.bias is not None else 0
+
+        flops = batch_size * (weight_ops + bias_ops)
+        list_linear.append(flops)
+
+    list_bn=[]
+    def bn_hook(self, input, output):
+        list_bn.append(input[0].nelement() * 2)
+
+    list_relu=[]
+    def relu_hook(self, input, output):
+        list_relu.append(input[0].nelement())
+
+    list_pooling=[]
+    def pooling_hook(self, input, output):
+        batch_size, input_channels, input_height, input_width = input[0].size()
+        output_channels, output_height, output_width = output[0].size()
+
+        kernel_ops = self.kernel_size * self.kernel_size
+        bias_ops = 0
+        params = 0
+        flops = (kernel_ops + bias_ops) * output_channels * output_height * output_width * batch_size
+
+        list_pooling.append(flops)
+
+    list_upsample=[]
+    # For bilinear upsample
+    def upsample_hook(self, input, output):
+        batch_size, input_channels, input_height, input_width = input[0].size()
+        output_channels, output_height, output_width = output[0].size()
+
+        flops = output_height * output_width * output_channels * batch_size * 12
+        list_upsample.append(flops)
+
+    def foo(net):
+        childrens = list(net.children())
+        if not childrens:
+            if isinstance(net, torch.nn.Conv2d):
+                net.register_forward_hook(conv_hook)
+            if isinstance(net, torch.nn.Linear):
+                net.register_forward_hook(linear_hook)
+            if isinstance(net, torch.nn.Upsample):
+                 net.register_forward_hook(upsample_hook)
+            return
+        for c in childrens:
+            foo(c)
+
+    foo(model)
+    input = Variable(torch.rand(3,input_res,input_res).unsqueeze(0), requires_grad = True).cuda()
+    out = model(input)
+    total_flops = (sum(list_conv) + sum(list_linear) + sum(list_bn) + sum(list_relu) + sum(list_pooling) + sum(list_upsample))
+
+    print('  + Number of FLOPs: %.2f' % (total_flops/2/1000000))
+
+    return total_flops/2/1000000
 
 
 if __name__ == '__main__':
